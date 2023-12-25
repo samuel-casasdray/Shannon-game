@@ -1,10 +1,12 @@
-package fr.projet;
+package fr.projet.Graph;
 
 import javafx.util.Pair;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 @Accessors(chain = true)
@@ -19,9 +21,12 @@ public class Graph {
 
     private final Random random = new Random();
 
-    private ArrayList<Vertex> vertices;
+    private List<Vertex> vertices;
 
-    public Graph(ArrayList<Vertex> vertices) {
+    @Getter
+    private List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>();
+
+    public Graph(List<Vertex> vertices) {
         this.vertices = vertices;
     }
 
@@ -54,6 +59,7 @@ public class Graph {
                 if (p > proba) {
                     this.vertices.get(i).addNeighborVertex(this.vertices.get(j));
                     this.vertices.get(j).addNeighborVertex(this.vertices.get(i));
+                    neighbors.add(new Pair<>(this.vertices.get(i), this.vertices.get(j)));
                 }
             }
         }

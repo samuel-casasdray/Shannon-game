@@ -1,9 +1,11 @@
 package fr.projet.Gui;
 
-import fr.projet.Graph;
-import fr.projet.Vertex;
+import fr.projet.Graph.Graph;
+import fr.projet.Graph.Vertex;
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -27,6 +29,13 @@ public class Gui extends Application {
 
     private final Random random = new Random();
 
+    @Getter
+    @Setter
+    private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
+
+    @Getter
+    @Setter
+    public static EventHandler<MouseEvent> handler;
 
     @Override
     public void start(Stage stage) {
@@ -44,20 +53,21 @@ public class Gui extends Application {
     }
 
     public void showGraph(Pane pane) {
-
         // Ajout des aretes sur l'affichage
-        List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>();
         for (Vertex vertex : graph.getVertices()) {
             for (Vertex vertex1 : vertex.getListNeighbors()) {
                 Pair<Vertex, Vertex> pair = new Pair<>(vertex, vertex1);
-                if (neighbors.stream().noneMatch(neighbor -> Vertex.isSameCouple(neighbor, pair))) {
+                if (edges.stream().noneMatch(neighbor -> Vertex.isSameCouple(neighbor.getKey(), pair))) {
                     Line line = new Line(vertex.getCoords().getKey() + 20,
                             vertex.getCoords().getValue() + 20,
                             vertex1.getCoords().getKey() + 20,
                             vertex1.getCoords().getValue() + 20);
+                    line.setStrokeWidth(5);
+                    line.setOnMouseClicked(handler);
+                    line.getProperties().put("pair", pair);
                     // Ajout de la ligne sur sur l'affichage
                     pane.getChildren().add(line);
-                    neighbors.add(pair);
+                    edges.add(new Pair<>(pair, line));
                 }
             }
         }
