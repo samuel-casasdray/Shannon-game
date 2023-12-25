@@ -1,4 +1,4 @@
-package fr.projet.Graph;
+package fr.projet.graph;
 
 import javafx.util.Pair;
 import lombok.Data;
@@ -16,8 +16,8 @@ public class Vertex {
     private List<Integer> listNeighborsPaint = new ArrayList<>();
     private Pair<Integer, Integer> coords;
 
-    public Vertex(ArrayList<Vertex> vertices, int x, int y) {
-        this.listNeighbors = vertices;
+    public Vertex(List<Vertex> vertices, int x, int y) {
+        this.listNeighbors = new ArrayList<>(vertices);
         this.coords = new Pair<>(x, y);
     }
 
@@ -57,8 +57,8 @@ public class Vertex {
     }
 
     public static boolean isSameCouple(Pair<Vertex, Vertex> vertex1, Pair<Vertex, Vertex> vertex2) {
-        return (vertex1.getKey() == vertex2.getKey() && vertex1.getValue() == vertex2.getValue()) ||
-                (vertex1.getKey() == vertex2.getValue() && vertex1.getValue() == vertex2.getKey());
+        return (vertex1.getKey().equals(vertex2.getKey()) && vertex1.getValue().equals(vertex2.getValue())) ||
+                (vertex1.getKey().equals(vertex2.getValue()) && vertex1.getValue().equals(vertex2.getKey()));
     }
 
     public void cut(Vertex v) {

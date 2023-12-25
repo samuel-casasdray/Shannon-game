@@ -1,5 +1,6 @@
-package fr.projet.Graph;
+package fr.projet.graph;
 
+import fr.projet.gui.Gui;
 import javafx.util.Pair;
 import lombok.Data;
 import lombok.Getter;
@@ -13,7 +14,8 @@ import java.util.Random;
 @Data
 public class Graph {
 
-    private int nbVertices = 5; // nombre de vertex
+    // nombre de vertex
+    private int nbVertices = 5;
 
     private boolean aroundCircle = true;
 
@@ -44,11 +46,18 @@ public class Graph {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         for (int i = 0; i < nbVertices; i++) {
             Pair<Integer, Integer> coord;
-            if (aroundCircle) { // Coord autour d'un cercle
-                double toRad = (i * 360f / nbVertices) * (Math.PI / 180);
-                coord = new Pair<>((int) (Math.cos(toRad) * 300 + 400), (int) (Math.sin(toRad) * 300 + 400));
-            } else // Coord aléatoire
-                coord = new Pair<>(random.nextInt(0, 780), random.nextInt(0, 780));
+            if (aroundCircle) {
+                // Coord autour d'un cercle
+                double toRad = Math.toRadians((double) i / nbVertices);
+                coord = new Pair<>(
+                        (int) (Math.cos(toRad) * (Gui.WINDOW_SIZE - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE),
+                        (int) (Math.sin(toRad) * (Gui.WINDOW_SIZE - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE));
+            } else {
+                // Coord aléatoire
+                coord = new Pair<>(
+                        random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE),
+                        random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE));
+            }
             // On ajoute le sommet au graphe
             vertices.add(new Vertex(coord.getKey(), coord.getValue()));
         }
