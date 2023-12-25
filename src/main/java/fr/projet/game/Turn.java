@@ -1,4 +1,4 @@
-package fr.projet;
+package fr.projet.game;
 
 public enum Turn {
     CUT, SHORT;

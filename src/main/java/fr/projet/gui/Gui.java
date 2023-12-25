@@ -1,7 +1,7 @@
-package fr.projet.Gui;
+package fr.projet.gui;
 
-import fr.projet.Graph.Graph;
-import fr.projet.Graph.Vertex;
+import fr.projet.graph.Graph;
+import fr.projet.graph.Vertex;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -23,19 +23,19 @@ import java.util.Random;
 
 public class Gui extends Application {
 
+    public static final double CIRCLE_SIZE = 20D;
+    public static final int WINDOW_SIZE = 800;
+    public static final int WINDOW_MARGE = 100;
     @Getter
     @Setter
-    private static Graph graph = null;
-
-    private final Random random = new Random();
-
+    private static EventHandler<MouseEvent> handler;
+    @Getter
+    @Setter
+    private static Graph graph;
     @Getter
     @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
-
-    @Getter
-    @Setter
-    public static EventHandler<MouseEvent> handler;
+    private final Random random = new Random();
 
     @Override
     public void start(Stage stage) {
@@ -46,8 +46,7 @@ public class Gui extends Application {
     public Pane run() {
         Pane pane = new Pane();
         // On définit la taille de notre affichage
-        pane.setPrefSize(800, 800);
-        if (graph == null) graph = new Graph();
+        pane.setPrefSize(WINDOW_SIZE, WINDOW_SIZE);
         showGraph(pane);
         return pane;
     }
@@ -58,10 +57,10 @@ public class Gui extends Application {
             for (Vertex vertex1 : vertex.getListNeighbors()) {
                 Pair<Vertex, Vertex> pair = new Pair<>(vertex, vertex1);
                 if (edges.stream().noneMatch(neighbor -> Vertex.isSameCouple(neighbor.getKey(), pair))) {
-                    Line line = new Line(vertex.getCoords().getKey() + 20,
-                            vertex.getCoords().getValue() + 20,
-                            vertex1.getCoords().getKey() + 20,
-                            vertex1.getCoords().getValue() + 20);
+                    Line line = new Line(vertex.getCoords().getKey() + CIRCLE_SIZE,
+                            vertex.getCoords().getValue() + CIRCLE_SIZE,
+                            vertex1.getCoords().getKey() + CIRCLE_SIZE,
+                            vertex1.getCoords().getValue() + CIRCLE_SIZE);
                     line.setStrokeWidth(5);
                     line.setOnMouseClicked(handler);
                     line.getProperties().put("pair", pair);
@@ -78,9 +77,9 @@ public class Gui extends Application {
             // On crée un texte pour le numéro du sommet
             Text text = new Text(String.valueOf(i + 1));
             text.setBoundsType(TextBoundsType.VISUAL);
-            text.relocate(coord.getKey() + 18, coord.getValue() + 18);
+            text.relocate(coord.getKey() + 18D, coord.getValue() + 18D);
             // Un cercle pour représenter le sommet
-            Circle vertex = new Circle(20, new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
+            Circle vertex = new Circle(CIRCLE_SIZE, new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
             vertex.relocate(coord.getKey(), coord.getValue());
             // On ajoute les 2 élements sur l'affichage
             pane.getChildren().addAll(vertex, text);
