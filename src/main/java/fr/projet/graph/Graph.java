@@ -29,7 +29,7 @@ public class Graph {
     private List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>();
 
     public Graph(List<Vertex> vertices) {
-        this.vertices = vertices;
+        this.vertices = new ArrayList<>(vertices);
     }
 
     public Graph(int nbVertices) {
@@ -48,10 +48,10 @@ public class Graph {
             Pair<Integer, Integer> coord;
             if (aroundCircle) {
                 // Coord autour d'un cercle
-                double toRad = Math.toRadians((double) i / nbVertices);
+                double toRad = Math.toRadians((double) i * 360F / nbVertices);
                 coord = new Pair<>(
-                        (int) (Math.cos(toRad) * (Gui.WINDOW_SIZE - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE),
-                        (int) (Math.sin(toRad) * (Gui.WINDOW_SIZE - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE));
+                        (int) (Math.cos(toRad) * (Gui.WINDOW_SIZE / 2D - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE / 2D),
+                        (int) (Math.sin(toRad) * (Gui.WINDOW_SIZE / 2D - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE / 2D));
             } else {
                 // Coord aléatoire
                 coord = new Pair<>(
