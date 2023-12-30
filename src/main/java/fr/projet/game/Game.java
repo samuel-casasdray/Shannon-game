@@ -18,6 +18,7 @@ public class Game {
         graph = new Graph(8);
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
+        System.out.println(graph.estConnexe());
         new Thread(() -> Application.launch(Gui.class)).start();
     }
 

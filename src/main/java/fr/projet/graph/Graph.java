@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -77,5 +78,27 @@ public class Graph {
     public void setNbVertices(int nbVertices) {
         this.nbVertices = nbVertices;
         this.generateGraph();
+    }
+
+    public boolean estConnexe() {
+        HashSet<Vertex> marked = new HashSet<>();
+        ArrayList<Vertex> pile = new ArrayList<>();
+        if (vertices.size() == 0) {
+            return true;
+        }
+        pile.add(vertices.get(0));
+        while (pile.size() > 0) {
+            var s = pile.getLast();
+            pile.remove(pile.size()-1);
+            if (!marked.contains(s)) {
+                marked.add(s);
+                for (var t: s.getListNeighbors()) {
+                    if (!marked.contains(t)) {
+                        pile.add(t);
+                    }
+                }
+            }
+        }
+        return marked.size() == vertices.size();
     }
 }
