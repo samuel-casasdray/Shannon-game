@@ -28,10 +28,12 @@ public class Vertex {
 
     public void addNeighborVertex(Vertex v) {
         listNeighbors.add(v);
+        v.getListNeighbors().add(this);
     }
 
     public void removeNeighborVertex(Vertex v) {
         listNeighbors.remove(v);
+        v.getListNeighbors().remove(this);
     }
 
     public void removeNeighborVertex(int i) {
@@ -63,10 +65,12 @@ public class Vertex {
 
     public void cut(Vertex v) {
         listNeighborsCut.add(listNeighbors.indexOf(v));
+        v.listNeighborsCut.add(v.getListNeighbors().indexOf(this)); // si c'est cut, c'est cut dans les deux sens
     }
 
     public boolean isCut(Vertex v) {
-        return listNeighborsCut.contains(listNeighbors.indexOf(v));
+        return listNeighborsCut.contains(listNeighbors.indexOf(v)) 
+        || v.getListNeighborsCut().contains(v.getListNeighbors().indexOf(this));
     }
 
     public void paint(Vertex v) {

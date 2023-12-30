@@ -73,6 +73,9 @@ public class Graph {
                 }
             }
         }
+        if (!estConnexe()) { // Il faut que le graphe généré soit connexe
+            this.generateGraph();
+        }
     }
 
     public void setNbVertices(int nbVertices) {
@@ -100,5 +103,20 @@ public class Graph {
             }
         }
         return marked.size() == vertices.size();
+    }
+
+    public boolean cutWon() {
+        ArrayList<Vertex> notCuttedVerticies = new ArrayList<>();
+        for (Vertex v: vertices) {
+            Vertex newVertex = new Vertex(v.getCoords().getKey(), v.getCoords().getValue());
+            for (var neighbor: v.getListNeighbors()) {
+                if (!v.isCut(neighbor) && !neighbor.isCut(v)) {
+                    newVertex.addNeighborVertex(neighbor);
+                }
+            }
+            notCuttedVerticies.add(newVertex);
+        }
+        Graph notCuttedGraph = new Graph(notCuttedVerticies);
+        return !notCuttedGraph.estConnexe();
     }
 }

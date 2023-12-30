@@ -13,16 +13,16 @@ import javafx.util.Pair;
 public class Game {
     private final Graph graph;
     private Turn turn = Turn.CUT;
-
+    private boolean cutWon = false;
     public Game() {
         graph = new Graph(8);
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
-        System.out.println(graph.estConnexe());
         new Thread(() -> Application.launch(Gui.class)).start();
     }
 
     private void handleEvent(MouseEvent mouseEvent) {
+        if (cutWon) return;
         if (mouseEvent.getSource() instanceof Line line &&
                 line.getProperties().get("pair") instanceof Pair<?, ?> pair1 &&
                 pair1.getKey() instanceof Vertex key && pair1.getValue() instanceof Vertex value) {
@@ -39,10 +39,17 @@ public class Game {
                         neighbors.getValue().setStroke(Color.RED);
                     }
                     turn = turn.flip();
+                    if (graph.cutWon()) {
+                        System.out.println("CUT a gagné");
+                        cutWon = true;
+                    }
                     return;
-
                 }
             }
+        }
+        if (graph.cutWon()) {
+            System.out.println("CUT a gagné");
+            cutWon = true;
         }
     }
 }
