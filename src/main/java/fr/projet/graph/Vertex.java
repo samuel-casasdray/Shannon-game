@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -12,8 +13,8 @@ import java.util.Objects;
 @Data
 public class Vertex {
     private List<Vertex> listNeighbors;
-    private List<Integer> listNeighborsCut = new ArrayList<>();
-    private List<Integer> listNeighborsPaint = new ArrayList<>();
+    private HashSet<Vertex> listNeighborsCut = new HashSet<>(); // Pour avoir un contains en O(1) et aucune répétition ?
+    private HashSet<Vertex> listNeighborsPaint = new HashSet<>();
     private Pair<Integer, Integer> coords;
 
     public Vertex(List<Vertex> vertices, int x, int y) {
@@ -28,7 +29,8 @@ public class Vertex {
 
     public void addNeighborVertex(Vertex v) {
         listNeighbors.add(v);
-        v.getListNeighbors().add(this);
+        if (!v.getListNeighbors().contains(this))
+            v.getListNeighbors().add(this);
     }
 
     public void removeNeighborVertex(Vertex v) {
@@ -40,18 +42,29 @@ public class Vertex {
         listNeighbors.remove(i);
     }
 
+    // @Override
+    // public boolean equals(Object o) {
+    //     if (this == o) return true;
+    //     if (o == null || getClass() != o.getClass()) return false;
+    //     Vertex vertex = (Vertex) o;
+    //     return Objects.equals(coords, vertex.coords);
+    // }
+
+    // @Override
+    // public int hashCode() {
+    //     return Objects.hash(coords);
+    // }
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Vertex vertex = (Vertex) o;
-        return Objects.equals(coords, vertex.coords);
+    public boolean equals(Object o) { 
+        // à mon avis il faut garder le equals par défaut pour comparer les instances
+        return super.equals(o); 
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(coords);
+        return super.hashCode();
     }
+
 
     @Override
     public String toString() {
@@ -64,21 +77,21 @@ public class Vertex {
     }
 
     public void cut(Vertex v) {
-        listNeighborsCut.add(listNeighbors.indexOf(v));
-        v.listNeighborsCut.add(v.getListNeighbors().indexOf(this)); // si c'est cut, c'est cut dans les deux sens
+        listNeighborsCut.add(v);
+        v.listNeighborsCut.add(this); // si c'est cut, c'est cut dans les deux sens
     }
 
     public boolean isCut(Vertex v) {
-        return listNeighborsCut.contains(listNeighbors.indexOf(v)) 
-        || v.getListNeighborsCut().contains(v.getListNeighbors().indexOf(this));
+        return listNeighborsCut.contains(v) 
+        || v.getListNeighborsCut().contains(this);
     }
 
     public void paint(Vertex v) {
-        listNeighborsPaint.add(listNeighbors.indexOf(v));
+        listNeighborsPaint.add(v);
     }
 
     public boolean isPainted(Vertex v) {
-        return listNeighborsPaint.contains(listNeighbors.indexOf(v));
+        return listNeighborsPaint.contains(v);
     }
 
     public boolean isCutOrPanted(Vertex v) {

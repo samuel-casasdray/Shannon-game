@@ -11,11 +11,15 @@ import javafx.scene.shape.Line;
 import javafx.util.Pair;
 
 public class Game {
-    private final Graph graph;
+    private Graph graph;
     private Turn turn = Turn.CUT;
     private boolean cutWon = false;
     public Game() {
-        graph = new Graph(8);
+        int nbVertices = 8;
+        graph = new Graph(nbVertices);
+        while (!graph.estConnexe()) {
+            graph = new Graph(nbVertices);
+        }
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
         new Thread(() -> Application.launch(Gui.class)).start();

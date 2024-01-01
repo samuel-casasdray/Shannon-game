@@ -31,19 +31,25 @@ public class Graph {
 
     public Graph(List<Vertex> vertices) {
         this.vertices = new ArrayList<>(vertices);
+        this.nbVertices = vertices.size();
     }
 
     public Graph(int nbVertices) {
         this.nbVertices = nbVertices;
+        this.vertices = new ArrayList<>();
         this.generateGraph();
     }
 
     public Graph() {
+        this.vertices = new ArrayList<>();
         this.generateGraph();
     }
 
+    public void addVertice(Vertex v) {
+        vertices.add(v);
+    }
+
     private void generateGraph() {
-        this.vertices = new ArrayList<>();
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         for (int i = 0; i < nbVertices; i++) {
             Pair<Integer, Integer> coord;
@@ -60,21 +66,18 @@ public class Graph {
                         random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE));
             }
             // On ajoute le sommet au graphe
-            vertices.add(new Vertex(coord.getKey(), coord.getValue()));
+            addVertice(new Vertex(coord.getKey(), coord.getValue()));
         }
-        // Instantiation des aretes selon une probabilité (proba) entre 2 sommets
+        //Instantiation des aretes selon une probabilité (proba) entre 2 sommets
         for (int i = 0; i < nbVertices; i++) {
             for (int j = i + 1; j < nbVertices; j++) {
                 float p = random.nextFloat();
                 if (p > proba) {
                     this.vertices.get(i).addNeighborVertex(this.vertices.get(j));
-                    this.vertices.get(j).addNeighborVertex(this.vertices.get(i));
-                    neighbors.add(new Pair<>(this.vertices.get(i), this.vertices.get(j)));
+                    // this.vertices.get(j).addNeighborVertex(this.vertices.get(i)); // Voir la méthode addNeighbor
+                    neighbors.add(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(j)));
                 }
             }
-        }
-        if (!estConnexe()) { // Il faut que le graphe généré soit connexe
-            this.generateGraph();
         }
     }
 
@@ -95,6 +98,7 @@ public class Graph {
             pile.remove(pile.size()-1);
             if (!marked.contains(s)) {
                 marked.add(s);
+                //System.out.println(s);
                 for (var t: s.getListNeighbors()) {
                     if (!marked.contains(t)) {
                         pile.add(t);
@@ -106,17 +110,11 @@ public class Graph {
     }
 
     public boolean cutWon() {
-        ArrayList<Vertex> notCuttedVerticies = new ArrayList<>();
-        for (Vertex v: vertices) {
-            Vertex newVertex = new Vertex(v.getCoords().getKey(), v.getCoords().getValue());
-            for (var neighbor: v.getListNeighbors()) {
-                if (!v.isCut(neighbor) && !neighbor.isCut(v)) {
-                    newVertex.addNeighborVertex(neighbor);
-                }
-            }
-            notCuttedVerticies.add(newVertex);
-        }
-        Graph notCuttedGraph = new Graph(notCuttedVerticies);
-        return !notCuttedGraph.estConnexe();
+    List<Vertex> notCuttedVerticices = vertices;
+    notCuttedVerticices.stream().forEach(
+        x -> x.setListNeighbors(x.getListNeighbors().stream().filter(y -> !x.isCut(y) && !y.isCut(x)).toList())
+    );
+    Graph notCuttedGraph = new Graph(notCuttedVerticices);
+    return !notCuttedGraph.estConnexe();
     }
 }
