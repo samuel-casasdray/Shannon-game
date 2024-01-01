@@ -7,7 +7,6 @@ import lombok.experimental.Accessors;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 
 @Accessors(chain = true)
 @Data
@@ -88,10 +87,11 @@ public class Vertex {
 
     public void paint(Vertex v) {
         listNeighborsPaint.add(v);
+        v.getListNeighborsPaint().add(this);
     }
 
     public boolean isPainted(Vertex v) {
-        return listNeighborsPaint.contains(v);
+        return listNeighborsPaint.contains(v) || v.getListNeighborsPaint().contains(this);
     }
 
     public boolean isCutOrPanted(Vertex v) {

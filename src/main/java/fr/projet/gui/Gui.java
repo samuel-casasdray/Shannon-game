@@ -1,5 +1,7 @@
 package fr.projet.gui;
 
+import fr.projet.IA.BasicAI;
+import fr.projet.game.Game;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.application.Application;
@@ -34,6 +36,12 @@ public class Gui extends Application {
     private static Graph graph;
     @Getter
     @Setter
+    private static BasicAI ia;
+    @Getter
+    @Setter
+    private static Game game;
+    @Getter
+    @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
     private final Random random = new Random();
 
@@ -48,29 +56,42 @@ public class Gui extends Application {
         // On définit la taille de notre affichage
         pane.setPrefSize(WINDOW_SIZE, WINDOW_SIZE);
         showGraph(pane);
+        if (ia != null)
+        playFirst();
         return pane;
+    }
+
+    public void playFirst() {
+        var v = ia.play();
+        for (var element : Gui.getEdges()) {
+            if (element.getKey().equals(v)) {
+                element.getValue().getStrokeDashArray().addAll(25D, 10D);
+                break;
+            }
+        }
+        if (graph.cutWon()) {
+            game.setCutWon(true);
+            System.out.println("CUT a gagné");
+        }
     }
 
     public void showGraph(Pane pane) {
         // Ajout des aretes sur l'affichage
-        for (Vertex vertex : graph.getVertices()) {
-            for (Vertex vertex1 : vertex.getListNeighbors()) {
-                Pair<Vertex, Vertex> pair = new Pair<>(vertex, vertex1);
-                if (edges.stream().noneMatch(neighbor -> Vertex.isSameCouple(neighbor.getKey(), pair))) {
-                    Line line = new Line(vertex.getCoords().getKey() + CIRCLE_SIZE,
-                            vertex.getCoords().getValue() + CIRCLE_SIZE,
-                            vertex1.getCoords().getKey() + CIRCLE_SIZE,
-                            vertex1.getCoords().getValue() + CIRCLE_SIZE);
-                    line.setStrokeWidth(5);
-                    line.setOnMouseClicked(handler);
-                    line.getProperties().put("pair", pair);
-                    // Ajout de la ligne sur sur l'affichage
-                    pane.getChildren().add(line);
-                    edges.add(new Pair<>(pair, line));
-                }
-            }
+        for (Pair<Vertex, Vertex> pair : graph.getNeighbors()) {
+            // if (edges.stream().noneMatch(neighbor ->
+            // Vertex.isSameCouple(neighbor.getKey(), pair))) {
+            Line line = new Line(pair.getKey().getCoords().getKey() + CIRCLE_SIZE,
+                    pair.getKey().getCoords().getValue() + CIRCLE_SIZE,
+                    pair.getValue().getCoords().getKey() + CIRCLE_SIZE,
+                    pair.getValue().getCoords().getValue() + CIRCLE_SIZE);
+            line.setStrokeWidth(5);
+            line.setOnMouseClicked(handler);
+            line.getProperties().put("pair", pair);
+            // Ajout de la ligne sur sur l'affichage
+            pane.getChildren().add(line);
+            edges.add(new Pair<>(pair, line));
+            // }
         }
-
         // Ajout des sommets sur l'affichage
         for (int i = 0; i < graph.getNbVertices(); i++) {
             Pair<Integer, Integer> coord = graph.getVertices().get(i).getCoords();
@@ -79,7 +100,8 @@ public class Gui extends Application {
             text.setBoundsType(TextBoundsType.VISUAL);
             text.relocate(coord.getKey() + 18D, coord.getValue() + 18D);
             // Un cercle pour représenter le sommet
-            Circle vertex = new Circle(CIRCLE_SIZE, new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
+            Circle vertex = new Circle(CIRCLE_SIZE,
+                    new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
             vertex.relocate(coord.getKey(), coord.getValue());
             // On ajoute les 2 élements sur l'affichage
             pane.getChildren().addAll(vertex, text);

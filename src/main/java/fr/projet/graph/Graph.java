@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Accessors(chain = true)
 @Data
@@ -98,7 +99,6 @@ public class Graph {
             pile.remove(pile.size()-1);
             if (!marked.contains(s)) {
                 marked.add(s);
-                //System.out.println(s);
                 for (var t: s.getListNeighbors()) {
                     if (!marked.contains(t)) {
                         pile.add(t);
@@ -110,11 +110,23 @@ public class Graph {
     }
 
     public boolean cutWon() {
-    List<Vertex> notCuttedVerticices = vertices;
-    notCuttedVerticices.stream().forEach(
-        x -> x.setListNeighbors(x.getListNeighbors().stream().filter(y -> !x.isCut(y) && !y.isCut(x)).toList())
-    );
-    Graph notCuttedGraph = new Graph(notCuttedVerticices);
-    return !notCuttedGraph.estConnexe();
+        List<Vertex> notCuttedVerticices = vertices;
+        notCuttedVerticices.stream().forEach(
+            x -> x.setListNeighbors(x.getListNeighbors().stream().filter(y -> !x.isCut(y) && !y.isCut(x)).collect(Collectors.toCollection(ArrayList::new)))
+        );
+        Graph notCuttedGraph = new Graph(notCuttedVerticices);
+        return !notCuttedGraph.estConnexe();
+    }
+
+    public void removeNeighbor(Pair<Vertex, Vertex> edge) {
+        neighbors.remove(edge);
+        edge.getKey().removeNeighborVertex(edge.getValue());
+        edge.getValue().removeNeighborVertex(edge.getKey());
+    }
+
+    public void addNeighbor(Pair<Vertex, Vertex> edge) {
+        neighbors.add(edge);
+        edge.getKey().addNeighborVertex(edge.getValue());
+        edge.getValue().addNeighborVertex(edge.getKey());
     }
 }
