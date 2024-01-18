@@ -1,6 +1,6 @@
 package fr.projet.gui;
 
-import fr.projet.IA.BasicAI;
+import fr.projet.IA.InterfaceIA;
 import fr.projet.game.Game;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
@@ -36,7 +36,7 @@ public class Gui extends Application {
     private static Graph graph;
     @Getter
     @Setter
-    private static BasicAI ia;
+    private static InterfaceIA ia;
     @Getter
     @Setter
     private static Game game;
@@ -62,15 +62,26 @@ public class Gui extends Application {
     }
 
     public void playFirst() {
-        var v = ia.play();
+        // var v = ia.playCUT();
+        var v = graph.getNeighbors().get(0);
+        graph.removeNeighbor(v);
+        int i = 0;
+        while (game.cutWon() && i < graph.getNeighbors().size())  {
+            graph.addNeighbor(v);
+            v = graph.getNeighbors().get(i);
+            graph.removeNeighbor(v);
+            i++;
+        }
+        graph.addNeighbor(v);
+        v.getKey().cut(v.getValue());
+        game.cutted.add(new Pair<>(v.getKey(), v.getValue()));
         for (var element : Gui.getEdges()) {
             if (element.getKey().equals(v)) {
                 element.getValue().getStrokeDashArray().addAll(25D, 10D);
                 break;
             }
         }
-        if (graph.cutWon()) {
-            game.setCutWon(true);
+        if (game.cutWon()) {
             System.out.println("CUT a gagné");
         }
     }

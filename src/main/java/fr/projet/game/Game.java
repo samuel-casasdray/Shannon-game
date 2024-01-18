@@ -1,11 +1,13 @@
 package fr.projet.game;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import fr.projet.IA.BasicAI;
+import fr.projet.IA.InterfaceIA;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
 import javafx.application.Application;
-import javafx.event.EventHandler;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -19,18 +21,23 @@ public class Game {
     private Turn turn = Turn.CUT;
     @Setter
     private boolean cutWon = false;
+    private boolean shortWon = false;
     private boolean againstAI = true;
-    private BasicAI ia;
+    private InterfaceIA ia;
+    private ArrayList<Pair<Vertex, Vertex>> secured = new ArrayList<>();
+    public ArrayList<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
 
     public Game() {
-        int nbVertices = 8;
+        int nbVertices = 10;
         graph = new Graph(nbVertices);
         while (!graph.estConnexe()) {
             graph = new Graph(nbVertices);
         }
         ia = new BasicAI(this, turn);
-        if (againstAI)
-        Gui.setIa(ia);
+        if (againstAI) {
+            Gui.setIa(ia);
+            turn = turn.flip();
+        }
         Gui.setGraph(graph);
         Gui.setGame(this);
         Gui.setHandler(this::handleEvent);
@@ -40,8 +47,9 @@ public class Game {
     private void play(Vertex key, Vertex value) {
         if (cutWon) return;
         if (againstAI && turn == Turn.CUT) {
-            Pair<Vertex, Vertex> v = ia.play();
+            Pair<Vertex, Vertex> v = ia.playCUT();
             v.getKey().cut(v.getValue());
+            cutted.add(new Pair<Vertex,Vertex>(v.getKey(), v.getValue()));
             for (var element : Gui.getEdges()) {
                 if (element.getKey().equals(v)) {
                     element.getValue().getStrokeDashArray().addAll(25D, 10D);
@@ -49,10 +57,6 @@ public class Game {
                 }
             }
             turn = turn.flip();
-            if (graph.cutWon()) {
-                cutWon = true;
-                return;
-            }
         } else {
             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                 if (Vertex.isSameCouple(new Pair<>(key, value), neighbors.getKey())) {
@@ -61,24 +65,26 @@ public class Game {
                     }
                     if (turn == Turn.CUT) {
                         key.cut(value);
+                        cutted.add(new Pair<>(key, value));
                         neighbors.getValue().getStrokeDashArray().addAll(25D, 10D);
 
                     } else {
                         key.paint(value);
+                        secured.add(new Pair<>(key, value));
                         neighbors.getValue().setStroke(Color.RED);
                     }
                     turn = turn.flip();
-                    if (graph.cutWon()) {
-                        cutWon = true;
-                    }
                     if (againstAI) {
                         play(key, value);
                     }
+                    cutWon(); 
+                    shortWon();
                     return;
                 }
             }
         }
-
+        cutWon();
+        shortWon();
     }
 
     private void handleEvent(MouseEvent mouseEvent) {
@@ -91,8 +97,27 @@ public class Game {
         }
         if (cutWon) {
             System.out.println("CUT a gagné");
-            cutWon = true;
+        }
+        else if (shortWon) {
+            System.out.println("SHORT a gagné");
         }
 
+    }
+
+    public boolean shortWon() {
+        if (!cutWon && cutted.size()+secured.size() >= graph.getNeighbors().size()) {
+            shortWon = true;
+        }
+        return shortWon;
+    }
+
+    public boolean cutWon() {
+        List<Vertex> notCuttedVerticices = graph.getVertices();
+        notCuttedVerticices.stream().forEach(
+            x -> x.setListNeighbors(x.getListNeighbors().stream().filter(y -> !x.isCut(y) && !y.isCut(x)).collect(Collectors.toCollection(ArrayList::new)))
+        );
+        Graph notCuttedGraph = new Graph(notCuttedVerticices);
+        cutWon = !notCuttedGraph.estConnexe();
+        return cutWon;
     }
 }

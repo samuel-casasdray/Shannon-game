@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 @Accessors(chain = true)
 @Data
@@ -107,15 +106,6 @@ public class Graph {
             }
         }
         return marked.size() == vertices.size();
-    }
-
-    public boolean cutWon() {
-        List<Vertex> notCuttedVerticices = vertices;
-        notCuttedVerticices.stream().forEach(
-            x -> x.setListNeighbors(x.getListNeighbors().stream().filter(y -> !x.isCut(y) && !y.isCut(x)).collect(Collectors.toCollection(ArrayList::new)))
-        );
-        Graph notCuttedGraph = new Graph(notCuttedVerticices);
-        return !notCuttedGraph.estConnexe();
     }
 
     public void removeNeighbor(Pair<Vertex, Vertex> edge) {
