@@ -8,7 +8,7 @@ import javafx.util.Pair;
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
 
-public class BasicAI {
+public class BasicAI implements InterfaceIA {
     Game game;
     Turn plays;
     Graph graph;
@@ -19,11 +19,11 @@ public class BasicAI {
         this.graph = game.getGraph();
     }
 
-    public Pair<Vertex, Vertex> play() {
+    public Pair<Vertex, Vertex> playCUT() {
         for (int i = graph.getNeighbors().size() - 1; i > 0; i--) {
             var element = graph.getNeighbors().get(i);
             graph.removeNeighbor(element);
-            if (graph.cutWon()) {
+            if (game.cutWon()) {
                 for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                     if (Vertex.isSameCouple(new Pair<>(element.getKey(), element.getValue()), neighbors.getKey())) {
                         if (!element.getKey().isCut(element.getValue())
@@ -33,7 +33,6 @@ public class BasicAI {
                             graph.addNeighbor(element);
                     }
                 }
-                game.getTurn().flip();
             } else {
                 graph.addNeighbor(element);
             }
