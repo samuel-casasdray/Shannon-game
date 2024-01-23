@@ -89,8 +89,6 @@ public class Gui extends Application {
     public void showGraph(Pane pane) {
         // Ajout des aretes sur l'affichage
         for (Pair<Vertex, Vertex> pair : graph.getNeighbors()) {
-            // if (edges.stream().noneMatch(neighbor ->
-            // Vertex.isSameCouple(neighbor.getKey(), pair))) {
             Line line = new Line(pair.getKey().getCoords().getKey() + CIRCLE_SIZE,
                     pair.getKey().getCoords().getValue() + CIRCLE_SIZE,
                     pair.getValue().getCoords().getKey() + CIRCLE_SIZE,
@@ -101,7 +99,6 @@ public class Gui extends Application {
             // Ajout de la ligne sur sur l'affichage
             pane.getChildren().add(line);
             edges.add(new Pair<>(pair, line));
-            // }
         }
         // Ajout des sommets sur l'affichage
         for (int i = 0; i < graph.getNbVertices(); i++) {
