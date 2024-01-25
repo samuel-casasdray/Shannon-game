@@ -57,33 +57,8 @@ public class Gui extends Application {
         pane.setPrefSize(WINDOW_SIZE, WINDOW_SIZE);
         showGraph(pane);
         if (ia != null)
-        playFirst();
+        game.playFirst();
         return pane;
-    }
-
-    public void playFirst() {
-        // var v = ia.playCUT();
-        var v = graph.getNeighbors().get(0);
-        graph.removeNeighbor(v);
-        int i = 0;
-        while (game.cutWon() && i < graph.getNeighbors().size())  {
-            graph.addNeighbor(v);
-            v = graph.getNeighbors().get(i);
-            graph.removeNeighbor(v);
-            i++;
-        }
-        graph.addNeighbor(v);
-        v.getKey().cut(v.getValue());
-        game.cutted.add(new Pair<>(v.getKey(), v.getValue()));
-        for (var element : Gui.getEdges()) {
-            if (element.getKey().equals(v)) {
-                element.getValue().getStrokeDashArray().addAll(25D, 10D);
-                break;
-            }
-        }
-        if (game.cutWon()) {
-            System.out.println("CUT a gagné");
-        }
     }
 
     public void showGraph(Pane pane) {
