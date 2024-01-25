@@ -22,7 +22,7 @@ public class Game {
     @Setter
     private boolean cutWon = false;
     private boolean shortWon = false;
-    private boolean againstAI = false;
+    private boolean againstAI = true;
     private InterfaceIA ia;
     private ArrayList<Pair<Vertex, Vertex>> secured = new ArrayList<>();
     public ArrayList<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
@@ -62,12 +62,40 @@ public class Game {
         new Thread(() -> Application.launch(Gui.class)).start();
     }
 
-    private void play(Vertex key, Vertex value) {
-        if (cutWon) return;
+    public void playFirst() {
+        // var v = ia.playCUT();
+        var v = graph.getNeighbors().getFirst();
+        graph.removeNeighbor(v);
+        int i = 0;
+        while (cutWon() && i < graph.getNeighbors().size())  {
+            graph.addNeighbor(v);
+            v = graph.getNeighbors().get(i);
+            graph.removeNeighbor(v);
+            i++;
+        }
+        graph.addNeighbor(v);
+        v.getKey().cut(v.getValue());
+        cutted.add(new Pair<>(v.getKey(), v.getValue()));
+        for (var element : Gui.getEdges()) {
+            if (element.getKey().equals(v)) {
+                element.getValue().getStrokeDashArray().addAll(25D, 10D);
+                break;
+            }
+        }
+        if (cutWon()) {
+            System.out.println("CUT a gagné");
+        }
+    }
+
+
+    private Pair<Vertex, Vertex> play(Vertex key, Vertex value) {
+        if (cutWon) return null;
+        Pair<Vertex, Vertex> played = null;
         if (againstAI && turn == Turn.CUT) {
             Pair<Vertex, Vertex> v = ia.playCUT();
             v.getKey().cut(v.getValue());
-            cutted.add(new Pair<Vertex,Vertex>(v.getKey(), v.getValue()));
+            played = new Pair<Vertex,Vertex>(v.getKey(), v.getValue());
+            cutted.add(played);
             for (var element : Gui.getEdges()) {
                 if (element.getKey().equals(v)) {
                     element.getValue().getStrokeDashArray().addAll(25D, 10D);
@@ -79,16 +107,18 @@ public class Game {
             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                 if (Vertex.isSameCouple(new Pair<>(key, value), neighbors.getKey())) {
                     if (key.isCutOrPanted(value)) {
-                        return;
+                        return null;
                     }
                     if (turn == Turn.CUT) {
                         key.cut(value);
-                        cutted.add(new Pair<>(key, value));
+                        played = new Pair<>(key, value);
+                        cutted.add(played);
                         neighbors.getValue().getStrokeDashArray().addAll(25D, 10D);
 
                     } else {
                         key.paint(value);
-                        secured.add(new Pair<>(key, value));
+                        played = new Pair<>(key, value);
+                        secured.add(played);
                         neighbors.getValue().setStroke(Color.RED);
                     }
                     turn = turn.flip();
@@ -97,12 +127,13 @@ public class Game {
                     }
                     cutWon(); 
                     shortWon();
-                    return;
+                    return played;
                 }
             }
         }
         cutWon();
         shortWon();
+        return played;
     }
 
     private void handleEvent(MouseEvent mouseEvent) {
