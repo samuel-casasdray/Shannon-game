@@ -22,7 +22,7 @@ public class Graph {
 
     private double proba = 0.5;
 
-    private final Random random = new Random();
+    private Random random = new Random();
 
     private List<Vertex> vertices;
 
@@ -37,6 +37,13 @@ public class Graph {
     public Graph(int nbVertices) {
         this.nbVertices = nbVertices;
         this.vertices = new ArrayList<>();
+        this.generateGraph();
+    }
+
+    public Graph(int nbVertices, long seed) {
+        this.nbVertices = nbVertices;
+        this.vertices = new ArrayList<>();
+        random = new Random(seed);
         this.generateGraph();
     }
 

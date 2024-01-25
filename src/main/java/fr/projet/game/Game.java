@@ -22,16 +22,34 @@ public class Game {
     @Setter
     private boolean cutWon = false;
     private boolean shortWon = false;
-    private boolean againstAI = true;
+    private boolean againstAI = false;
     private InterfaceIA ia;
     private ArrayList<Pair<Vertex, Vertex>> secured = new ArrayList<>();
     public ArrayList<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
+    private long seed;
 
     public Game() {
         int nbVertices = 10;
         graph = new Graph(nbVertices);
         while (!graph.estConnexe()) {
             graph = new Graph(nbVertices);
+        }
+        ia = new BasicAI(this, turn);
+        if (againstAI) {
+            Gui.setIa(ia);
+            turn = turn.flip();
+        }
+        Gui.setGraph(graph);
+        Gui.setGame(this);
+        Gui.setHandler(this::handleEvent);
+        new Thread(() -> Application.launch(Gui.class)).start();
+    }
+    public Game(long seed) {
+        this.seed = seed;
+        int nbVertices = 10;
+        graph = new Graph(nbVertices, seed);
+        while (!graph.estConnexe()) {
+            graph = new Graph(nbVertices, seed);
         }
         ia = new BasicAI(this, turn);
         if (againstAI) {
