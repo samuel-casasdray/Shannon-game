@@ -28,7 +28,6 @@ public class Graph {
 
     @Getter
     private List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>();
-
     public Graph(List<Vertex> vertices) {
         this.vertices = new ArrayList<>(vertices);
         this.nbVertices = vertices.size();

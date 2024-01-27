@@ -43,7 +43,10 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
-    private final Random random = new Random();
+    @Getter
+    @Setter
+    private static long seed;
+    private Random random = new Random();
 
     @Override
     public void start(Stage stage) {
@@ -55,9 +58,10 @@ public class Gui extends Application {
         Pane pane = new Pane();
         // On définit la taille de notre affichage
         pane.setPrefSize(WINDOW_SIZE, WINDOW_SIZE);
+        random = new Random(seed);
         showGraph(pane);
         if (ia != null)
-        game.playFirst();
+            game.playFirst();
         return pane;
     }
 
