@@ -36,6 +36,7 @@ public class Game {
     public ArrayList<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
     private boolean pvpOnline = false;
     private long seed;
+    private long id;
     @Getter
     private  boolean joinerIsHere;
     private final String serverUri = "ws://51.75.126.59:2999/ws";
@@ -71,6 +72,7 @@ public class Game {
             }
             JsonElement jsonElement = JsonParser.parseString(client.getResponse());
             seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
+            this.id = id;
             turn = Turn.SHORT;
         }
         else {
@@ -80,6 +82,7 @@ public class Game {
             }
             JsonElement jsonElement = JsonParser.parseString(client.getResponse());
             seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
+            this.id = jsonElement.getAsJsonObject().get("id").getAsLong();
             turn = Turn.CUT;
         }
         this.joinerIsHere = joiner;
@@ -217,12 +220,13 @@ public class Game {
         int turnValue = 0;
         if (joinerIsHere)
             turnValue = 1;
-        String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue;
+        String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue + " " + id;
         try {
             if (client.isClosed()) {
                 client.connect(serverUri);
             }
-            client.sendMessage(data);
+            if (!shortWon && !cutWon)
+                client.sendMessage(data);
         } catch (Exception e) {
             e.printStackTrace();
         }

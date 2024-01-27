@@ -15,7 +15,7 @@ public class Client {
     }
     public void CreateGame() {
         try {
-            new Game(0, false);
+            new Game(id, false);
         }
         catch (NumberFormatException | URISyntaxException e) {
             System.out.println("error");
