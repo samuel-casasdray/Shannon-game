@@ -30,7 +30,7 @@ async fn main() {
         .route("/ws", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
         .with_state(games.clone());
     // 51.75.126.59:2999
-    let listener = tokio::net::TcpListener::bind("51.75.126.59:2999") // Ip de mon serveur avec un port random mais probablement pas déjà pris
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:2999") // Ip de mon serveur avec un port random mais probablement pas déjà pris
         .await
         .unwrap();
     axum::serve(
@@ -177,7 +177,8 @@ async fn handle_socket(
     game: State<Arc<futures::lock::Mutex<Games>>>,
 ) {
     let (mut sender, mut receiver) = socket.split();
-    // On récupère les deux vertices depuis le client sous la forme "145 123 568 147" par exemple où chaque int est une coordonnée "x y x y"
+    // On récupère les deux vertices depuis le client sous la forme "id1 id2 move" par exemple "3 4 1"
+    // 3 et 4 représentent l'id des vertices et 1 représente le type de move (CUT ou SHORT, 0 pour CUT, 1 pour SHORT)
     let vertices = match receiver.next().await {
         Some(Ok(msg)) => match msg {
             Message::Text(text) => text,
@@ -197,9 +198,9 @@ async fn handle_socket(
         .split(' ')
         .into_iter()
         .map(|x| x.parse().unwrap())
-        .collect(); // on transforme "x1 y1 x2 y2" en [x1,y2,x2,y2]
+        .collect(); // on transforme "x y m" en [x, y, m]
     let mut games = game.lock().await;
-    if vertices[4] == games.games.last_mut().unwrap().previous_move as i32 {
+    if vertices[2] == games.games.last_mut().unwrap().previous_move as i32 {
         return; // On empêche le joueur de jouer deux fois d'affilé
     }
     games.games.last_mut().unwrap().previous_move = 1 - games.games.last().unwrap().previous_move; // On change le coup précédent (1 -> 0 et 0 -> 1)
@@ -241,7 +242,6 @@ async fn handle_socket(
             }
         }
     });
-
     send_task.await.unwrap();
     println!("WebSocket context {} destroyed", who); // On ferme la connexion websocket
 }
@@ -260,7 +260,7 @@ pub struct Games {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct PartialGame { // ça permet de pouvoir sérialiser une Game, en enlevant juste la tx        
+pub struct PartialGame { // ça permet de pouvoir sérialiser une Game, en enlevant juste la tx et le previous move (utiles juste pour le serveur)
     id: i64,
     seed: i64,
 }
