@@ -21,7 +21,7 @@ async fn main() {
         id: 0,
         seed: 0,
         tx: None,
-        previous_move: 0
+        previous_move: 0,
     };
     let games = Arc::new(futures::lock::Mutex::new(Games { games: vec![game] }));
     let app = Router::new()
@@ -70,7 +70,7 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
         id: n,
         seed,
         tx: Some(broadcast::channel(100).0), // On ajoute une Game avec id et seed random, et un canal de communication
-        previous_move: 1
+        previous_move: 1,
     });
 
     println!("{:?}", games);
@@ -117,23 +117,38 @@ async fn join_game(
 ) {
     let (mut sender, _receiver) = socket.split();
     let payload = (&payload[1..]).to_string(); // On enlève le premier caractère ":123456" -> "123456"
-    let mut msg = "".to_string();
     let mut games = games.lock().await;
-    // On trouve, parmi les games, celle dont l'id est égal au payload et on créé une game partielle pour pouvoir l'envoyer en JSON
-    for i in 0..games.games.len() {
-        if games.games[i].id.to_string() == payload {
-            let partial = PartialGame {
-                id: games.games[i].id,
-                seed: games.games[i].seed,
-            };
-            msg = json!(partial).to_string();
-            break;
-        }
-    }
     if games.games.len() > 10 {
         games.games = games.games.clone().into_iter().skip(1).collect(); // On garde que les 10 premières games
     }
-    let tx = games.games.last().unwrap().tx.clone().unwrap(); // à optim
+    let mut current_game_indice = -1;
+    for i in 0..games.games.len() {
+        if games.games[i].id.to_string() == payload {
+            current_game_indice = i as i32;
+            break;
+        }
+    }
+    if current_game_indice == -1 {
+        println!("No game has been found to join");
+        return;
+    }
+    // On trouve, parmi les games, celle dont l'id est égal au payload et on créé une game partielle pour pouvoir l'envoyer en JSON
+    // for i in 0..games.games.len() {
+    //     if games.games[i].id.to_string() == payload {
+    //         let partial = PartialGame {
+    //             id: games.games[i].id,
+    //             seed: games.games[i].seed,
+    //         };
+    //         msg = json!(partial).to_string();
+    //         break;
+    //     }
+    // }
+    let partial = PartialGame {
+        id: games.games[current_game_indice as usize].id,
+        seed: games.games[current_game_indice as usize].seed,
+    };
+    let msg = json!(partial).to_string();
+    let tx = games.games[current_game_indice as usize].tx.clone().unwrap();
     // Partie compliquée qui sert à envoyer la game à la personne qui veut rejoindre la game
     let mut rx = tx.subscribe();
     let _ = tx.send(msg);
@@ -194,17 +209,33 @@ async fn handle_socket(
         }
     };
 
-    let vertices: Vec<i32> = vertices
+    let vertices: Vec<i64> = vertices
         .split(' ')
         .into_iter()
         .map(|x| x.parse().unwrap())
-        .collect(); // on transforme "x y m" en [x, y, m]
+        .collect(); // on transforme "x y m id" en [x, y, m, id]
+    if vertices.len() != 4 {
+        return; // Il faut obligatoirement 3 éléments : les deux premiers vertices, le type de move, et l'id de la game
+    }
     let mut games = game.lock().await;
-    if vertices[2] == games.games.last_mut().unwrap().previous_move as i32 {
+    let mut current_game_indice = -1;
+    for i in 0..games.games.len() {
+        if games.games[i].id == vertices[3] {
+            current_game_indice = i as i32;
+            break;
+        }
+    }
+    if current_game_indice == -1 {
+        println!("No game found");
+        return;
+    }
+    if vertices[2] == games.games[current_game_indice as usize].previous_move as i64 {
+        println!("previous move crash");
         return; // On empêche le joueur de jouer deux fois d'affilé
     }
-    games.games.last_mut().unwrap().previous_move = 1 - games.games.last().unwrap().previous_move; // On change le coup précédent (1 -> 0 et 0 -> 1)
-    let tx = match games.games.last().unwrap().tx.clone() {
+    games.games[current_game_indice as usize].previous_move =
+        1 - games.games[current_game_indice as usize].previous_move; // On change le coup précédent (1 -> 0 et 0 -> 1)
+    let tx = match games.games[current_game_indice as usize].tx.clone() {
         // Ligne à optim (gérer les erreurs etc)
         Some(tx) => tx,
         None => {
@@ -251,7 +282,7 @@ pub struct Game {
     id: i64,
     seed: i64,
     tx: Option<broadcast::Sender<String>>,
-    previous_move: u8
+    previous_move: u8,
 }
 
 #[derive(Clone, Debug)]
@@ -260,7 +291,8 @@ pub struct Games {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct PartialGame { // ça permet de pouvoir sérialiser une Game, en enlevant juste la tx et le previous move (utiles juste pour le serveur)
+pub struct PartialGame {
+    // ça permet de pouvoir sérialiser une Game, en enlevant juste la tx et le previous move (utiles juste pour le serveur)
     id: i64,
     seed: i64,
 }

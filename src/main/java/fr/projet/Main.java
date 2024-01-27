@@ -8,8 +8,8 @@ import java.net.URISyntaxException;
 public class Main {
     public static void main(String[] args) {
         Client client = new Client();
-        client.CreateGame(); // On créé une game
-        //client.JoinGame(39); // On récupère l'id de la game créée (affichée dans un print)
+        //client.CreateGame(); // On créé une game
+        client.JoinGame(612); // On récupère l'id de la game créée (affichée dans un print)
         //new Game();
     }
 }
