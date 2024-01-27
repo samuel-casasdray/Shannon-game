@@ -13,7 +13,6 @@ public class Client {
     public Client()  {
 
     }
-
     public void CreateGame() {
         try {
             new Game(0, false);

@@ -67,7 +67,7 @@ public class Game {
         if (joiner) {
             client.connect(JoinGameUri+id);
             while (client.getResponse() == null) {
-                Thread.sleep(100);
+                Thread.sleep(1);
             }
             JsonElement jsonElement = JsonParser.parseString(client.getResponse());
             seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
@@ -76,7 +76,7 @@ public class Game {
         else {
             client.connect(CreateGameUri);
             while (client.getResponse() == null) {
-                Thread.sleep(100);
+                Thread.sleep(1);
             }
             JsonElement jsonElement = JsonParser.parseString(client.getResponse());
             seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
@@ -127,7 +127,7 @@ public class Game {
         if (againstAI && turn == Turn.CUT) {
             Pair<Vertex, Vertex> v = ia.playCUT();
             v.getKey().cut(v.getValue());
-            played = new Pair<Vertex,Vertex>(v.getKey(), v.getValue());
+            played = new Pair<>(v.getKey(), v.getValue());
             cutted.add(played);
             for (var element : Gui.getEdges()) {
                 if (element.getKey().equals(v)) {
@@ -203,7 +203,7 @@ public class Game {
 
     public boolean cutWon() {
         List<Vertex> notCuttedVerticices = graph.getVertices();
-        notCuttedVerticices.stream().forEach(
+        notCuttedVerticices.forEach(
             x -> x.setListNeighbors(x.getListNeighbors().stream().filter(y -> !x.isCut(y) && !y.isCut(x)).collect(Collectors.toCollection(ArrayList::new)))
         );
         Graph notCuttedGraph = new Graph(notCuttedVerticices);
@@ -217,10 +217,7 @@ public class Game {
         int turnValue = 0;
         if (joinerIsHere)
             turnValue = 1;
-        String data =
-        move.getKey().getCoords().getKey().toString() + " "+ move.getKey().getCoords().getValue().toString() + " "+
-        move.getValue().getCoords().getKey().toString()+ " "+ move.getValue().getCoords().getValue().toString() + " " +
-                turnValue;
+        String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue;
         try {
             if (client.isClosed()) {
                 client.connect(serverUri);
@@ -231,14 +228,10 @@ public class Game {
         }
     }
 
-    public boolean getJoinerIsHere() {
-        return joinerIsHere;
-    }
-
     public void play1vs1(String message) {
         if (message.isEmpty()) return;
         if (message.chars().toArray()[0] == '[') {
-            String[] items = message.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\s", "").split(",");
+            String[] items = message.replaceAll("\\[", "").replaceAll("]", "").replaceAll("\\s", "").split(",");
 
             int[] results = new int[items.length];
 
@@ -249,19 +242,18 @@ public class Game {
                     System.out.println("Erreur de parsing dans la réponse");
                 }
             }
-            Vertex key = null;
-            Vertex val = null;
-            for (Pair<Vertex, Vertex> element : getGraph().getNeighbors()) {
-                if (element.getKey().getCoords().getKey() == results[0] && element.getKey().getCoords().getValue() == results[1]) {
-                    key = element.getKey();
-                }
-                if (element.getValue().getCoords().getKey() == results[2] && element.getValue().getCoords().getValue() == results[3]) {
-                    val = element.getValue();
-                }
+            Vertex val;
+            Vertex key;
+            try {
+                key = graph.getVertices().get(results[0]);
+                val = graph.getVertices().get(results[1]);
+            } catch (IndexOutOfBoundsException e) {
+                key = null;
+                val = null;
             }
             if (key != null && val != null) {
                 Turn t = getTurn();
-                if (results[4] == 0)
+                if (results[2] == 0)
                     setTurn(Turn.CUT);
                 else
                     setTurn(Turn.SHORT);
