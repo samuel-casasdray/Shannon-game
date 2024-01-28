@@ -1,9 +1,15 @@
 package fr.projet;
 
-import fr.projet.game.Game;
+import fr.projet.serverClient.Client;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 public class Main {
     public static void main(String[] args) {
-        new Game();
+        Client client = new Client();
+        //client.CreateGame(); // On créé une game
+        client.JoinGame(612); // On récupère l'id de la game créée (affichée dans un print)
+        //new Game();
     }
 }
