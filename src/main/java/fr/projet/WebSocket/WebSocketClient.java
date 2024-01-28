@@ -54,7 +54,7 @@ public class WebSocketClient {
     }
 
     @OnMessage
-    public void onMessage(String message) {
+    public void onMessage(String message) throws IOException {
         response = message;
         System.out.println("Received message: " + message);
         game.play1vs1(message);

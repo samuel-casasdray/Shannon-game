@@ -39,7 +39,7 @@ public class Game {
     private long id;
     @Getter
     private  boolean joinerIsHere;
-    private final String serverUri = "ws://51.75.126.59:2999/ws";
+    private final String serverUri = "ws://51.75.126.59:2999/ws/:";
     private final String CreateGameUri = "ws://51.75.126.59:2999/create_game";
     private final String JoinGameUri = "ws://51.75.126.59:2999/join_game/:";
     private final WebSocketClient client = new WebSocketClient();
@@ -86,7 +86,7 @@ public class Game {
             turn = Turn.CUT;
         }
         this.joinerIsHere = joiner;
-        client.connect(serverUri);
+        client.connect(serverUri+this.id);
         this.pvpOnline = true;
         int nbVertices = 10;
         graph = new Graph(nbVertices, seed);
@@ -180,6 +180,8 @@ public class Game {
         if (mouseEvent.getSource() instanceof Line line &&
                 line.getProperties().get("pair") instanceof Pair<?, ?> pair1 &&
                 pair1.getKey() instanceof Vertex key && pair1.getValue() instanceof Vertex value) {
+            Pair<Vertex, Vertex> move = new Pair<>(key, value);
+            if (cutted.contains(move) || secured.contains(move)) return;
             if (pvpOnline) {
                     try {
                         sendMove(new Pair<>(key, value));
@@ -223,7 +225,7 @@ public class Game {
         String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue + " " + id;
         try {
             if (client.isClosed()) {
-                client.connect(serverUri);
+                client.connect(serverUri+id);
             }
             if (!shortWon && !cutWon)
                 client.sendMessage(data);
@@ -232,8 +234,18 @@ public class Game {
         }
     }
 
-    public void play1vs1(String message) {
+    public void play1vs1(String message) throws IOException {
         if (message.isEmpty()) return;
+        if (message.equals("L'adversaire a quitté la partie")) {
+            client.sendMessage(turn.toString());
+            if (turn == Turn.CUT) {
+                cutWon = true;
+            }
+            else {
+                shortWon = true;
+            }
+            return;
+        }
         if (message.chars().toArray()[0] == '[') {
             String[] items = message.replaceAll("\\[", "").replaceAll("]", "").replaceAll("\\s", "").split(",");
 
@@ -244,6 +256,7 @@ public class Game {
                     results[i] = Integer.parseInt(items[i]);
                 } catch (NumberFormatException nfe) {
                     System.out.println("Erreur de parsing dans la réponse");
+                    return;
                 }
             }
             Vertex val;
@@ -262,6 +275,12 @@ public class Game {
                 else
                     setTurn(Turn.SHORT);
                 play(key, val);
+                if (cutWon) {
+                    client.sendMessage("CUT!");
+                }
+                else if (shortWon) {
+                    client.sendMessage("SHORT!");
+                }
                 setTurn(t);
             } else {
                 System.out.println(key + " " + val);
