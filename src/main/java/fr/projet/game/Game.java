@@ -36,13 +36,11 @@ public class Game {
     public ArrayList<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
     private boolean pvpOnline = false;
     private long seed;
-    private long id;
     @Getter
     private  boolean joinerIsHere;
-    private final String serverUri = "ws://51.75.126.59:2999/ws/:";
-    private final String CreateGameUri = "ws://51.75.126.59:2999/create_game";
-    private final String JoinGameUri = "ws://51.75.126.59:2999/join_game/:";
-    private final WebSocketClient client = new WebSocketClient();
+    private WebSocketClient client;
+    private String serverUri;
+    private long id;
 
     public Game() {
         int nbVertices = 10;
@@ -51,42 +49,20 @@ public class Game {
             graph = new Graph(nbVertices);
         }
         ia = new BasicAI(this, turn);
-        if (againstAI) {
-            Gui.setIa(ia);
-            turn = turn.flip();
-        }
+        Gui.setIa(ia);
+        turn = turn.flip();
         Random rngSeed = new Random();
         seed = rngSeed.nextLong();
         Gui.setGraph(graph);
-        Gui.setGame(this);
         Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
-        new Thread(() -> Application.launch(Gui.class)).start();
     }
-    public Game(long id, boolean joiner) throws DeploymentException, URISyntaxException, IOException, InterruptedException {
-        client.setGame(this);
-        if (joiner) {
-            client.connect(JoinGameUri+id);
-            while (client.getResponse() == null) {
-                Thread.sleep(1);
-            }
-            JsonElement jsonElement = JsonParser.parseString(client.getResponse());
-            seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
-            this.id = id;
-            turn = Turn.SHORT;
-        }
-        else {
-            client.connect(CreateGameUri);
-            while (client.getResponse() == null) {
-                Thread.sleep(1);
-            }
-            JsonElement jsonElement = JsonParser.parseString(client.getResponse());
-            seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
-            this.id = jsonElement.getAsJsonObject().get("id").getAsLong();
-            turn = Turn.CUT;
-        }
+    public Game(long id, boolean joiner, WebSocketClient client, String serverUri, Long seed) {
+        if (joiner) turn = Turn.SHORT;
+        this.id = id;
         this.joinerIsHere = joiner;
-        client.connect(serverUri+this.id);
+        this.client = client;
+        this.serverUri = serverUri;
         this.pvpOnline = true;
         int nbVertices = 10;
         graph = new Graph(nbVertices, seed);
@@ -94,10 +70,8 @@ public class Game {
             graph = new Graph(nbVertices, seed);
         }
         Gui.setGraph(graph);
-        Gui.setGame(this);
         Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
-        new Thread(() -> Application.launch(Gui.class)).start();
     }
 
     public void playFirst() {
@@ -183,9 +157,9 @@ public class Game {
             Pair<Vertex, Vertex> move = new Pair<>(key, value);
             if (cutted.contains(move) || secured.contains(move)) return;
             if (pvpOnline) {
-                    try {
-                        sendMove(new Pair<>(key, value));
-                    }
+                try {
+                    sendMove(new Pair<>(key, value));
+                }
                 catch (Exception e) {
                     System.out.println(e);
                 }
@@ -224,9 +198,7 @@ public class Game {
             turnValue = 1;
         String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue + " " + id;
         try {
-            if (client.isClosed()) {
-                client.connect(serverUri+id);
-            }
+            client.reConnect(serverUri);
             if (!shortWon && !cutWon)
                 client.sendMessage(data);
         } catch (Exception e) {
