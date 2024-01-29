@@ -1,7 +1,7 @@
 package fr.projet.gui;
 
-import fr.projet.IA.InterfaceIA;
 import fr.projet.game.Game;
+import fr.projet.game.Turn;
 import fr.projet.game.TypeJeu;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
@@ -33,9 +33,6 @@ import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.websocket.DeploymentException;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -51,9 +48,6 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static Graph graph;
-    @Getter
-    @Setter
-    private static InterfaceIA ia;
     @Getter
     @Setter
     private Game game;
@@ -78,7 +72,7 @@ public class Gui extends Application {
     }
 
     public VBox getBasicScene() {
-        VBox root = new VBox(60); // Espacement vertical entre les éléments
+        VBox root = new VBox(50); // Espacement vertical entre les éléments
         root.setPadding(new Insets(40));
 
         BackgroundFill backgroundFill = new BackgroundFill(Color.LIGHTGREY, null, null);
@@ -92,13 +86,15 @@ public class Gui extends Application {
     public Text createText(String content) { return createText(content, false); }
     public Text createText(String content, boolean withShadow) {
         Text text = new Text(content);
-        text.setFont(Font.font("Consolas", FontWeight.BOLD, 40));
         if (withShadow) {
+            text.setFont(Font.font("Consolas", FontWeight.BOLD, 40));
             DropShadow dropShadow = new DropShadow();
             dropShadow.setOffsetX(3.0);
             dropShadow.setOffsetY(3.0);
             dropShadow.setColor(Color.GRAY);
             text.setEffect(dropShadow);
+        } else {
+            text.setFont(Font.font("Consolas", 20));
         }
         return text;
     }
@@ -132,10 +128,11 @@ public class Gui extends Application {
         //création des boutons d'option de jeu
         Button button1 = createButton("Jouer SHORT vs IA", event -> handleButtonClick(TypeJeu.SHORT_VS_IA));
         Button button2 = createButton("Jouer CUT vs IA", event -> handleButtonClick(TypeJeu.CUT_VS_IA));
-        Button button3 = createButton("Joueur vs Joueur", event -> handleButtonClick(TypeJeu.PLAYER_VS_PLAYER));
-        Button button4 = createButton("IA vs IA", event -> handleButtonClick(TypeJeu.IA_VS_IA));
+        Button button3 = createButton("Joueur vs Joueur Online", event -> handleButtonClick(TypeJeu.PLAYER_VS_PLAYER_DISTANT));
+        Button button4 = createButton("Joueur vs Joueur Local", event -> handleButtonClick(TypeJeu.PLAYER_VS_PLAYER_LOCAL));
+        Button button5 = createButton("IA vs IA", event -> handleButtonClick(TypeJeu.IA_VS_IA));
 
-        root.getChildren().addAll(text1,text2,button1,button2,button3,button4);
+        root.getChildren().addAll(text1,text2,button1,button2,button3,button4,button5);
 
         return new Scene(root, WINDOW_SIZE, WINDOW_SIZE);
     }
@@ -199,21 +196,29 @@ public class Gui extends Application {
        scaleBackTransition.setToY(1.0);
 
        button.setOnMouseEntered(event -> scaleTransition.play());
+       button.setOnMouseExited(event -> scaleBackTransition.play());
    }
 
     public void handleButtonClick(TypeJeu type){ //fonction qui change de scene lorsqu'on clique les differents boutons
-       if (type == TypeJeu.SHORT_VS_IA){
+        if (type == TypeJeu.SHORT_VS_IA){
+            this.game = new Game(true, Turn.CUT);
             stage.setScene(run());
-       }
-       else if (type == TypeJeu.CUT_VS_IA){
+            game.play(null, null);
+        }
+        else if (type == TypeJeu.CUT_VS_IA){
+            this.game = new Game(true, Turn.SHORT);
             stage.setScene(run());
-       }
-       else if (type == TypeJeu.PLAYER_VS_PLAYER){
+        }
+        else if (type == TypeJeu.PLAYER_VS_PLAYER_DISTANT){
             stage.setScene(PvP());
-       }
-       else if (type == TypeJeu.IA_VS_IA){
+        }
+        else if (type == TypeJeu.PLAYER_VS_PLAYER_LOCAL){
+            this.game = new Game();
             stage.setScene(run());
-       }
+        }
+        else if (type == TypeJeu.IA_VS_IA){
+            stage.setScene(run());
+        }
     }
 
     public Scene run() {
@@ -222,8 +227,6 @@ public class Gui extends Application {
         pane.setPrefSize(WINDOW_SIZE, WINDOW_SIZE);
         random = new Random(seed);
         showGraph(pane);
-        if (ia != null)
-            game.playFirst();
         return new Scene(pane, WINDOW_SIZE,WINDOW_SIZE);
 }
 
