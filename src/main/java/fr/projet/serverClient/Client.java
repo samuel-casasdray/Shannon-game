@@ -4,16 +4,12 @@ import com.google.gson.JsonParser;
 import fr.projet.Callback;
 import fr.projet.WebSocket.WebSocketClient;
 import fr.projet.game.Game;
-import fr.projet.game.Turn;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.websocket.DeploymentException;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URISyntaxException;
-import java.util.Objects;
-import java.util.function.Function;
 
 @Setter
 @Getter
