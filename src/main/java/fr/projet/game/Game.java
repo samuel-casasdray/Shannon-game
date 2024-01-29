@@ -174,7 +174,7 @@ public class Game {
         int turnValue = 0;
         if (joinerIsHere)
             turnValue = 1;
-        String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue + " " + id;
+        String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue;
         try {
             client.reConnect(serverUri);
             if (!shortWon && !cutWon)
