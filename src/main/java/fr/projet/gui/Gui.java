@@ -1,23 +1,25 @@
 package fr.projet.gui;
 
-import fr.projet.IA.InterfaceIA;
 import fr.projet.game.Game;
+import fr.projet.game.Turn;
+import fr.projet.game.TypeJeu;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
+import fr.projet.serverClient.Client;
 import javafx.animation.ScaleTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -48,10 +50,7 @@ public class Gui extends Application {
     private static Graph graph;
     @Getter
     @Setter
-    private static InterfaceIA ia;
-    @Getter
-    @Setter
-    private static Game game;
+    private Game game;
     @Getter
     @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
@@ -59,42 +58,47 @@ public class Gui extends Application {
     @Setter
     private static long seed;
     private Random random = new Random();
+    private Stage stage;
 
 
     @Override
     public void start(Stage stage) {
-        stage.setScene(new Scene(run()));
-        VBox root = new VBox(60); // Espacement vertical entre les éléments
-        root.setPadding(new Insets(40));
-        stage.setScene(new Scene(root, WINDOW_SIZE, WINDOW_SIZE));
-
+        this.stage = stage;
+        stage.setScene(home());
         stage.setTitle("Shannon Game");
         Image icon = new Image(getClass().getResource("/icon-appli.png").toExternalForm());
         stage.getIcons().add(icon);
+        stage.show();
+    }
+
+    public VBox getBasicScene() {
+        VBox root = new VBox(50); // Espacement vertical entre les éléments
+        root.setPadding(new Insets(40));
 
         BackgroundFill backgroundFill = new BackgroundFill(Color.LIGHTGREY, null, null);
         Background background = new Background(backgroundFill);
         root.setBackground(background);
         root.setAlignment(Pos.CENTER);
 
-        Text text1= new Text("SHANNON GAME");
-        text1.setFont(Font.font("Consolas", FontWeight.BOLD, 40));
-        Text text2 = new Text("Choisissez votre mode de jeu :");
-        text2.setFont(Font.font("Consolas", 20));
-        DropShadow dropShadow = new DropShadow();
-        dropShadow.setOffsetX(3.0);
-        dropShadow.setOffsetY(3.0);
-        dropShadow.setColor(Color.GRAY);
-        text1.setEffect(dropShadow);
-
-        //création des boutons d'option de jeu
-        Button button1 = createButton("Jouer SHORT vs IA", stage);
-        Button button2 = createButton("Jouer CUT vs IA", stage);
-        Button button3 = createButton("Joueur vs Joueur", stage);
-
+        return root;
     }
 
-    private Button createButton(String text, Stage stage){
+    public Text createText(String content) { return createText(content, false); }
+    public Text createText(String content, boolean withShadow) {
+        Text text = new Text(content);
+        if (withShadow) {
+            text.setFont(Font.font("Consolas", FontWeight.BOLD, 40));
+            DropShadow dropShadow = new DropShadow();
+            dropShadow.setOffsetX(3.0);
+            dropShadow.setOffsetY(3.0);
+            dropShadow.setColor(Color.GRAY);
+            text.setEffect(dropShadow);
+        } else {
+            text.setFont(Font.font("Consolas", 20));
+        }
+        return text;
+    }
+    private Button createButton(String text, EventHandler<ActionEvent> action) {
         Button button = new Button(text);
         button.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         button.setFont(Font.font("System", FontWeight.BOLD, 14));
@@ -108,10 +112,70 @@ public class Gui extends Application {
         //effet de grossissement lors du survol
         addHoverEffect(button);
 
-        //effet lorsqu'on clique les boutons
-        button.setOnAction(event -> handleButtonClick(text,stage));
+        if (action != null)
+            button.setOnAction(action);
 
         return button;
+    }
+
+
+    private Scene home() {
+        VBox root = getBasicScene();
+
+        Text text1 = createText("SHANNON GAME", true);
+        Text text2 = createText("Choisissez votre mode de jeu :");
+
+        //création des boutons d'option de jeu
+        Button button1 = createButton("Jouer SHORT vs IA", event -> handleButtonClick(TypeJeu.SHORT_VS_IA));
+        Button button2 = createButton("Jouer CUT vs IA", event -> handleButtonClick(TypeJeu.CUT_VS_IA));
+        Button button3 = createButton("Joueur vs Joueur Online", event -> handleButtonClick(TypeJeu.PLAYER_VS_PLAYER_DISTANT));
+        Button button4 = createButton("Joueur vs Joueur Local", event -> handleButtonClick(TypeJeu.PLAYER_VS_PLAYER_LOCAL));
+        Button button5 = createButton("IA vs IA", event -> handleButtonClick(TypeJeu.IA_VS_IA));
+
+        root.getChildren().addAll(text1,text2,button1,button2,button3,button4,button5);
+
+        return new Scene(root, WINDOW_SIZE, WINDOW_SIZE);
+    }
+
+    private Scene PvP() {
+        VBox root = getBasicScene();
+
+        Text text1 = createText("Player vs Player", true);
+
+        HBox type = new HBox(60);
+
+        VBox join = new VBox(30);
+        TextField textJoin = new TextField();
+        Button button1 = createButton("Join", event -> {
+            try {
+                Client client = new Client(Long.parseLong(textJoin.getText()), true);
+                this.game = client.connect(() -> {});
+                stage.setScene(run());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        join.getChildren().addAll(button1, textJoin);
+
+        VBox create = new VBox(30);
+        Text textCreate = createText("");
+        Button button2 = createButton("Create", event -> {
+            try {
+                Client client = new Client(0L, false);
+                textCreate.setText(String.valueOf(client.getId()));
+                this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        create.getChildren().addAll(button2, textCreate);
+
+        type.getChildren().addAll(join, create);
+        type.setAlignment(Pos.CENTER);
+
+        root.getChildren().addAll(text1,type);
+
+        return new Scene(root, WINDOW_SIZE, WINDOW_SIZE);
     }
 
     //Fonction qui change la taille des boutons lorsqu'on les survole
@@ -131,47 +195,45 @@ public class Gui extends Application {
        scaleBackTransition.setToX(1.0);
        scaleBackTransition.setToY(1.0);
 
-       button.setOnMouseEntered(event -> {
-           scaleTransition.play();
-       });
+       button.setOnMouseEntered(event -> scaleTransition.play());
+       button.setOnMouseExited(event -> scaleBackTransition.play());
    }
 
-    public void handleButtonClick(String text, Stage stage){ //fonction qui change de scene lorsqu'on clique les differents boutons
-       if (text.equals("Jouer SHORT vs IA")){
-            Scene SHORTvsIA = new Scene(run(),WINDOW_SIZE,WINDOW_SIZE);
-            stage.setScene(SHORTvsIA);
-       }
-       else if (text.equals("Jouer CUT vs IA")){
-            Scene CUTvsIA = new Scene(run(),WINDOW_SIZE,WINDOW_SIZE);
-            stage.setScene(CUTvsIA);
-       }
-       else if (text.equals("Joueur vs Joueur")){
-            Scene CUTvsSHORT = new Scene(run(),WINDOW_SIZE,WINDOW_SIZE);
-            stage.setScene(CUTvsSHORT);
-       }
-       else if (text.equals("IA vs IA")){
-            Scene IAvsIA = new Scene(run(),WINDOW_SIZE,WINDOW_SIZE);
-            stage.setScene(IAvsIA);
-       }
+    public void handleButtonClick(TypeJeu type){ //fonction qui change de scene lorsqu'on clique les differents boutons
+        if (type == TypeJeu.SHORT_VS_IA){
+            this.game = new Game(true, Turn.CUT);
+            stage.setScene(run());
+            game.play(null, null);
+        }
+        else if (type == TypeJeu.CUT_VS_IA){
+            this.game = new Game(true, Turn.SHORT);
+            stage.setScene(run());
+        }
+        else if (type == TypeJeu.PLAYER_VS_PLAYER_DISTANT){
+            stage.setScene(PvP());
+        }
+        else if (type == TypeJeu.PLAYER_VS_PLAYER_LOCAL){
+            this.game = new Game();
+            stage.setScene(run());
+        }
+        else if (type == TypeJeu.IA_VS_IA){
+            stage.setScene(run());
+        }
     }
 
-
-
-    public Pane run() {
+    public Scene run() {
         Pane pane = new Pane();
         // On définit la taille de notre affichage
         pane.setPrefSize(WINDOW_SIZE, WINDOW_SIZE);
         random = new Random(seed);
         showGraph(pane);
-        if (ia != null)
-            game.playFirst();
-        return pane;
+        return new Scene(pane, WINDOW_SIZE,WINDOW_SIZE);
 }
 
 
     public void showGraph(Pane pane) {
         // Ajout des aretes sur l'affichage
-        for (Pair<Vertex, Vertex> pair : graph.getNeighbors()) {
+        for (Pair<Vertex, Vertex> pair : this.game.getGraph().getNeighbors()) {
             Line line = new Line(pair.getKey().getCoords().getKey() + CIRCLE_SIZE,
                     pair.getKey().getCoords().getValue() + CIRCLE_SIZE,
                     pair.getValue().getCoords().getKey() + CIRCLE_SIZE,
@@ -184,8 +246,8 @@ public class Gui extends Application {
             edges.add(new Pair<>(pair, line));
         }
         // Ajout des sommets sur l'affichage
-        for (int i = 0; i < graph.getNbVertices(); i++) {
-            Pair<Integer, Integer> coord = graph.getVertices().get(i).getCoords();
+        for (int i = 0; i < this.game.getGraph().getNbVertices(); i++) {
+            Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i).getCoords();
             // On crée un texte pour le numéro du sommet
             Text text = new Text(String.valueOf(i + 1));
             text.setBoundsType(TextBoundsType.VISUAL);
@@ -199,3 +261,4 @@ public class Gui extends Application {
         }
     }
 }
+

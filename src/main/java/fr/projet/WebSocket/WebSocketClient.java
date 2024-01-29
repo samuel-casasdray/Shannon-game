@@ -1,7 +1,9 @@
 package fr.projet.WebSocket;
 
+import fr.projet.Callback;
 import fr.projet.game.Game;
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.websocket.*;
 import java.io.IOException;
@@ -19,12 +21,21 @@ public class WebSocketClient {
     private String response = null;
     @Getter
     private boolean closed = true;
+    @Getter
+    @Setter
+    private Callback callback;
 
     public WebSocketClient() {
         this.latch = new CountDownLatch(1);
     }
 
     private Game game = null;
+
+    public void reConnect(String serverUri) throws DeploymentException, URISyntaxException, IOException, InterruptedException {
+        if (isClosed()) {
+            connect(serverUri);
+        }
+    }
 
     public void connect(String serverUri) throws URISyntaxException, DeploymentException, InterruptedException, IOException {
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
@@ -57,6 +68,11 @@ public class WebSocketClient {
     public void onMessage(String message) throws IOException {
         response = message;
         System.out.println("Received message: " + message);
+        if (message.startsWith("{")) {
+            if (callback != null)
+                callback.call();
+            return;
+        }
         game.play1vs1(message);
     }
     @OnClose
