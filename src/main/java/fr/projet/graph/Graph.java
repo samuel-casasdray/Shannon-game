@@ -78,7 +78,7 @@ public class Graph {
         for (int i = 0; i < nbVertices; i++) {
             for (int j = i + 1; j < nbVertices; j++) {
                 float p = random.nextFloat();
-                if (p > proba) {
+                if (p < proba) {
                     this.vertices.get(i).addNeighborVertex(this.vertices.get(j));
                     // this.vertices.get(j).addNeighborVertex(this.vertices.get(i)); // Voir la méthode addNeighbor
                     neighbors.add(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(j)));
