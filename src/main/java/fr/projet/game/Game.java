@@ -154,7 +154,8 @@ public class Game {
             shortWon = true;
         }
         if (shortWon)
-            System.out.println("SHORT a gagné");
+            //System.out.println("SHORT a gagné");
+            Gui.PopupMessage(Turn.SHORT);
         return shortWon;
     }
 
@@ -166,7 +167,8 @@ public class Game {
         Graph notCuttedGraph = new Graph(notCuttedVerticices);
         cutWon = !notCuttedGraph.estConnexe();
         if (cutWon)
-            System.out.println("CUT a gagné");
+            //System.out.println("CUT a gagné");
+            Gui.PopupMessage(Turn.CUT);
         return cutWon;
     }
 
