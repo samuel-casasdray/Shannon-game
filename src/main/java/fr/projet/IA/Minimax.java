@@ -4,8 +4,6 @@ import fr.projet.game.Game;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
-import fr.projet.gui.Gui;
-import javafx.scene.shape.Line;
 import javafx.util.Pair;
 
 public class Minimax {

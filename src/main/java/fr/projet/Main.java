@@ -1,12 +1,10 @@
 package fr.projet;
 
-import fr.projet.serverClient.Client;
+import fr.projet.gui.Gui;
+import javafx.application.Application;
 
 public class Main {
     public static void main(String[] args) {
-        Client client = new Client();
-        client.CreateGame(); // On créé une game
-        //client.JoinGame(575); // On récupère l'id de la game créée (affichée dans un print)
-        //new Game();
+        Application.launch(Gui.class);
     }
 }
