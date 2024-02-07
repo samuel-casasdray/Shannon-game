@@ -1,6 +1,8 @@
 package fr.projet.game;
 import java.io.IOException;
 import fr.projet.WebSocket.WebSocketClient;
+
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -16,6 +18,8 @@ import javafx.scene.shape.Line;
 import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
+
+import javax.websocket.DeploymentException;
 
 @Getter
 public class Game {
@@ -66,8 +70,10 @@ public class Game {
         this.pvpOnline = true;
         int nbVertices = 10;
         graph = new Graph(nbVertices, seed);
+        int c = 1;
         while (!graph.estConnexe()) {
-            graph = new Graph(nbVertices, seed);
+            graph = new Graph(nbVertices, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
+            c++;
         }
         Gui.setGraph(graph);
         Gui.setSeed(seed);
@@ -188,7 +194,7 @@ public class Game {
         }
     }
 
-    public void play1vs1(String message) throws IOException {
+    public void play1vs1(String message) throws IOException, DeploymentException, URISyntaxException, InterruptedException {
         if (message.isEmpty()) return;
         if (message.equals("L'adversaire a quitté la partie")) {
             client.sendMessage(turn.toString());
@@ -231,9 +237,11 @@ public class Game {
                 play(key, val);
                 if (cutWon) {
                     client.sendMessage("CUT!");
+                    client.close();
                 }
                 else if (shortWon) {
                     client.sendMessage("SHORT!");
+                    client.close();
                 }
                 setTurn(t);
             } else {
