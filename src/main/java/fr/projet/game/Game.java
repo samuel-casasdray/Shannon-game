@@ -33,10 +33,11 @@ public class Game {
     private boolean pvpOnline = false;
     private long seed;
     @Getter
-    private boolean joinerIsHere;
+    private boolean joiner;
     private WebSocketClient client;
     private String serverUri;
     private long id;
+    private ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
 
     public Game() { this(false, Turn.CUT); }
     public Game(boolean withIA, Turn typeIA) {
@@ -59,7 +60,7 @@ public class Game {
     public Game(long id, boolean joiner, WebSocketClient client, String serverUri, Long seed) {
         if (joiner) turn = Turn.SHORT;
         this.id = id;
-        this.joinerIsHere = joiner;
+        this.joiner = joiner;
         this.client = client;
         this.serverUri = serverUri;
         this.pvpOnline = true;
@@ -84,7 +85,7 @@ public class Game {
                 cutted.add(played);
                 for (var element : Gui.getEdges()) {
                     if (element.getKey().equals(v)) {
-                        element.getValue().getStrokeDashArray().addAll(25D, 10D);
+                        cutEdge(element.getValue());
                         break;
                     }
                 }
@@ -102,27 +103,36 @@ public class Game {
                         key.cut(value);
                         played = new Pair<>(key, value);
                         cutted.add(played);
-                        neighbors.getValue().getStrokeDashArray().addAll(25D, 10D);
+                        cutEdge(neighbors.getValue());
 
                     } else {
                         key.paint(value);
                         played = new Pair<>(key, value);
                         secured.add(played);
-                        neighbors.getValue().setStroke(Color.RED);
+                        paintEdge(neighbors.getValue());
                     }
                     if (!pvpOnline)
                         turn = turn.flip();
                     if (againstAI) {
                         play(key, value);
+                        return null;
                     }
                     cutWon(); 
                     shortWon();
+                    if (shortWon)
+                        System.out.println("SHORT a gagné");
+                    else if (cutWon)
+                        System.out.println("CUT a gagné");
                     return played;
                 }
             }
         }
         cutWon();
         shortWon();
+        if (shortWon)
+            System.out.println("SHORT a gagné");
+        else if (cutWon)
+            System.out.println("CUT a gagné");
         return played;
     }
 
@@ -153,9 +163,6 @@ public class Game {
         if (!cutWon && cutted.size()+secured.size() >= graph.getNeighbors().size()) {
             shortWon = true;
         }
-        if (shortWon)
-            //System.out.println("SHORT a gagné");
-            Gui.PopupMessage(Turn.SHORT);
         return shortWon;
     }
 
@@ -166,16 +173,11 @@ public class Game {
         );
         Graph notCuttedGraph = new Graph(notCuttedVerticices);
         cutWon = !notCuttedGraph.estConnexe();
-        if (cutWon)
-            //System.out.println("CUT a gagné");
-            Gui.PopupMessage(Turn.CUT);
         return cutWon;
     }
 
     public void sendMove(Pair<Vertex, Vertex> move) {
-        int turnValue = 0;
-        if (joinerIsHere)
-            turnValue = 1;
+        int turnValue = joiner ? 1 : 0;
         String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue;
         try {
             client.reConnect(serverUri);
@@ -238,5 +240,33 @@ public class Game {
                 System.out.println(key + " " + val);
             }
         }
+    }
+
+    public void cutEdge(Line line) {
+        lastsLines.add(new Pair<>(line, turn));
+        line.setStroke(Color.BLUE);
+        line.getStrokeDashArray().addAll(25D, 10D);
+        setColor();
+    }
+
+    public void paintEdge(Line line) {
+        lastsLines.add(new Pair<>(line, turn));
+        line.setStroke(Color.BLUE);
+        setColor();
+    }
+
+    public void setColor() {
+        if (lastsLines.size() < 2) return;
+        if (lastsLines.get(lastsLines.size()-2).getValue() == Turn.CUT) {
+            lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.BLACK);
+            lastsLines.get(lastsLines.size()-2).getKey().getStrokeDashArray().addAll(25D, 10D);
+        }
+        else {
+            lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.RED);
+        }
+    }
+
+    public boolean getCutWon() {
+        return cutWon;
     }
 }
