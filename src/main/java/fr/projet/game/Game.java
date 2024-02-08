@@ -119,20 +119,24 @@ public class Game {
                     }
                     cutWon(); 
                     shortWon();
-                    if (shortWon)
-                        System.out.println("SHORT a gagné");
-                    else if (cutWon)
-                        System.out.println("CUT a gagné");
+                    if (cutWon) {
+                        Gui.PopupMessage(Turn.CUT);
+                    }
+                    else if (shortWon) {
+                        Gui.PopupMessage(Turn.SHORT);
+                    }
                     return played;
                 }
             }
         }
         cutWon();
         shortWon();
-        if (shortWon)
-            System.out.println("SHORT a gagné");
-        else if (cutWon)
-            System.out.println("CUT a gagné");
+        if (cutWon) {
+            Gui.PopupMessage(Turn.CUT);
+        }
+        else if (shortWon) {
+            Gui.PopupMessage(Turn.SHORT);
+        }
         return played;
     }
 
