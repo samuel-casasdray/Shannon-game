@@ -114,15 +114,28 @@ public class Game {
                         turn = turn.flip();
                     if (againstAI) {
                         play(key, value);
+                        return null;
                     }
                     cutWon(); 
                     shortWon();
+                    if (cutWon) {
+                        Gui.PopupMessage(Turn.CUT);
+                    }
+                    else if (shortWon) {
+                        Gui.PopupMessage(Turn.SHORT);
+                    }
                     return played;
                 }
             }
         }
         cutWon();
         shortWon();
+        if (cutWon) {
+            Gui.PopupMessage(Turn.CUT);
+        }
+        else if (shortWon) {
+            Gui.PopupMessage(Turn.SHORT);
+        }
         return played;
     }
 
@@ -153,9 +166,6 @@ public class Game {
         if (!cutWon && cutted.size()+secured.size() >= graph.getNeighbors().size()) {
             shortWon = true;
         }
-        if (shortWon)
-            //System.out.println("SHORT a gagné");
-            Gui.PopupMessage(Turn.SHORT);
         return shortWon;
     }
 
@@ -166,9 +176,6 @@ public class Game {
         );
         Graph notCuttedGraph = new Graph(notCuttedVerticices);
         cutWon = !notCuttedGraph.estConnexe();
-        if (cutWon)
-            //System.out.println("CUT a gagné");
-            Gui.PopupMessage(Turn.CUT);
         return cutWon;
     }
 
