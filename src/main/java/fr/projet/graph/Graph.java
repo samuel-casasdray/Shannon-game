@@ -20,7 +20,7 @@ public class Graph {
 
     private boolean aroundCircle = true;
 
-    private double proba = 0.5;
+    private double proba = 0.2;
 
     private Random random = new Random();
 
@@ -85,8 +85,29 @@ public class Graph {
                 }
             }
         }
+        //ajout d'aretes si jamais le sommet a moins de 2 voisins
+        for (int i=0; i< nbVertices; i++){
+            while(countNeighborsVertex(i)<2){
+                int r;
+                do{
+                    r=random.nextInt(nbVertices);
+                } while(r==i || neighbors.contains(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(r))));
+                this.vertices.get(i).addNeighborVertex(this.vertices.get(r));
+                neighbors.add(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(r)));
+            }
+        }
     }
 
+    public int countNeighborsVertex(int indexVertex){
+        Vertex vertex= this.vertices.get(indexVertex);
+        int count =0;
+        for(Pair<Vertex,Vertex> p: neighbors){
+            if (p.getKey().equals(vertex)){
+                count++;
+            }
+        }
+        return count;
+    }
     public void setNbVertices(int nbVertices) {
         this.nbVertices = nbVertices;
         this.generateGraph();
