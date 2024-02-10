@@ -20,10 +20,12 @@ public class BasicAI implements InterfaceIA {
     }
 
     public Pair<Vertex, Vertex> playCUT() {
+        boolean cutWonState = game.getCutWon();
         for (int i = graph.getNeighbors().size() - 1; i > 0; i--) {
             var element = graph.getNeighbors().get(i);
             graph.removeNeighbor(element);
             if (game.cutWon()) {
+                game.setCutWon(cutWonState);
                 for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                     if (Vertex.isSameCouple(new Pair<>(element.getKey(), element.getValue()), neighbors.getKey())) {
                         if (!element.getKey().isCut(element.getValue())
@@ -37,11 +39,12 @@ public class BasicAI implements InterfaceIA {
                 graph.addNeighbor(element);
             }
         }
+        game.setCutWon(cutWonState);
         for (var x : graph.getNeighbors()) {
             if (!x.getKey().isCut(x.getValue()) && !x.getKey().isPainted(x.getValue()))
                 return x;
         }
-        return graph.getNeighbors().get(0);
+        return graph.getNeighbors().getFirst();
     }
 
 }
