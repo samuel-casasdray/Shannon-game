@@ -2,11 +2,10 @@ use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     extract::{Path, State},
     response::IntoResponse,
-    routing::get,
-    Json, Router,
+    routing::get, Router,
 };
 use axum_extra::{headers, TypedHeader};
-use futures::{SinkExt, StreamExt};
+use futures::{lock::MutexGuard, SinkExt, StreamExt};
 use rand::Rng;
 use serde::Serialize;
 use std::sync::Arc;
@@ -16,22 +15,15 @@ use tokio::sync::broadcast;
 
 #[tokio::main]
 async fn main() {
-    // On créé une Game "default"
-    let game = Game {
-        id: 0,
-        seed: 0,
-        tx: None,
-        previous_move: Turn::Short,
-        joined: false
-    };
-    let games = Arc::new(futures::lock::Mutex::new(Games { games: vec![game] }));
+    let games = Arc::new(futures::lock::Mutex::new(Games { games: vec![] }));
     let app = Router::new()
+        .route("/", get(get_handshake))
         .route("/create_game", get(create_game_handler)) // Ici, c'est pour créer une game
         .route("/join_game/:id", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
         .with_state(games);
-    // 51.75.126.59:2999
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:2999") // Ip de mon serveur avec un port random mais probablement pas déjà pris
+    // 51.75.126.59:2999 (ip de mon serveur)
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:2999") // Port random mais probablement pas déjà pris
         .await
         .unwrap();
     axum::serve(
@@ -40,6 +32,10 @@ async fn main() {
     )
     .await
     .unwrap();
+}
+
+async fn get_handshake(ws: WebSocketUpgrade) -> impl IntoResponse {
+    ws.on_upgrade(|_| async {})
 }
 
 async fn create_game_handler(
@@ -54,24 +50,21 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
     let mut games = games.lock().await;
     let mut rng = rand::thread_rng();
     let mut n = rng.gen_range(0..=1000); // Pour la démo avec Bessy
-    while games.games.iter().any(|x| x.id == n) {
+    while games.games.iter().any(|x| x.id == n) { // On empêche de créer deux fois une game avec le même id
         n = rng.gen_range(0..=1000);
     }
     let seed = rng.gen::<i64>();
-    if let Some(x) = games.games.first() {
-        if x.tx.is_none() {
-            games.games.remove(0);
-        }
-    }
     games.games.push(Game {
         id: n,
         seed,
         tx: Some(broadcast::channel(100).0), // On ajoute une Game avec id et seed random, et un canal de communication
         previous_move: Turn::Short, // C'est à cut de commencer, donc le previous move est SHORT
-        joined: false  // Personne n'a rejoint jusque là
+        joined: false,  // Personne n'a rejoint jusque là
+        ended: false // La game n'est pas encore finie
     });
+    games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
     while games.games.len() > 10 {
-        games.games.remove(0); // On ne garde que les 10 dernières games
+        games.games.remove(0); // On ne garde que les 10 dernières games (potentiellement à ajuster/enlever)
     }
     println!("{:?}", games.games);
     let partial = PartialGame { id: n, seed }; // On créé une "Game Partielle" pour pouvoir sérializer certaines informations
@@ -102,37 +95,31 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
 async fn join_game_handler(
     ws: WebSocketUpgrade,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
-    Path(game_id): Path<String>,
+    Path(game_id): Path<i64>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| join_game(socket, State(games), Json(game_id)))
+    ws.on_upgrade(move |socket| join_game(socket, State(games), game_id))
 }
 
 async fn join_game(
     socket: WebSocket,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
-    Json(payload): Json<String>,
+    payload: i64,
 ) {
     let (mut sender, _receiver) = socket.split();
-    let payload = payload[1..].to_string(); // On enlève le premier caractère ":123456" -> "123456"
-    let mut games = games.lock().await;
-    let mut current_game_indice = -1; // Indice de la game qui nous intéresse, initialisé à -1
-    for i in 0..games.games.len() {
-        if games.games[i].id.to_string() == payload {
-            current_game_indice = i as i32;
-            break;
-        }
-    }
+    let games = games.lock().await;
+    let (mut games, current_game_indice) = get_current_indice(games, payload);
     if current_game_indice == -1 {
         println!("No game has been found to join");
         return;
     }
+    let current_game_indice = current_game_indice as usize;
     let partial = PartialGame {
-        id: games.games[current_game_indice as usize].id,
-        seed: games.games[current_game_indice as usize].seed,
+        id: games.games[current_game_indice].id,
+        seed: games.games[current_game_indice].seed,
     };
-    games.games[current_game_indice as usize].joined = true;
+    games.games[current_game_indice].joined = true;
     let msg = json!(partial).to_string();
-    let tx = games.games[current_game_indice as usize]
+    let tx = games.games[current_game_indice]
         .tx
         .clone()
         .unwrap();
@@ -162,50 +149,39 @@ async fn ws_handler(
     websocket: WebSocketUpgrade,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
-    Path(game_id): Path<String>
+    Path(game_id): Path<i64>
 ) -> impl IntoResponse {
     if let Some(TypedHeader(user_agent)) = user_agent {
         user_agent.to_string()
     } else {
         String::from("Unknown browser")
     };
-    websocket.on_upgrade(move |socket| handle_socket(socket, State(games), Json(game_id)))
+    websocket.on_upgrade(move |socket| handle_socket(socket, State(games), game_id))
 }
 
 async fn handle_socket(
     socket: WebSocket,
     game: State<Arc<futures::lock::Mutex<Games>>>,
-    Json(game_id): Json<String>
+    game_id: i64
 ) {
     let (_sender, mut receiver) = socket.split();
-    let game_id = game_id[1..].parse::<i64>(); // On enlève le premier caractère ":123456" -> "123456"
-    let game_id = match game_id {
-        Ok(k) => k,
-        Err(k) => {
-            println!("Erreur de parsing de l'id {}", k);
-            return; 
-        }
-    };
     let _recv_task = tokio::spawn(async move {
         while let Some(Ok(Message::Text(vertices))) = receiver.next().await {
-            let mut games = game.lock().await;
-            let mut current_game_indice = -1;
-            for i in 0..games.games.len() {
-                if games.games[i].id == game_id { // On récupère l'indice de la game
-                    current_game_indice = i as i32;
-                    break;
-                }
-            }
+            let games = game.lock().await;
+            let (mut games, current_game_indice) = get_current_indice(games, game_id);
             if current_game_indice == -1 {
                 println!("No game has been found to join");
                 return;
             }
-            let tx = games.games[current_game_indice as usize].tx.clone().unwrap();
+            let current_game_indice = current_game_indice as usize;
+            let tx = games.games[current_game_indice].tx.clone().unwrap();
             if vertices == *"CUT!" || vertices == *"SHORT!" { // Fin de la game
+                games.games[current_game_indice].ended = true;
                 return;
             }
             if vertices == *"CUT" || vertices == *"SHORT" { // Un des deux joueurs a déconnecté, et celui qui est resté à répondu
                 let _ = tx.send(vertices + " a gagné"); // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
+                games.games[current_game_indice].ended = true;
                 return;
             }
             // On récupère les deux vertices depuis le client sous la forme "id1 id2 move" par exemple "3 4 1"
@@ -217,41 +193,31 @@ async fn handle_socket(
             if vertices.len() != 3 {
                 continue; // Il faut obligatoirement 3 éléments : les deux premiers vertices et le type de move
             }
-            if current_game_indice == -1 {
-                println!("No game found");
-                continue; // Si l'indice est -1, la game n'est pas présente, c'est cassé
-            }
-            if !games.games[current_game_indice as usize].joined {
+            if !games.games[current_game_indice].joined {
                 println!("Nobody joined the game"); // Si personne n'a rejoint la game, le créateur ne peut pas encore jouer
                 continue;
             }
             let turn;
-            if vertices[2] == 0 {
+            if vertices[2] == 0 { // 0 = CUT
                 turn = Turn::Cut;
             }
-            else if vertices[2] == 1 {
+            else if vertices[2] == 1 { // 1 = SHORT
                 turn = Turn::Short;
             }
             else {
                 println!("Turn should be 0 or 1");
                 continue;
             }
-            if turn == games.games[current_game_indice as usize].previous_move {
+            if turn == games.games[current_game_indice].previous_move {
                 println!("Wait the next turn");
                 continue; // On empêche le joueur de jouer deux fois d'affilé
             }
-            games.games[current_game_indice as usize].previous_move = flip(&games.games[current_game_indice as usize].previous_move); // On change le previous move (0 -> 1 et 1 -> 0)
+            games.games[current_game_indice].previous_move = flip(&games.games[current_game_indice].previous_move); // On change le previous move (0 -> 1 et 1 -> 0)
             let _ = tx.send(json!(vertices).to_string()); // On envoie les vertices aux clients
         }
         // Si on quitte le while, l'un des deux joueurs s'est déconnecté
         let games = game.lock().await;
-        let mut current_game_indice = -1;
-            for i in 0..games.games.len() {
-                if games.games[i].id == game_id{ // On récupère l'indice de la game
-                    current_game_indice = i as i32;
-                    break;
-            }
-        }
+        let (games, current_game_indice) = get_current_indice(games, game_id);
         if current_game_indice != -1 {
             let tx = games.games[current_game_indice as usize].tx.clone().unwrap();
             let _ = tx.send("L'adversaire a quitté la partie".to_string()); // On envoie au joueur restant l'information
@@ -260,13 +226,26 @@ async fn handle_socket(
     println!("WebSocket context destroyed"); // On ferme la connexion websocket
 }
 
+fn get_current_indice(mut games: MutexGuard<'_, Games>, game_id: i64) -> (MutexGuard<'_, Games>, i32) {
+    let mut current_game_indice = -1;
+            for i in 0..games.games.len() {
+                if games.games[i].id == game_id { // On récupère l'indice de la game
+                    current_game_indice = i as i32;
+                    games.games[i].ended = true;
+                    break;
+            }
+        }
+    (games, current_game_indice)
+}
+
 #[derive(Debug)]
 pub struct Game {
     id: i64,
     seed: i64,
     tx: Option<broadcast::Sender<String>>,
     previous_move: Turn,
-    joined: bool
+    joined: bool,
+    ended: bool
 }
 
 #[derive(Debug)]
@@ -276,7 +255,7 @@ pub struct Games {
 
 #[derive(Debug, Serialize)]
 pub struct PartialGame {
-    // ça permet de pouvoir sérialiser une Game, en enlevant juste la tx et le previous move (utiles juste pour le serveur)
+    // ça permet de pouvoir sérialiser une Game, en gardant seulement l'id et la seed
     id: i64,
     seed: i64,
 }

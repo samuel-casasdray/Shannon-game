@@ -9,13 +9,9 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 @ClientEndpoint
 public class WebSocketClient {
-
-    private final CountDownLatch latch;
     private Session session;
     @Getter
     private String response = null;
@@ -25,9 +21,7 @@ public class WebSocketClient {
     @Setter
     private Callback callback;
 
-    public WebSocketClient() {
-        this.latch = new CountDownLatch(1);
-    }
+    public WebSocketClient() {}
 
     private Game game = null;
 
@@ -39,12 +33,25 @@ public class WebSocketClient {
 
     public void connect(String serverUri) throws URISyntaxException, DeploymentException, InterruptedException, IOException {
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        container.connectToServer(this, new URI(serverUri));
-        latch.await(5, TimeUnit.SECONDS);
+        try {
+            container.connectToServer(this, new URI(serverUri));
+        }
+        catch (DeploymentException handshakeError) {
+            closed = true;
+            return;
+        }
+        closed = false;
     }
 
-    public void sendMessage(String message) throws IOException {
-        session.getBasicRemote().sendText(message);
+    public void sendMessage(String message) throws IOException, DeploymentException, URISyntaxException, InterruptedException {
+        try {
+            session.getBasicRemote().sendText(message);
+        }
+        catch (Exception e) {
+            if (closed) {
+                System.out.println("Déconnexion suite à une période d'inactivité");
+            }
+        }
     }
 
     public void setGame(Game game) {
@@ -53,7 +60,8 @@ public class WebSocketClient {
     }
 
     public void close() throws IOException {
-        session.close();
+        if (session != null && session.isOpen())
+            session.close();
     }
 
     @OnOpen
@@ -61,11 +69,10 @@ public class WebSocketClient {
         this.session = session;
         closed = false;
         System.out.println("Connected to server");
-        latch.countDown();
     }
 
     @OnMessage
-    public void onMessage(String message) throws IOException {
+    public void onMessage(String message) throws IOException, DeploymentException, URISyntaxException, InterruptedException {
         response = message;
         System.out.println("Received message: " + message);
         if (message.startsWith("{")) {

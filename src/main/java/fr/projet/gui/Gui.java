@@ -67,6 +67,8 @@ public class Gui extends Application {
 
     @Override
     public void start(Stage stage) {
+        // On initialise un handshake pour éviter de devoir attendre 1 seconde lorsqu'on appuie sur create
+        new Thread(Client::getHandshake).start();
         this.stage = stage;
         stage.setScene(home());
         stage.setTitle("Shannon Game");
@@ -335,6 +337,7 @@ public class Gui extends Application {
 
     public void showGraph(Pane pane) {
         // Ajout des aretes sur l'affichage
+        if (game == null) return; // Cas qui peut survenir si le serveur est off
         for (Pair<Vertex, Vertex> pair : this.game.getGraph().getNeighbors()) {
             Line line = new Line(pair.getKey().getCoords().getKey() + CIRCLE_SIZE,
                     pair.getKey().getCoords().getValue() + CIRCLE_SIZE,
