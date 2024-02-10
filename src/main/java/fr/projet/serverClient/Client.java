@@ -16,29 +16,51 @@ import java.net.URISyntaxException;
 public class Client {
     @Getter
     private long id;
-    private final String serverUri = "ws://51.75.126.59:2999/ws/:";
-    private final String CreateGameUri = "ws://51.75.126.59:2999/create_game";
-    private final String JoinGameUri = "ws://51.75.126.59:2999/join_game/:";
+    private static final String serverHostname = "wss://cryp.tf/";
+    private static final String serverUri = serverHostname+"ws/";
+    private static final String CreateGameUri = serverHostname+"create_game"; // Le nom de domaine de mon serveur
+    private static final String JoinGameUri = serverHostname+"join_game/";
     private final WebSocketClient client = new WebSocketClient();
     private final boolean joiner;
+    private String response = null;
     public Client(long id, boolean joiner) throws DeploymentException, URISyntaxException, IOException, InterruptedException {
         if (joiner) {
+            if (!client.isClosed())
+                client.close();
             client.connect(JoinGameUri + id);
         }
         else {
+            if (!client.isClosed())
+                client.close();
             client.connect(CreateGameUri);
         }
         this.joiner = joiner;
-        while (client.getResponse() == null) {
-            Thread.sleep(1);
+        int count = 0;
+        while(response == null) {
+            if (count > 50) {
+                return; // Le serveur ne répond pas
+            }
+            response = client.getResponse();
+            Thread.sleep(100);
+            count++;
         }
-        JsonElement jsonElement = JsonParser.parseString(client.getResponse());
-        this.id = jsonElement.getAsJsonObject().get("id").getAsInt();
+        JsonElement jsonElement = JsonParser.parseString(response);
+        this.id = jsonElement.getAsJsonObject().get("id").getAsLong();
     }
 
-    public Game connect(Callback function) {
+    public static void getHandshake() {
         try {
-            JsonElement jsonElement = JsonParser.parseString(client.getResponse());
+            WebSocketClient client = new WebSocketClient();
+            client.connect(serverHostname);
+            if (!client.isClosed())
+                client.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public Game connect(Callback function) throws IOException {
+        try {
+            JsonElement jsonElement = JsonParser.parseString(response);
             long seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
             client.connect(serverUri + this.id);
             Game game = new Game(this.id, joiner, client, serverUri + this.id, seed);
@@ -46,6 +68,7 @@ public class Client {
             client.setCallback(function);
             return game;
         } catch (Exception e) {
+            client.close();
             return null;
         }
     }
