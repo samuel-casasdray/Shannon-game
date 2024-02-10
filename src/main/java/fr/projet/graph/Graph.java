@@ -79,9 +79,7 @@ public class Graph {
             for (int j = i + 1; j < nbVertices; j++) {
                 float p = random.nextFloat();
                 if (p < proba) {
-                    this.vertices.get(i).addNeighborVertex(this.vertices.get(j));
-                    // this.vertices.get(j).addNeighborVertex(this.vertices.get(i)); // Voir la méthode addNeighbor
-                    neighbors.add(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(j)));
+                    addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(j)));
                 }
             }
         }
@@ -91,9 +89,8 @@ public class Graph {
                 int r;
                 do{
                     r=random.nextInt(nbVertices);
-                } while(r==i || neighbors.contains(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(r))));
-                this.vertices.get(i).addNeighborVertex(this.vertices.get(r));
-                neighbors.add(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(r)));
+                } while(r==i || this.vertices.get(i).getListNeighbors().contains(this.vertices.get(r)));
+                addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
             }
         }
     }
@@ -142,6 +139,7 @@ public class Graph {
     }
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
+        if (neighbors.contains(edge)) return;
         neighbors.add(edge);
         edge.getKey().addNeighborVertex(edge.getValue());
         edge.getValue().addNeighborVertex(edge.getKey());
