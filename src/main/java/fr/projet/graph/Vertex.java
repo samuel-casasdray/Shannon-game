@@ -27,7 +27,8 @@ public class Vertex {
     }
 
     public void addNeighborVertex(Vertex v) {
-        listNeighbors.add(v);
+        if (!listNeighbors.contains(v))
+            listNeighbors.add(v);
         if (!v.getListNeighbors().contains(this))
             v.getListNeighbors().add(this);
     }
