@@ -47,4 +47,9 @@ public class BasicAI implements InterfaceIA {
         return graph.getNeighbors().getFirst();
     }
 
+    @Override
+    public Pair<Vertex, Vertex> playSHORT() {
+        return null;
+    }
+
 }

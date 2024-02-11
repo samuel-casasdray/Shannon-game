@@ -20,7 +20,7 @@ public class Graph {
 
     private boolean aroundCircle = true;
 
-    private double proba = 0.5;
+    private double proba = 0.2;
 
     private Random random = new Random();
 
@@ -114,15 +114,33 @@ public class Graph {
         for (int i = 0; i < nbVertices; i++) {
             for (int j = i + 1; j < nbVertices; j++) {
                 float p = random.nextFloat();
-                if (p > proba) {
-                    this.vertices.get(i).addNeighborVertex(this.vertices.get(j));
-                    // this.vertices.get(j).addNeighborVertex(this.vertices.get(i)); // Voir la méthode addNeighbor
-                    neighbors.add(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(j)));
+                if (p < proba) {
+                    addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(j)));
                 }
+            }
+        }
+        //ajout d'aretes si jamais le sommet a moins de 2 voisins
+        for (int i=0; i< nbVertices; i++){
+            while(countNeighborsVertex(i)<2){
+                int r;
+                do{
+                    r=random.nextInt(nbVertices);
+                } while(r==i || this.vertices.get(i).getListNeighbors().contains(this.vertices.get(r)));
+                addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
             }
         }
     }
 
+    public int countNeighborsVertex(int indexVertex){
+        Vertex vertex= this.vertices.get(indexVertex);
+        int count =0;
+        for(Pair<Vertex,Vertex> p: neighbors){
+            if (p.getKey().equals(vertex)){
+                count++;
+            }
+        }
+        return count;
+    }
     public void setNbVertices(int nbVertices) {
         this.nbVertices = nbVertices;
         this.generateGraph();
