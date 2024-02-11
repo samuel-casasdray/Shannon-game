@@ -5,7 +5,6 @@ import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.util.Pair;
-import java.util.Collections;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,24 +16,22 @@ public class Minimax implements InterfaceIA {
 
     //Pair<Vertex, Vertex> bestMove;
 
-    Integer d;
+    int depth;
 
-    public Minimax(Game game, Turn plays, Integer d) {
+    public Minimax(Game game, Turn plays, int depth) {
         this.game = game;
         this.plays = plays;
         this.graph = game.getGraph();
-        this.d=d;
+        this.depth = depth;
     }
 
-    public Integer sum (List<Pair<Integer, Pair<Vertex, Vertex>>> liste) {
+    public int sum (List<Pair<Integer, Pair<Vertex, Vertex>>> liste) {
         int sum = 0;
         for (Pair<Integer, Pair<Vertex, Vertex>> element : liste){
             sum+=element.getKey();
         }
         return sum;
     }
-
-
 
 //    public Pair<Vertex, Vertex> playCUT() {
 //        List<Pair<Vertex, Vertex>> AllEdges = this.graph.getNeighbors();
@@ -46,13 +43,13 @@ public class Minimax implements InterfaceIA {
 //                edges.add(toUse);
 //            }
 //        }
-//
-//        Integer value = 0;
+
+//        int value = 0;
 //        Pair<Vertex, Vertex> res = edges.getFirst();
 //        for (Pair<Vertex, Vertex> toCut : edges) {
 //            ArrayList<Pair<Vertex, Vertex>> copieCutted = new ArrayList<>(cutted);
 //            copieCutted.add(toCut);
-//            Integer call = MinMax(secured, copieCutted, d - 1, false);
+//            int call = MinMax(secured, copieCutted, d - 1, false);
 //            if (value < call) {
 //                value = call;
 //                res = toCut;
@@ -60,10 +57,9 @@ public class Minimax implements InterfaceIA {
 //        }
 //        return res;
 //    }
-//
-//
-//    public Integer MinMax (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted, Integer depth, Boolean maximizingPlayer) {
-//        List<Pair<Integer, Pair<Vertex, Vertex>>> score = new ArrayList<>();
+
+//    public int MinMax (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted, int depth, Boolean maximizingPlayer) {
+//        List<Pair<int, Pair<Vertex, Vertex>>> score = new ArrayList<>();
 //        List<Pair<Vertex, Vertex>> AllEdges = this.graph.getNeighbors();
 //        List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
 //        for (Pair<Vertex, Vertex> toUse : AllEdges) {
@@ -71,7 +67,7 @@ public class Minimax implements InterfaceIA {
 //                edges.add(toUse);
 //            }
 //        }
-//        Integer value = 0;
+//        int value = 0;
 //        if (depth == 0 || terminalNode(secured,cutted)) {
 //            return evaluate(this.graph, secured, cutted);
 //        }
@@ -93,16 +89,13 @@ public class Minimax implements InterfaceIA {
 //        }
 //        return value;
 //    }
-//
-//
-//
+
 //    public Boolean terminalNode (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted) {
 //        Graph testSecured = new Graph(secured);
 //        return this.graph.estCouvrant(testSecured) || this.graph.difference(cutted);
 //    }
 
-
-    public Integer evaluate (Graph G, ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted) {
+    public int evaluate (Graph G, ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted) {
         Graph testSecured = new Graph(secured);
         if (G.estCouvrant(testSecured)) return -10;
         if (G.difference(cutted)) return 10;
@@ -114,16 +107,13 @@ public class Minimax implements InterfaceIA {
         return null;
     }
 
-
-
-
-
     public Pair<Vertex, Vertex> playCUT () {
         //System.out.println("debut");
         ArrayList<Pair<Vertex, Vertex>> secured = game.getSecured();
         ArrayList<Pair<Vertex, Vertex>> cutted = game.getCutted();
         //System.out.println(cutted);
-        List<Pair<Integer, Pair<Vertex, Vertex>>> score = MinMaxF(secured, cutted, d);
+        List<Pair<Integer, Pair<Vertex, Vertex>>> score = MinMaxF(secured, cutted, depth);
+        if (score.isEmpty()) return null; // Cas à gérer quand l'IA ne peut plus jouer
         Pair<Integer, Pair<Vertex, Vertex>> max = score.getFirst();
         for (Pair<Integer, Pair<Vertex, Vertex>> element : score){
             if (element.getKey()>max.getKey()) max=element;
@@ -131,7 +121,6 @@ public class Minimax implements InterfaceIA {
         //System.out.println("fin ---- "+max.getValue());
         return max.getValue();
     }
-
 
     public List<Pair<Integer, Pair<Vertex, Vertex>>> MinMaxF (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted, int depth) {
         //score contient en fait des paire qui corresponde à une arrete le score qu'on lui a calculé
@@ -147,7 +136,7 @@ public class Minimax implements InterfaceIA {
             //si on ne regarde plus en avant, alors toute les arretes ont le meme score qui est celui que la fonction d'evaluation donne au graphe
             int value = evaluate(this.graph,secured,cutted);
             for (Pair<Vertex, Vertex> toCut : edges) {
-                score.add(new Pair(value,toCut));
+                score.add(new Pair<>(value,toCut));
             }
             return score;
         }
@@ -168,31 +157,24 @@ public class Minimax implements InterfaceIA {
                 }
             }
             //Maintenant scoreEdge contient pour chaque securisation de CUT, les valeur des evaluations de nos coup suivant, le score de l'arrete est donc la somme de ces valeurs
-            score.add(new Pair(scoreEdge.stream().mapToInt(Integer::intValue).sum(),toCut));
+            score.add(new Pair<>(scoreEdge.stream().mapToInt(Integer::intValue).sum(),toCut));
         }
         return score;
     }
 
-
-//
-//
-//
-//
-//
-//
 //    public Pair<Vertex, Vertex> playSHORT () {
 //        ArrayList<Pair<Vertex, Vertex>> secured = game.getSecured();
 //        ArrayList<Pair<Vertex, Vertex>> cutted = game.getCutted();
-//        List<Pair<Integer, Pair<Vertex, Vertex>>> score = MinMaxF2(secured, cutted, d);
-//        Pair<Integer, Pair<Vertex, Vertex>> max = score.getFirst();
-//        for (Pair<Integer, Pair<Vertex, Vertex>> element : score){
+//        List<Pair<int, Pair<Vertex, Vertex>>> score = MinMaxF2(secured, cutted, d);
+//        Pair<int, Pair<Vertex, Vertex>> max = score.getFirst();
+//        for (Pair<int, Pair<Vertex, Vertex>> element : score){
 //            if (element.getKey()>max.getKey()) max=element;
 //        }
 //        return max.getValue();
 //    }
-//
-//    public List<Pair<Integer, Pair<Vertex, Vertex>>> MinMaxF2 (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted, int depth) {
-//        List<Pair<Integer, Pair<Vertex, Vertex>>> score = new ArrayList<>();
+////
+//    public List<Pair<int, Pair<Vertex, Vertex>>> MinMaxF2 (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted, int depth) {
+//        List<Pair<int, Pair<Vertex, Vertex>>> score = new ArrayList<>();
 //        List<Pair<Vertex, Vertex>> AllEdges = this.graph.getNeighbors();
 //        List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
 //        for (Pair<Vertex, Vertex> toCut : AllEdges) {
@@ -203,12 +185,12 @@ public class Minimax implements InterfaceIA {
 //        if (depth==0) {
 //            int value = -evaluate(this.graph,secured,cutted);
 //            for (Pair<Vertex, Vertex> toCut : edges) {
-//                score.add(new Pair(value,toCut));
+//                score.add(new Pair<>(value,toCut));
 //            }
 //            return score;
 //        }
 //        for (Pair<Vertex, Vertex> toSecure : edges) {
-//            List<Integer> scoreEdge = new ArrayList<>();
+//            List<int> scoreEdge = new ArrayList<>();
 //            ArrayList<Pair<Vertex, Vertex>> copieSecure = new ArrayList<>(secured);
 //            ArrayList<Pair<Vertex, Vertex>> copieCutted = new ArrayList<>(cutted);
 //            copieSecure.add(toSecure);
@@ -218,11 +200,10 @@ public class Minimax implements InterfaceIA {
 //                    scoreEdge.add(sum (MinMaxF2(copieSecure,copieCutted, depth-1) ));
 //                }
 //            }
-//            score.add(new Pair(scoreEdge.stream().mapToInt(Integer::intValue).sum(),toSecure));
+//            score.add(new Pair<>(scoreEdge.stream().mapToInt(int::intValue).sum(),toSecure));
 //        }
 //        return score;
 //    }
-//
 
 
 
