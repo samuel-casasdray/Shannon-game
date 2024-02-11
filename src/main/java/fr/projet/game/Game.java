@@ -12,6 +12,7 @@ import fr.projet.IA.InterfaceIA;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
+import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -123,29 +124,32 @@ public class Game {
                         play(key, value);
                         return null;
                     }
-                    cutWon(); 
-                    shortWon();
-                    if (cutWon) {
-                        Gui.PopupMessage(Turn.CUT);
-                    }
-                    else if (shortWon) {
-                        Gui.PopupMessage(Turn.SHORT);
-                    }
+                    detectWinner();
                     return played;
                 }
             }
         }
-        cutWon();
-        shortWon();
-        if (cutWon) {
-            Gui.PopupMessage(Turn.CUT);
-        }
-        else if (shortWon) {
-            Gui.PopupMessage(Turn.SHORT);
-        }
+        detectWinner();
         return played;
     }
 
+    public void showWinner() {
+        if (cutWon()) {
+            Gui.PopupMessage(Turn.CUT);
+        }
+        else if (shortWon()) {
+            Gui.PopupMessage(Turn.SHORT);
+        }
+    }
+
+    private void detectWinner() {
+        if (client == null) {
+            showWinner();
+        }
+        else {
+            Platform.runLater(this::showWinner); // Cas d'une game online
+        }
+    }
     private void handleEvent(MouseEvent mouseEvent) {
         if (cutWon || shortWon)
             return;
