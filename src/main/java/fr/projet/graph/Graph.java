@@ -149,13 +149,13 @@ public class Graph {
     public boolean estConnexe() {
         HashSet<Vertex> marked = new HashSet<>();
         ArrayList<Vertex> pile = new ArrayList<>();
-        if (vertices.size() == 0) {
+        if (vertices.isEmpty()) {
             return true;
         }
-        pile.add(vertices.get(0));
-        while (pile.size() > 0) {
+        pile.add(vertices.getFirst());
+        while (!pile.isEmpty()) {
             var s = pile.getLast();
-            pile.remove(pile.size()-1);
+            pile.removeLast();
             if (!marked.contains(s)) {
                 marked.add(s);
                 for (var t: s.getListNeighbors()) {

@@ -4,7 +4,6 @@ use axum::{
     response::IntoResponse,
     routing::get, Router,
 };
-use axum_extra::{headers, TypedHeader};
 use futures::{lock::MutexGuard, SinkExt, StreamExt};
 use rand::Rng;
 use serde::Serialize;
@@ -147,15 +146,9 @@ async fn join_game(
 
 async fn ws_handler(
     websocket: WebSocketUpgrade,
-    user_agent: Option<TypedHeader<headers::UserAgent>>,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
     Path(game_id): Path<i64>
 ) -> impl IntoResponse {
-    if let Some(TypedHeader(user_agent)) = user_agent {
-        user_agent.to_string()
-    } else {
-        String::from("Unknown browser")
-    };
     websocket.on_upgrade(move |socket| handle_socket(socket, State(games), game_id))
 }
 
