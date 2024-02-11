@@ -20,7 +20,7 @@ public class Graph {
 
     private boolean aroundCircle = true;
 
-    private double proba = 0.2;
+    private double proba = 0.5;
 
     private Random random = new Random();
 
@@ -28,9 +28,32 @@ public class Graph {
 
     @Getter
     private List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>();
-    public Graph(List<Vertex> vertices) {
-        this.vertices = new ArrayList<>(vertices);
-        this.nbVertices = vertices.size();
+    public Graph(List<?> liste) {
+        if (liste.isEmpty()) {
+            this.nbVertices=0;
+            this.vertices= new ArrayList<>();
+            this.neighbors= new ArrayList<>();
+        }
+        else {
+            if (liste.getFirst() instanceof Vertex) {
+                //System.out.println("création a partir de sommet");
+                this.vertices = (List<Vertex>) new ArrayList<>(liste);
+                this.nbVertices = liste.size();
+            }
+            if (liste.getFirst() instanceof Pair) {
+                //System.out.println("création a partir d'arretes");
+                this.neighbors = (List<Pair<Vertex, Vertex>>) new ArrayList<>(liste);
+                ;
+                this.nbVertices = liste.size();
+                List<Vertex> vertices = new ArrayList<>();
+                for (Pair<Vertex, Vertex> element : neighbors) {
+                    if (!vertices.contains(element.getKey())) vertices.add(element.getKey());
+                    if (!vertices.contains(element.getValue())) vertices.add(element.getValue());
+                }
+                this.vertices = vertices;
+            }
+        }
+        //this.printGraph();
     }
 
     public Graph(int nbVertices) {
@@ -45,6 +68,19 @@ public class Graph {
         random = new Random(seed);
         this.generateGraph();
     }
+
+
+//    public Graph (List<Pair<Vertex, Vertex>> neighbors) {
+//        this.neighbors=neighbors;
+//        this.nbVertices= neighbors.size();
+//        List<Vertex> vertices = new ArrayList<>();
+//        for (Pair<Vertex, Vertex> element : neighbors) {
+//            if (!vertices.contains(element.getKey())) vertices.add(element.getKey());
+//            if (!vertices.contains(element.getValue())) vertices.add(element.getValue());
+//        }
+//        this.vertices=vertices;
+//    }
+
 
     public Graph() {
         this.vertices = new ArrayList<>();
@@ -78,33 +114,15 @@ public class Graph {
         for (int i = 0; i < nbVertices; i++) {
             for (int j = i + 1; j < nbVertices; j++) {
                 float p = random.nextFloat();
-                if (p < proba) {
-                    addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(j)));
+                if (p > proba) {
+                    this.vertices.get(i).addNeighborVertex(this.vertices.get(j));
+                    // this.vertices.get(j).addNeighborVertex(this.vertices.get(i)); // Voir la méthode addNeighbor
+                    neighbors.add(new Pair<Vertex, Vertex>(this.vertices.get(i), this.vertices.get(j)));
                 }
-            }
-        }
-        //ajout d'aretes si jamais le sommet a moins de 2 voisins
-        for (int i=0; i< nbVertices; i++){
-            while(countNeighborsVertex(i)<2){
-                int r;
-                do{
-                    r=random.nextInt(nbVertices);
-                } while(r==i || this.vertices.get(i).getListNeighbors().contains(this.vertices.get(r)));
-                addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
             }
         }
     }
 
-    public int countNeighborsVertex(int indexVertex){
-        Vertex vertex= this.vertices.get(indexVertex);
-        int count =0;
-        for(Pair<Vertex,Vertex> p: neighbors){
-            if (p.getKey().equals(vertex)){
-                count++;
-            }
-        }
-        return count;
-    }
     public void setNbVertices(int nbVertices) {
         this.nbVertices = nbVertices;
         this.generateGraph();
@@ -139,9 +157,43 @@ public class Graph {
     }
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
-        if (neighbors.contains(edge)) return;
         neighbors.add(edge);
         edge.getKey().addNeighborVertex(edge.getValue());
         edge.getValue().addNeighborVertex(edge.getKey());
     }
+
+
+    public void printGraph () { //Affiche le graphe dans la console (pour debuguer surtout)
+        for (Pair<Vertex, Vertex> element : neighbors) {
+            System.out.println("Arrete : "+element.getKey().toString()+element.getValue().toString());
+        }
+        System.out.println(this.vertices);
+    }
+
+
+    public boolean estCouvrant (Graph G) { //true si G est couvrant de this
+        boolean couvrant = true;
+        List<Vertex> VerticeG = G.getVertices();
+        for (Vertex v : this.vertices) {
+            if (!VerticeG.contains(v)) {
+                couvrant = false;
+                break;
+            }
+        }
+        return couvrant && G.estConnexe();
+    }
+
+
+    public boolean difference (List<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
+        List<Pair<Vertex, Vertex>> VerticeNew = new ArrayList<>();
+        for (Pair<Vertex, Vertex> edge : neighbors) {
+            if (!cutted.contains(edge)) {
+                VerticeNew.add(edge);
+            }
+        }
+        Graph toTest = new Graph(VerticeNew);
+        return !toTest.estConnexe();
+    }
+
+
 }

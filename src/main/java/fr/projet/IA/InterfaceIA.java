@@ -5,4 +5,6 @@ import javafx.util.Pair;
 
 public interface InterfaceIA {
     public Pair<Vertex, Vertex> playCUT();
+
+    public Pair<Vertex, Vertex> playSHORT();
 }
