@@ -205,6 +205,7 @@ public class Game {
     public void play1vs1(String message) throws IOException, DeploymentException, URISyntaxException, InterruptedException {
         if (message.isEmpty()) return;
         if (message.equals("L'adversaire a quitté la partie")) {
+            if (cutWon || shortWon) return;
             client.sendMessage(turn.toString());
             if (turn == Turn.CUT) {
                 cutWon = true;
@@ -285,4 +286,5 @@ public class Game {
     public boolean getCutWon() {
         return cutWon;
     }
+    public boolean getShortWon() { return shortWon; }
 }
