@@ -36,11 +36,13 @@ import javafx.util.Duration;
 import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+@Slf4j
 public class Gui extends Application {
 
     public static final double CIRCLE_SIZE = 20D;
@@ -179,7 +181,7 @@ public class Gui extends Application {
                 this.game = client.connect(() -> {});
                 stage.setScene(run());
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
         });
         join.getChildren().addAll(button1, textJoin);
@@ -192,7 +194,7 @@ public class Gui extends Application {
                 textCreate.setText(String.valueOf(client.getId()));
                 this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
         });
         create.getChildren().addAll(button2, textCreate);

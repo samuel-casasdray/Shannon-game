@@ -4,6 +4,7 @@ import fr.projet.Callback;
 import fr.projet.game.Game;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.websocket.*;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 @ClientEndpoint
+@Slf4j
 public class WebSocketClient {
     private Session session;
     @Getter
@@ -66,7 +68,7 @@ public class WebSocketClient {
         }
         catch (Exception e) {
             if (closed) {
-                System.out.println("Déconnexion inattendue");
+                log.error("Déconnexion inattendue");
             }
         }
     }
@@ -85,13 +87,13 @@ public class WebSocketClient {
     public void onOpen(Session session) {
         this.session = session;
         closed = false;
-        System.out.println("Connected to server");
+        log.info("Connected to server");
     }
 
     @OnMessage
     public void onMessage(String message) throws IOException, DeploymentException, URISyntaxException, InterruptedException {
         response = message;
-        System.out.println("Received message: " + message);
+        log.info("Received message: " + message);
         if (message.startsWith("{")) {
             if (callback != null)
                 callback.call();
@@ -105,6 +107,6 @@ public class WebSocketClient {
         if (timer != null)
             timer.cancel();
         closed = true;
-        System.out.println("Connection closed");
+        log.info("Connection closed");
     }
 }

@@ -5,6 +5,8 @@ import javafx.util.Pair;
 import lombok.Data;
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +15,7 @@ import java.util.Random;
 
 @Accessors(chain = true)
 @Data
+@Slf4j
 public class Graph {
 
     // nombre de vertex
@@ -36,12 +39,12 @@ public class Graph {
         }
         else {
             if (liste.getFirst() instanceof Vertex) {
-                //System.out.println("création a partir de sommet");
+                //log.info("création a partir de sommet");
                 this.vertices = (List<Vertex>) new ArrayList<>(liste);
                 this.nbVertices = liste.size();
             }
             if (liste.getFirst() instanceof Pair) {
-                //System.out.println("création a partir d'arretes");
+                //log.info("création a partir d'arretes");
                 this.neighbors = (List<Pair<Vertex, Vertex>>) new ArrayList<>(liste);
                 ;
                 this.nbVertices = liste.size();
@@ -183,9 +186,9 @@ public class Graph {
 
     public void printGraph () { //Affiche le graphe dans la console (pour debuguer surtout)
         for (Pair<Vertex, Vertex> element : neighbors) {
-            System.out.println("Arrete : "+element.getKey().toString()+element.getValue().toString());
+            log.info("Arrete : "+element.getKey().toString()+element.getValue().toString());
         }
-        System.out.println(this.vertices);
+        log.info(ToStringBuilder.reflectionToString(this.vertices));
     }
 
 

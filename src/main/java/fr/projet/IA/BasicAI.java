@@ -1,6 +1,5 @@
 package fr.projet.IA;
 
-import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
 import javafx.scene.shape.Line;
@@ -8,15 +7,10 @@ import javafx.util.Pair;
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
 
-public class BasicAI implements InterfaceIA {
-    Game game;
-    Turn plays;
-    Graph graph;
+public class BasicAI extends InterfaceIA {
 
     public BasicAI(Game game, Turn plays) {
-        this.game = game;
-        this.plays = plays;
-        this.graph = game.getGraph();
+        super(game, plays);
     }
 
     public Pair<Vertex, Vertex> playCUT() {

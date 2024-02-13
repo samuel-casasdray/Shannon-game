@@ -9,19 +9,14 @@ import javafx.util.Pair;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Minimax implements InterfaceIA {
-    Game game;
-    Turn plays;
-    Graph graph;
+public class Minimax extends InterfaceIA {
 
     //Pair<Vertex, Vertex> bestMove;
 
     int depth;
 
     public Minimax(Game game, Turn plays, int depth) {
-        this.game = game;
-        this.plays = plays;
-        this.graph = game.getGraph();
+        super(game, plays);
         this.depth = depth;
     }
 
@@ -108,17 +103,17 @@ public class Minimax implements InterfaceIA {
     }
 
     public Pair<Vertex, Vertex> playCUT () {
-        //System.out.println("debut");
+        //log.info("debut");
         ArrayList<Pair<Vertex, Vertex>> secured = game.getSecured();
         ArrayList<Pair<Vertex, Vertex>> cutted = game.getCutted();
-        //System.out.println(cutted);
+        //log.info(cutted);
         List<Pair<Integer, Pair<Vertex, Vertex>>> score = MinMaxF(secured, cutted, depth);
         if (score.isEmpty()) return null; // Cas à gérer quand l'IA ne peut plus jouer
         Pair<Integer, Pair<Vertex, Vertex>> max = score.getFirst();
         for (Pair<Integer, Pair<Vertex, Vertex>> element : score){
             if (element.getKey()>max.getKey()) max=element;
         }
-        //System.out.println("fin ---- "+max.getValue());
+        //log.info("fin ---- "+max.getValue());
         return max.getValue();
     }
 
