@@ -19,10 +19,12 @@ import javafx.scene.shape.Line;
 import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.websocket.DeploymentException;
 
 @Getter
+@Slf4j
 public class Game {
     private Graph graph;
     @Setter
@@ -163,7 +165,7 @@ public class Game {
                     sendMove(new Pair<>(key, value));
                 }
                 catch (Exception e) {
-                    System.out.println(e);
+                    log.error(e.getMessage());
                 }
             }
             else {
@@ -198,7 +200,7 @@ public class Game {
             if (!shortWon && !cutWon)
                 client.sendMessage(data);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -223,7 +225,7 @@ public class Game {
                 try {
                     results[i] = Integer.parseInt(items[i]);
                 } catch (NumberFormatException nfe) {
-                    System.out.println("Erreur de parsing dans la réponse");
+                    log.error("Erreur de parsing dans la réponse");
                     return;
                 }
             }
@@ -253,7 +255,7 @@ public class Game {
                 }
                 setTurn(t);
             } else {
-                System.out.println(key + " " + val);
+                log.info(key + " " + val);
             }
         }
     }
