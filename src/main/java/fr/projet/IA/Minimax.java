@@ -9,19 +9,14 @@ import javafx.util.Pair;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Minimax implements InterfaceIA {
-    Game game;
-    Turn plays;
-    Graph graph;
+public class Minimax extends InterfaceIA {
 
     //Pair<Vertex, Vertex> bestMove;
 
     int depth;
 
     public Minimax(Game game, Turn plays, int depth) {
-        this.game = game;
-        this.plays = plays;
-        this.graph = game.getGraph();
+        super(game, plays);
         this.depth = depth;
     }
 
