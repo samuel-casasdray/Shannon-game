@@ -168,6 +168,10 @@ async fn handle_socket(
             }
             let current_game_indice = current_game_indice as usize;
             let tx = games.games[current_game_indice].tx.clone().unwrap();
+            if vertices == *"Ping" {
+                let _ = tx.send("Pong".to_string());
+                continue;
+            }
             if vertices == *"CUT!" || vertices == *"SHORT!" { // Fin de la game
                 games.games[current_game_indice].ended = true;
                 return;
