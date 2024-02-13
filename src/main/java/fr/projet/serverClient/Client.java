@@ -22,7 +22,7 @@ public class Client {
     private static final String serverUri = serverHostname+"ws/";
     private static final String CreateGameUri = serverHostname+"create_game"; // Le nom de domaine de mon serveur
     private static final String JoinGameUri = serverHostname+"join_game/";
-    private final WebSocketClient client = new WebSocketClient();
+    private final WebSocketClient client = new WebSocketClient(true);
     private final boolean joiner;
     private String response = null;
     public Client(long id, boolean joiner) throws DeploymentException, URISyntaxException, IOException, InterruptedException {
@@ -52,7 +52,7 @@ public class Client {
 
     public static void getHandshake() {
         try {
-            WebSocketClient client = new WebSocketClient();
+            WebSocketClient client = new WebSocketClient(false);
             client.connect(serverHostname);
             if (!client.isClosed())
                 client.close();

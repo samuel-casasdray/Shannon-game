@@ -10,6 +10,8 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 @ClientEndpoint
 @Slf4j
@@ -22,8 +24,23 @@ public class WebSocketClient {
     @Getter
     @Setter
     private Callback callback;
-
-    public WebSocketClient() {}
+    @Getter
+    private static Timer timer;
+    public WebSocketClient(boolean timer) {
+        if (timer) {
+            // Permet d'envoyer à intervalle régulier des ping au serveur pour garder en vie les
+            // connexions websocket qui ont une durée de vie de 120s ou 180s
+            WebSocketClient.timer = new Timer();
+            WebSocketClient.timer.scheduleAtFixedRate(new TimerTask(){
+                @Override
+                public void run(){
+                    if (game != null && (game.getCutWon() || game.getShortWon())) WebSocketClient.getTimer().cancel();
+                    if (session != null && session.isOpen())
+                        sendMessage("Ping");
+                }
+            },0,60000);
+        }
+    }
 
     private Game game = null;
 
@@ -45,13 +62,13 @@ public class WebSocketClient {
         closed = false;
     }
 
-    public void sendMessage(String message) throws IOException, DeploymentException, URISyntaxException, InterruptedException {
+    public void sendMessage(String message) {
         try {
             session.getBasicRemote().sendText(message);
         }
         catch (Exception e) {
             if (closed) {
-                log.error("Déconnexion suite à une période d'inactivité");
+                log.error("Déconnexion inattendue");
             }
         }
     }
@@ -82,10 +99,13 @@ public class WebSocketClient {
                 callback.call();
             return;
         }
-        game.play1vs1(message);
+        if (!message.equals("Pong"))
+            game.play1vs1(message);
     }
     @OnClose
     public void onClose() {
+        if (timer != null)
+            timer.cancel();
         closed = true;
         log.info("Connection closed");
     }
