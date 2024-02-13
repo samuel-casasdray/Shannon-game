@@ -6,6 +6,7 @@ import fr.projet.WebSocket.WebSocketClient;
 import fr.projet.game.Game;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.websocket.DeploymentException;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.net.URISyntaxException;
 
 @Setter
 @Getter
+@Slf4j
 public class Client {
     @Getter
     private long id;
@@ -55,7 +57,7 @@ public class Client {
             if (!client.isClosed())
                 client.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
     public Game connect(Callback function) throws IOException {
