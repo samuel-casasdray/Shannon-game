@@ -123,18 +123,18 @@ public class Graph {
             }
         }
         //ajout d'aretes si jamais le sommet a moins de 2 voisins
-        for (int i=0; i< nbVertices; i++){
-            while(countNeighborsVertex(i)<2){
+        for (int i=0; i< nbVertices; i++) {
+            while(VertexDegree(i)<2){
                 int r;
                 do{
                     r=random.nextInt(nbVertices);
                 } while(r==i || this.vertices.get(i).getListNeighbors().contains(this.vertices.get(r)));
                 addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
             }
-        }
+        } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
     }
 
-    public int countNeighborsVertex(int indexVertex){
+    public int VertexDegree(int indexVertex) {
         Vertex vertex= this.vertices.get(indexVertex);
         int count =0;
         for(Pair<Vertex,Vertex> p: neighbors){
@@ -144,6 +144,7 @@ public class Graph {
         }
         return count;
     }
+
     public void setNbVertices(int nbVertices) {
         this.nbVertices = nbVertices;
         this.generateGraph();
@@ -204,7 +205,6 @@ public class Graph {
         return couvrant && G.estConnexe();
     }
 
-
     public boolean difference (List<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
         List<Pair<Vertex, Vertex>> VerticeNew = new ArrayList<>();
         for (Pair<Vertex, Vertex> edge : neighbors) {
@@ -215,6 +215,4 @@ public class Graph {
         Graph toTest = new Graph(VerticeNew);
         return !toTest.estConnexe();
     }
-
-
 }
