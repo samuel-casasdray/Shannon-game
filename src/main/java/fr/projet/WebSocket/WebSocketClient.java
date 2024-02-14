@@ -1,5 +1,7 @@
 package fr.projet.WebSocket;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import fr.projet.Callback;
 import fr.projet.game.Game;
 import lombok.Getter;
@@ -26,31 +28,77 @@ public class WebSocketClient {
     private Callback callback;
     @Getter
     private static Timer timer;
-    public WebSocketClient(boolean timer) {
-        if (timer) {
-            // Permet d'envoyer à intervalle régulier des ping au serveur pour garder en vie les
-            // connexions websocket qui ont une durée de vie de 120s ou 180s
-            WebSocketClient.timer = new Timer();
-            WebSocketClient.timer.scheduleAtFixedRate(new TimerTask(){
-                @Override
-                public void run(){
-                    if (game != null && (game.getCutWon() || game.getShortWon())) WebSocketClient.getTimer().cancel();
-                    if (session != null && session.isOpen())
-                        sendMessage("Ping");
-                }
-            },0,60000);
+    private static final String serverHostname = "wss://cryp.tf/";
+    private static final String serverUri = serverHostname+"ws/";
+    private static final String CreateGameUri = serverHostname+"create_game"; // Le nom de domaine de mon serveur
+    private static final String JoinGameUri = serverHostname+"join_game/";
+    private boolean joiner;
+    @Getter
+    private long id;
+    public WebSocketClient(long id, boolean joiner) throws IOException, URISyntaxException, InterruptedException {
+        if (joiner) {
+            if (!this.isClosed())
+                this.close();
+            this.connectServer(JoinGameUri + id);
         }
+        else {
+            if (!this.isClosed())
+                this.close();
+            this.connectServer(CreateGameUri);
+        }
+        this.joiner = joiner;
+        int count = 0;
+        while(response == null) {
+            if (count > 50) {
+                return; // Le serveur ne répond pas
+            }
+            response = this.getResponse();
+            Thread.sleep(100); // On attend que le serveur réponde
+            count++;
+        }
+        JsonElement jsonElement = JsonParser.parseString(response);
+        this.id = jsonElement.getAsJsonObject().get("id").getAsLong();
+        // Permet d'envoyer à intervalle régulier des ping au serveur pour garder en vie les
+        // connexions websocket qui ont une durée de vie de 120s ou 180s
+        if (timer != null)
+            timer.cancel(); // Cas qui peut se produire si l'on fait plusieurs parties à la suite
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask(){
+            @Override
+            public void run(){
+                if (game != null && (game.getCutWon() || game.getShortWon())) // Si la game est finie, on cancel le timer
+                    WebSocketClient.getTimer().cancel();
+                if (session != null && session.isOpen())
+                    sendMessage("Ping");
+            }
+        },0,60000);
     }
 
+    public WebSocketClient() {}
     private Game game = null;
 
     public void reConnect(String serverUri) throws DeploymentException, URISyntaxException, IOException, InterruptedException {
         if (isClosed()) {
-            connect(serverUri);
+            connectServer(serverUri);
         }
     }
 
-    public void connect(String serverUri) throws URISyntaxException, DeploymentException, InterruptedException, IOException {
+    public Game connect(Callback function) throws IOException {
+        try {
+            JsonElement jsonElement = JsonParser.parseString(response);
+            long seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
+            this.connectServer(serverUri + this.id);
+            Game game = new Game(this.id, joiner, this, serverUri + this.id, seed);
+            this.setGame(game);
+            this.setCallback(function);
+            return game;
+        } catch (Exception e) {
+            this.close();
+            return null;
+        }
+    }
+
+    public void connectServer(String serverUri) throws URISyntaxException, IOException {
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         try {
             container.connectToServer(this, new URI(serverUri));
@@ -73,6 +121,16 @@ public class WebSocketClient {
         }
     }
 
+    public static void getHandshake() {
+        try {
+            WebSocketClient clientHandshake = new WebSocketClient();
+            clientHandshake.connectServer(serverHostname);
+            if (!clientHandshake.isClosed())
+                clientHandshake.close();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+    }
     public void setGame(Game game) {
         if (this.game == null)
             this.game = game;

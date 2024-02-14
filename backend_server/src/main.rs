@@ -209,7 +209,7 @@ async fn handle_socket(
                 println!("Wait the next turn");
                 continue; // On empêche le joueur de jouer deux fois d'affilé
             }
-            games.games[current_game_indice].previous_move = flip(&games.games[current_game_indice].previous_move); // On change le previous move (0 -> 1 et 1 -> 0)
+            games.games[current_game_indice].previous_move.flip(); // On change le previous move (0 -> 1 et 1 -> 0)
             let _ = tx.send(json!(vertices).to_string()); // On envoie les vertices aux clients
         }
         // Si on quitte le while, l'un des deux joueurs s'est déconnecté
@@ -257,15 +257,17 @@ pub struct PartialGame {
     seed: i64,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 enum Turn {
     Cut,
     Short
 }
 
-fn flip(turn: &Turn) -> Turn {
-    match turn {
-        Turn::Cut => Turn::Short,
-        _ => Turn::Cut
+impl Turn {
+    fn flip(&mut self) {
+        *self = match *self {
+            Turn::Cut => Turn::Short,
+            _ => Turn::Cut
+        }
     }
 }

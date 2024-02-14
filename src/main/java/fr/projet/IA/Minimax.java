@@ -200,28 +200,6 @@ public class Minimax extends InterfaceIA {
 //        return score;
 //    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // public int minimax(int depth, Turn turn) {
     //     if (depth == 0) {
     //         if (game.cutWon()) return 1;

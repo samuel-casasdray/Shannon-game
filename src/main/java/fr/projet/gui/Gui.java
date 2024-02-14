@@ -1,12 +1,12 @@
 package fr.projet.gui;
 
+import fr.projet.WebSocket.WebSocketClient;
 import fr.projet.game.Game;
 import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.game.TypeJeu;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
-import fr.projet.serverClient.Client;
 import javafx.animation.ScaleTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -70,7 +70,7 @@ public class Gui extends Application {
     @Override
     public void start(Stage stage) {
         // On initialise un handshake pour éviter de devoir attendre 1 seconde lorsqu'on appuie sur create
-        new Thread(Client::getHandshake).start();
+        new Thread(WebSocketClient::getHandshake).start();
         this.stage = stage;
         stage.setScene(home());
         stage.setTitle("Shannon Game");
@@ -177,7 +177,7 @@ public class Gui extends Application {
         TextField textJoin = new TextField();
         Button button1 = createButton("Join", event -> {
             try {
-                Client client = new Client(Long.parseLong(textJoin.getText()), true);
+                WebSocketClient client = new WebSocketClient(Long.parseLong(textJoin.getText()), true);
                 this.game = client.connect(() -> {});
                 stage.setScene(run());
             } catch (Exception e) {
@@ -190,7 +190,7 @@ public class Gui extends Application {
         Text textCreate = createText("");
         Button button2 = createButton("Create", event -> {
             try {
-                Client client = new Client(0L, false);
+                WebSocketClient client = new WebSocketClient(0L, false);
                 textCreate.setText(String.valueOf(client.getId()));
                 this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
             } catch (Exception e) {
