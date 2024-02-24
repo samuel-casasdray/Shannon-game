@@ -65,7 +65,7 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
         previous_move: Turn::Short, // C'est à cut de commencer, donc le previous move est SHORT
         joined: false,  // Personne n'a rejoint jusque là
         ended: false, // La game n'est pas encore finie
-        creator_turn: creator_turn.clone()
+        creator_turn
     });
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
     while games.games.len() > 10 {
@@ -122,7 +122,7 @@ async fn join_game(
     let partial = PartialGame {
         id: games.games[current_game_indice].id,
         seed: games.games[current_game_indice].seed,
-        creator_turn: games.games[current_game_indice].creator_turn.clone()
+        creator_turn: games.games[current_game_indice].creator_turn
     };
     games.games[current_game_indice].joined = true;
     let msg = json!(partial).to_string();
@@ -267,7 +267,7 @@ pub struct PartialGame {
     creator_turn: Turn
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Copy)]
 enum Turn {
     Cut,
     Short
