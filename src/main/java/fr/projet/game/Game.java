@@ -45,7 +45,7 @@ public class Game {
     private String serverUri;
     private long id;
     private ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
-
+    private Turn creatorTurn;
     public Game() { this(false, Turn.CUT); }
     public Game(boolean withIA, Turn typeIA) {
         int nbVertices = 10;
@@ -64,8 +64,10 @@ public class Game {
         Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
     }
-    public Game(long id, boolean joiner, WebSocketClient client, String serverUri, Long seed) {
-        if (joiner) turn = Turn.SHORT;
+    public Game(long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
+        this.creatorTurn = creatorTurn;
+        if (joiner) turn = creatorTurn.flip();
+        else turn = creatorTurn;
         this.id = id;
         this.joiner = joiner;
         this.client = client;
@@ -193,7 +195,9 @@ public class Game {
     }
 
     public void sendMove(Pair<Vertex, Vertex> move) {
-        int turnValue = joiner ? 1 : 0;
+        int turnValue;
+        if (joiner) turnValue = creatorTurn == Turn.CUT ? 1: 0;
+        else turnValue = creatorTurn == Turn.CUT ? 0: 1;
         String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue;
         try {
             client.reConnect(serverUri);
@@ -204,7 +208,7 @@ public class Game {
         }
     }
 
-    public void play1vs1(String message) throws IOException, DeploymentException, URISyntaxException, InterruptedException {
+    public void play1vs1(String message) throws IOException {
         if (message.isEmpty()) return;
         if (message.equals("L'adversaire a quitté la partie")) {
             if (cutWon || shortWon) return;

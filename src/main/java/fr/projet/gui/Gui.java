@@ -15,10 +15,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -177,7 +174,7 @@ public class Gui extends Application {
         TextField textJoin = new TextField();
         Button button1 = createButton("Join", event -> {
             try {
-                WebSocketClient client = new WebSocketClient(Long.parseLong(textJoin.getText()), true);
+                WebSocketClient client = new WebSocketClient(Long.parseLong(textJoin.getText()), true, null);
                 this.game = client.connect(() -> {});
                 stage.setScene(run());
             } catch (Exception e) {
@@ -188,9 +185,10 @@ public class Gui extends Application {
 
         VBox create = new VBox(30);
         Text textCreate = createText("");
+        Turn creatorTurn = Turn.CUT; // Faire un menu déroulant pour laisser le choix ou une case à cocher, ou autre
         Button button2 = createButton("Create", event -> {
             try {
-                WebSocketClient client = new WebSocketClient(0L, false);
+                WebSocketClient client = new WebSocketClient(0L, false, creatorTurn);
                 textCreate.setText(String.valueOf(client.getId()));
                 this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
             } catch (Exception e) {
