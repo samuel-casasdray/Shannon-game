@@ -261,7 +261,7 @@ pub struct Games {
 
 #[derive(Debug, Serialize)]
 pub struct PartialGame {
-    // ça permet de pouvoir sérialiser une Game, en gardant seulement l'id et la seed
+    // ça permet de pouvoir sérialiser une Game, en gardant seulement l'id, la seed et le tour du créateur
     id: i64,
     seed: i64,
     creator_turn: Turn
