@@ -98,4 +98,10 @@ public class Vertex {
     public boolean isCutOrPanted(Vertex v) {
         return isCut(v) || isPainted(v);
     }
+
+    public double distance(Vertex v) {
+        return Math.sqrt(Math.pow(getCoords().getKey() - v.getCoords().getKey(), 2)
+                + Math.pow(getCoords().getValue() - v.getCoords().getValue(), 2));
+    }
 }
+
