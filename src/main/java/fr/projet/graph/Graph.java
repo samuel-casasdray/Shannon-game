@@ -8,10 +8,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Accessors(chain = true)
 @Data
@@ -21,7 +18,7 @@ public class Graph {
     // nombre de vertex
     private int nbVertices = 5;
 
-    private boolean aroundCircle = true;
+    private boolean aroundCircle = false;
 
     private double proba = 0.2;
 
@@ -62,14 +59,14 @@ public class Graph {
     public Graph(int nbVertices) {
         this.nbVertices = nbVertices;
         this.vertices = new ArrayList<>();
-        this.generateGraph();
+        this.generateGraphPlanaire();
     }
 
     public Graph(int nbVertices, long seed) {
         this.nbVertices = nbVertices;
         this.vertices = new ArrayList<>();
         random = new Random(seed);
-        this.generateGraph();
+        this.generateGraphPlanaire();
     }
 
 
@@ -87,11 +84,19 @@ public class Graph {
 
     public Graph() {
         this.vertices = new ArrayList<>();
-        this.generateGraph();
+        this.generateGraphPlanaire();
     }
 
     public void addVertice(Vertex v) {
         vertices.add(v);
+    }
+
+    private boolean det(double x1, double y1, double x2, double y2, double x3, double y3) {
+        return (y3-y1)*(x2-x1) > (y2-y1)*(x3-x1);
+    }
+
+    private boolean intersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+        return det(x1, y1, x3, y3, x4, y4) != det(x2, y2, x3, y3, x4, y4) && det(x1, y1, x2, y2, x3, y3) != det(x1, y1, x2, y2, x4, y4);
     }
 
     private void generateGraph() {
@@ -133,6 +138,85 @@ public class Graph {
             }
         } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
     }
+    private void generateGraphPlanaire() {
+        // Instantiation des N (nbVextex) sommets et de leur coordonnées.
+        int i = 0;
+        double minDist = 130;
+        while (vertices.size() != nbVertices) {
+            Pair<Integer, Integer> coord;
+            if (aroundCircle) {
+                // Coord autour d'un cercle
+                double toRad = Math.toRadians((double) i * 360F / nbVertices);
+                coord = new Pair<>(
+                        (int) (Math.cos(toRad) * (Gui.WINDOW_SIZE / 2D - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE / 2D),
+                        (int) (Math.sin(toRad) * (Gui.WINDOW_SIZE / 2D - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE / 2D));
+            } else {
+                // Coord aléatoire
+                coord = new Pair<>(
+                        random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE),
+                        random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE));
+            }
+            Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
+            if (getVertices().size() >= 2) {
+                for (int j = 0; j < getVertices().size(); j++)  {
+                    Vertex v = getVertices().get(random.nextInt(getVertices().size())); // Sommet aléatoire déjà créé
+                    boolean intersect = false;
+                    if (!v.equals(newVertex)) {
+                        for (int k = 0; k < getNeighbors().size(); k++) {
+                            Pair<Vertex, Vertex> neighbor = getNeighbors().get(k);
+                            if (intersect(newVertex.getCoords().getKey(), newVertex.getCoords().getValue(), v.getCoords().getKey(), v.getCoords().getValue(),
+                                    neighbor.getKey().getCoords().getKey(), neighbor.getKey().getCoords().getValue(), neighbor.getValue().getCoords().getKey(), neighbor.getValue().getCoords().getValue())) {
+                                intersect = true; // Si ya au moins une intersection, intersect = true
+                            }
+                        }
+                        if (!intersect) { // S'il n'y a aucune intersection, on place le sommet
+                            boolean distanceOk = true;
+                            for (Vertex v1: getVertices()) {
+                                if (newVertex.distance(v1) < minDist) { // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
+                                    distanceOk = false;
+                                    break;
+                                }
+                            }
+                            if (distanceOk)
+                            {
+                                addVertice(newVertex);
+                                addNeighbor(new Pair<>(newVertex, v));
+                                i++;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            else { // Ce else est dans le cas où on place les deux premiers sommets (dans ce cas aucun risque d'intersection)
+                i++;
+                if (getVertices().isEmpty() || newVertex.distance(getVertices().getFirst()) >= minDist)
+                    addVertice(newVertex);
+                if (getVertices().size() == 2) {
+                    addNeighbor(new Pair<>(newVertex, getVertices().getFirst()));
+                }
+            }
+            // Ces boucles imbriquées permettent d'éviter au maximum les sommets isolés
+                for (Vertex v: getVertices()) {
+                    for (Vertex v2: getVertices()) {
+                        if (!v.equals(v2) && v.getListNeighbors().size() == 1 && !v.getListNeighbors().contains(v2)) { // Si le sommet v est isolé (degré == 1) et que v2 n'est pas voisin de v
+                            boolean intersect = false;
+                            for (i = 0; i < neighbors.size(); i++) {
+                                Pair<Vertex, Vertex> neighbor = neighbors.get(i);
+                                if (intersect(v.getCoords().getKey(), v.getCoords().getValue(), v2.getCoords().getKey(), v2.getCoords().getValue(),
+                                        neighbor.getKey().getCoords().getKey(), neighbor.getKey().getCoords().getValue(), neighbor.getValue().getCoords().getKey(), neighbor.getValue().getCoords().getValue())) {
+                                    intersect = true;
+                                }
+                            }
+                            if (!intersect) {
+                                addNeighbor(new Pair<>(v, v2));
+                                break;
+                            }
+                        }
+                    }
+                }
+        }
+    }
 
     public int VertexDegree(int indexVertex) {
         Vertex vertex= this.vertices.get(indexVertex);
@@ -145,9 +229,19 @@ public class Graph {
         return count;
     }
 
+    public int minDeg() {
+        int minDeg = getVertices().getFirst().getListNeighbors().size();
+        for (Vertex v: getVertices()) {
+            if (v.getListNeighbors().size() < minDeg) {
+                minDeg = v.getListNeighbors().size();
+            }
+        }
+        return minDeg;
+    }
+
     public void setNbVertices(int nbVertices) {
         this.nbVertices = nbVertices;
-        this.generateGraph();
+        this.generateGraphPlanaire();
     }
 
     public boolean estConnexe() {

@@ -50,7 +50,7 @@ public class Game {
     public Game(boolean withIA, Turn typeIA) {
         int nbVertices = 10;
         graph = new Graph(nbVertices);
-        while (!graph.estConnexe()) {
+        while (graph.minDeg() == 1 || !graph.estConnexe()) {
             graph = new Graph(nbVertices);
         }
         if (withIA) {
