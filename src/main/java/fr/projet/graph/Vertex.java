@@ -38,6 +38,13 @@ public class Vertex {
         v.getListNeighbors().remove(this);
     }
 
+    public int getX() {
+        return getCoords().getKey();
+    }
+
+    public int getY() {
+        return getCoords().getValue();
+    }
     public void removeNeighborVertex(int i) {
         listNeighbors.remove(i);
     }
