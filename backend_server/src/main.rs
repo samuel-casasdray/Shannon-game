@@ -17,7 +17,7 @@ async fn main() {
     let games = Arc::new(futures::lock::Mutex::new(Games { games: vec![] }));
     let app = Router::new()
         .route("/", get(get_handshake))
-        .route("/create_game", get(create_game_handler)) // Ici, c'est pour créer une game
+        .route("/create_game/:creator_turn", get(create_game_handler)) // Ici, c'est pour créer une game
         .route("/join_game/:id", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
         .with_state(games);
@@ -40,11 +40,12 @@ async fn get_handshake(ws: WebSocketUpgrade) -> impl IntoResponse {
 async fn create_game_handler(
     ws: WebSocketUpgrade,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
+    Path(creator_turn): Path<u8>
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| create_game(socket, State(games)))
+    ws.on_upgrade(move |socket| create_game(socket, State(games), creator_turn))
 }
 
-async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::Mutex<Games>>>) {
+async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::Mutex<Games>>>, creator_turn: u8) {
     let (mut sender, _receiver) = socket.split();
     let mut games = games.lock().await;
     let mut rng = rand::thread_rng();
@@ -53,20 +54,25 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
         n = rng.gen_range(0..=1000);
     }
     let seed = rng.gen::<i64>();
+    let creator_turn = match creator_turn {
+        0 => Turn::Cut,
+        _ => Turn::Short
+    };
     games.games.push(Game {
         id: n,
         seed,
         tx: Some(broadcast::channel(100).0), // On ajoute une Game avec id et seed random, et un canal de communication
         previous_move: Turn::Short, // C'est à cut de commencer, donc le previous move est SHORT
         joined: false,  // Personne n'a rejoint jusque là
-        ended: false // La game n'est pas encore finie
+        ended: false, // La game n'est pas encore finie
+        creator_turn
     });
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
     while games.games.len() > 10 {
         games.games.remove(0); // On ne garde que les 10 dernières games (potentiellement à ajuster/enlever)
     }
     println!("{:?}", games.games);
-    let partial = PartialGame { id: n, seed }; // On créé une "Game Partielle" pour pouvoir sérializer certaines informations
+    let partial = PartialGame { id: n, seed, creator_turn }; // On créé une "Game Partielle" pour pouvoir sérializer certaines informations
     let tx = games.games.last().unwrap().tx.clone().unwrap();
     // Partie compliquée qui consiste à envoyer la Game au Client
     let mut rx = tx.subscribe();
@@ -109,12 +115,14 @@ async fn join_game(
     let (mut games, current_game_indice) = get_current_indice(games, payload);
     if current_game_indice == -1 {
         println!("No game has been found to join");
+        let _ = sender.send(Message::Text("Not found".to_string())).await;
         return;
     }
     let current_game_indice = current_game_indice as usize;
     let partial = PartialGame {
         id: games.games[current_game_indice].id,
         seed: games.games[current_game_indice].seed,
+        creator_turn: games.games[current_game_indice].creator_turn
     };
     games.games[current_game_indice].joined = true;
     let msg = json!(partial).to_string();
@@ -214,8 +222,9 @@ async fn handle_socket(
         }
         // Si on quitte le while, l'un des deux joueurs s'est déconnecté
         let games = game.lock().await;
-        let (games, current_game_indice) = get_current_indice(games, game_id);
+        let (mut games, current_game_indice) = get_current_indice(games, game_id);
         if current_game_indice != -1 {
+            games.games[current_game_indice as usize].ended = true;
             let tx = games.games[current_game_indice as usize].tx.clone().unwrap();
             let _ = tx.send("L'adversaire a quitté la partie".to_string()); // On envoie au joueur restant l'information
         }
@@ -223,12 +232,11 @@ async fn handle_socket(
     println!("WebSocket context destroyed"); // On ferme la connexion websocket
 }
 
-fn get_current_indice(mut games: MutexGuard<'_, Games>, game_id: i64) -> (MutexGuard<'_, Games>, i32) {
+fn get_current_indice(games: MutexGuard<'_, Games>, game_id: i64) -> (MutexGuard<'_, Games>, i32) {
     let mut current_game_indice = -1;
             for i in 0..games.games.len() {
                 if games.games[i].id == game_id { // On récupère l'indice de la game
                     current_game_indice = i as i32;
-                    games.games[i].ended = true;
                     break;
             }
         }
@@ -242,7 +250,8 @@ pub struct Game {
     tx: Option<broadcast::Sender<String>>,
     previous_move: Turn,
     joined: bool,
-    ended: bool
+    ended: bool,
+    creator_turn: Turn
 }
 
 #[derive(Debug)]
@@ -252,12 +261,13 @@ pub struct Games {
 
 #[derive(Debug, Serialize)]
 pub struct PartialGame {
-    // ça permet de pouvoir sérialiser une Game, en gardant seulement l'id et la seed
+    // ça permet de pouvoir sérialiser une Game, en gardant seulement l'id, la seed et le tour du créateur
     id: i64,
     seed: i64,
+    creator_turn: Turn
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Copy)]
 enum Turn {
     Cut,
     Short
