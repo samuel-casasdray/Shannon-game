@@ -8,10 +8,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Accessors(chain = true)
 @Data
@@ -21,7 +18,7 @@ public class Graph {
     // nombre de vertex
     private int nbVertices = 5;
 
-    private boolean aroundCircle = true;
+    private boolean aroundCircle = false;
 
     private double proba = 0.2;
 
@@ -62,14 +59,14 @@ public class Graph {
     public Graph(int nbVertices) {
         this.nbVertices = nbVertices;
         this.vertices = new ArrayList<>();
-        this.generateGraph();
+        this.generateGraphPlanaire();
     }
 
     public Graph(int nbVertices, long seed) {
         this.nbVertices = nbVertices;
         this.vertices = new ArrayList<>();
         random = new Random(seed);
-        this.generateGraph();
+        this.generateGraphPlanaire();
     }
 
 
@@ -87,11 +84,19 @@ public class Graph {
 
     public Graph() {
         this.vertices = new ArrayList<>();
-        this.generateGraph();
+        this.generateGraphPlanaire();
     }
 
     public void addVertice(Vertex v) {
         vertices.add(v);
+    }
+
+    private static boolean det(int x1, int y1, int x2, int y2, int x3, int y3) {
+        return (y3-y1)*(x2-x1) > (y2-y1)*(x3-x1);
+    }
+
+    private boolean intersect(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4) {
+        return det(x1, y1, x3, y3, x4, y4) != det(x2, y2, x3, y3, x4, y4) && det(x1, y1, x2, y2, x3, y3) != det(x1, y1, x2, y2, x4, y4);
     }
 
     private void generateGraph() {
@@ -133,7 +138,92 @@ public class Graph {
             }
         } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
     }
+    private void generateGraphPlanaire() {
+        // Instantiation des N (nbVextex) sommets et de leur coordonnées.
+        double minDist = 80;
+        double radius = Gui.CIRCLE_SIZE*3;
+        int maxIter = nbVertices*10000;
+        int iterCount = 0;
+        while (vertices.size() < nbVertices) {
+            iterCount++;
+            Pair<Integer, Integer> coord;
+            // Coord aléatoire
+            coord = new Pair<>(
+                    random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE),
+                    random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE));
+            Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
+            if (getVertices().size() >= 2) {
+                for (int j = 0; j < getVertices().size(); j++)  {
+                    Vertex v = getVertices().get(random.nextInt(getVertices().size())); // Sommet aléatoire déjà créé
+                    boolean intersect = false;
+                    if (!v.equals(newVertex)) {
+                        for (int k = 0; k < getNeighbors().size(); k++) {
+                            Pair<Vertex, Vertex> neighbor = getNeighbors().get(k);
+                            if (intersect(newVertex.getCoords().getKey(), newVertex.getCoords().getValue(), v.getCoords().getKey(), v.getCoords().getValue(),
+                                    neighbor.getKey().getCoords().getKey(), neighbor.getKey().getCoords().getValue(), neighbor.getValue().getCoords().getKey(), neighbor.getValue().getCoords().getValue())) {
+                                intersect = true; // Si ya au moins une intersection, intersect = true
+                                break; // S'il y a une intersection, pas la peine de continuer
+                            }
+                        }
+                        if (!intersect) { // S'il n'y a aucune intersection, on place le sommet
+                            boolean distanceOk = true;
+                            for (Vertex v1: getVertices()) {
+                                if (newVertex.distance(v1) < minDist) { // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
+                                    distanceOk = false;
+                                    break;
+                                }
+                            }
+                            if (distanceOk)
+                            {
+                                if (!thereAreACircleCollision(radius, newVertex, v)) {
+                                    addVertice(newVertex);
+                                    addNeighbor(new Pair<>(newVertex, v));
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            else { // Ce else est dans le cas où on place les deux premiers sommets (dans ce cas aucun risque d'intersection)
+                if (getVertices().isEmpty() || newVertex.distance(getVertices().getFirst()) >= minDist)
+                    addVertice(newVertex);
+            }
+            // Ces boucles imbriquées permettent d'éviter au maximum les sommets isolés
+            for (int i = 0; i < getVertices().size(); i++) {
+                Vertex v = getVertices().get(i);
+                if (v.getListNeighbors().size() <= 1)
+                    for (int j = 0; j < i; j++) {
+                        Vertex v2 = getVertices().get(j);
+                        if (!v.getListNeighbors().contains(v2)) { // Si le sommet v est isolé (degré == 1) et que v2 n'est pas voisin de v
+                            boolean intersect = false;
+                            for (Pair<Vertex, Vertex> neighbor : neighbors) {
+                                if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getCoords().getKey(), v.getCoords().getValue(), v2.getCoords().getKey(), v2.getCoords().getValue(),
+                                        neighbor.getKey().getCoords().getKey(), neighbor.getKey().getCoords().getValue(), neighbor.getValue().getCoords().getKey(), neighbor.getValue().getCoords().getValue())) {
+                                    intersect = true;
+                                    break; // S'il y a une intersection, pas la peine de continuer
+                                }
+                            }
+                            if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
+                                addNeighbor(new Pair<>(v, v2));
+                            }
+                        }
+                    }
+            }
+            if (iterCount >= maxIter) return;
+        }
+    }
 
+    private boolean thereAreACircleCollision(double radius, Vertex v1, Vertex v2) {
+        for (Vertex vertex: getVertices()) {
+            if (!vertex.equals(v1) && !vertex.equals(v2)) {
+                if (lineCircleCollision(radius, vertex, v1, v2)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     public int VertexDegree(int indexVertex) {
         Vertex vertex= this.vertices.get(indexVertex);
         int count =0;
@@ -145,9 +235,19 @@ public class Graph {
         return count;
     }
 
+    public int minDeg() {
+        int minDeg = getVertices().getFirst().getListNeighbors().size();
+        for (Vertex v: getVertices()) {
+            if (v.getListNeighbors().size() < minDeg) {
+                minDeg = v.getListNeighbors().size();
+            }
+        }
+        return minDeg;
+    }
+
     public void setNbVertices(int nbVertices) {
         this.nbVertices = nbVertices;
-        this.generateGraph();
+        this.generateGraphPlanaire();
     }
 
     public boolean estConnexe() {
@@ -181,7 +281,7 @@ public class Graph {
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
         neighbors.add(edge);
         edge.getKey().addNeighborVertex(edge.getValue());
-        edge.getValue().addNeighborVertex(edge.getKey());
+        //edge.getValue().addNeighborVertex(edge.getKey());
     }
 
 
@@ -214,5 +314,17 @@ public class Graph {
         }
         Graph toTest = new Graph(VerticeNew);
         return !toTest.estConnexe();
+    }
+
+    private double triangleArea(Vertex A, Vertex B, Vertex C) { // Renvoie l'aire du triangle formé par les sommets A B et C
+        Pair<Integer, Integer> AB = new Pair<>(B.getCoords().getKey() - A.getCoords().getKey(), B.getCoords().getValue() - A.getCoords().getValue());
+        Pair<Integer, Integer> AC = new Pair<>(C.getCoords().getKey() - A.getCoords().getKey(), C.getCoords().getValue() - A.getCoords().getValue());
+        double crossProduct = AB.getKey() * AC.getValue() - AB.getValue() * AC.getKey();
+        return Math.abs(crossProduct)/2.0;
+    }
+
+    private boolean lineCircleCollision(double radius, Vertex O, Vertex P, Vertex Q) {
+        double minimumDistance = (2*triangleArea(O, P, Q))/P.distance(Q);
+        return minimumDistance <= radius;
     }
 }

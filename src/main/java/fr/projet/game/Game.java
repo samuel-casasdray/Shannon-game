@@ -48,9 +48,9 @@ public class Game {
     private Turn creatorTurn;
     public Game() { this(false, Turn.CUT); }
     public Game(boolean withIA, Turn typeIA) {
-        int nbVertices = 10;
+        int nbVertices = 12;
         graph = new Graph(nbVertices);
-        while (!graph.estConnexe()) {
+        while (graph.getVertices().size() < nbVertices || graph.minDeg() <= 1 || !graph.estConnexe()) {
             graph = new Graph(nbVertices);
         }
         if (withIA) {
@@ -73,10 +73,10 @@ public class Game {
         this.client = client;
         this.serverUri = serverUri;
         this.pvpOnline = true;
-        int nbVertices = 10;
+        int nbVertices = 12;
         graph = new Graph(nbVertices, seed);
         int c = 1;
-        while (!graph.estConnexe()) {
+        while (graph.getVertices().size() < nbVertices || graph.minDeg() <= 1 || !graph.estConnexe()) {
             graph = new Graph(nbVertices, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
             c++;
         }
