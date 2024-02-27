@@ -154,13 +154,13 @@ public class Graph {
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
             if (getVertices().size() >= 2) {
                 for (int j = 0; j < getVertices().size(); j++)  {
-                    Vertex v = getVertices().get(random.nextInt(getVertices().size())); // Sommet aléatoire déjà créé
+                    Vertex v = getVertices().get(random.nextInt(getVertices().size()));
                     boolean intersect = false;
                     if (!v.equals(newVertex)) {
                         for (int k = 0; k < getNeighbors().size(); k++) {
                             Pair<Vertex, Vertex> neighbor = getNeighbors().get(k);
-                            if (intersect(newVertex.getCoords().getKey(), newVertex.getCoords().getValue(), v.getCoords().getKey(), v.getCoords().getValue(),
-                                    neighbor.getKey().getCoords().getKey(), neighbor.getKey().getCoords().getValue(), neighbor.getValue().getCoords().getKey(), neighbor.getValue().getCoords().getValue())) {
+                            if (intersect(newVertex.getX(), newVertex.getY(), v.getX(), v.getY(),
+                                    neighbor.getKey().getX(), neighbor.getKey().getY(), neighbor.getValue().getX(), neighbor.getValue().getY())) {
                                 intersect = true; // Si ya au moins une intersection, intersect = true
                                 break; // S'il y a une intersection, pas la peine de continuer
                             }
@@ -173,12 +173,30 @@ public class Graph {
                                     break;
                                 }
                             }
-                            if (distanceOk)
+                            if (distanceOk && !thereAreACircleCollision(radius, newVertex, v))
                             {
-                                if (!thereAreACircleCollision(radius, newVertex, v)) {
+                                // Cette boucle permet de placer le sommet ssi il n'est pas traversé par une arête déjà présente
+                                for (Pair<Vertex, Vertex> neighbor: neighbors) {
+                                    Vertex v1 = neighbor.getKey();
+                                    Vertex v2 = neighbor.getValue();
+                                    int xLeft = (int) (newVertex.getX()-radius);
+                                    int xRight = (int) (newVertex.getX()+radius);
+                                    int y = newVertex.getY();
+                                    int yTop = (int) (y+radius);
+                                    int yBottom = (int) (y-radius);
+                                    if (intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
+                                            xLeft, yTop, xRight, yBottom)) {
+                                        intersect = true;
+                                    }
+                                }
+                                if (!intersect) {
                                     addVertice(newVertex);
                                     addNeighbor(new Pair<>(newVertex, v));
+                                    break;
                                 }
+                            }
+                            else {
+                                vertices.remove(newVertex);
                                 break;
                             }
                         }
@@ -189,39 +207,48 @@ public class Graph {
                 if (getVertices().isEmpty() || newVertex.distance(getVertices().getFirst()) >= minDist)
                     addVertice(newVertex);
             }
-            // Ces boucles imbriquées permettent d'éviter au maximum les sommets isolés
-            for (int i = 0; i < getVertices().size(); i++) {
-                Vertex v = getVertices().get(i);
-                if (v.getListNeighbors().size() <= 1)
-                    for (int j = 0; j < i; j++) {
-                        Vertex v2 = getVertices().get(j);
-                        if (!v.getListNeighbors().contains(v2)) { // Si le sommet v est isolé (degré == 1) et que v2 n'est pas voisin de v
-                            boolean intersect = false;
-                            for (Pair<Vertex, Vertex> neighbor : neighbors) {
-                                if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getCoords().getKey(), v.getCoords().getValue(), v2.getCoords().getKey(), v2.getCoords().getValue(),
-                                        neighbor.getKey().getCoords().getKey(), neighbor.getKey().getCoords().getValue(), neighbor.getValue().getCoords().getKey(), neighbor.getValue().getCoords().getValue())) {
-                                    intersect = true;
-                                    break; // S'il y a une intersection, pas la peine de continuer
-                                }
-                            }
-                            if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
-                                addNeighbor(new Pair<>(v, v2));
-                            }
+            if (iterCount >= maxIter) return;
+        }
+        // Ces boucles imbriquées permettent d'éviter au maximum les sommets isolés
+        for (int i = 0; i < getVertices().size(); i++) {
+            Vertex v = getVertices().get(i);
+            for (int j = 0; j < i; j++) {
+                Vertex v2 = getVertices().get(j);
+                if (!v.getListNeighbors().contains(v2)) { // Si v2 n'est pas voisin de v
+                    boolean intersect = false;
+                    for (Pair<Vertex, Vertex> neighbor : neighbors) {
+                        if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
+                                neighbor.getKey().getX(), neighbor.getKey().getY(), neighbor.getValue().getX(), neighbor.getValue().getY())) {
+                            intersect = true;
+                            break; // S'il y a une intersection, pas la peine de continuer
                         }
                     }
+                    if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
+                        addNeighbor(new Pair<>(v, v2));
+                    }
+                }
             }
-            if (iterCount >= maxIter) return;
         }
     }
 
     private boolean thereAreACircleCollision(double radius, Vertex v1, Vertex v2) {
         for (Vertex vertex: getVertices()) {
             if (!vertex.equals(v1) && !vertex.equals(v2)) {
-                if (lineCircleCollision(radius, vertex, v1, v2)) {
+                int xLeft = (int) (vertex.getX()-radius);
+                int xRight = (int) (vertex.getX()+radius);
+                int y = vertex.getY();
+                int yTop = (int) (y+radius);
+                int yBottom = (int) (y-radius);
+                if (intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
+                        xLeft, yTop, xRight, yBottom) || intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
+                        xLeft, yBottom, xRight, yTop))
+                {
+                    //System.out.println((getVertices().indexOf(v1)+1) + " " + v1+" -> " + (getVertices().indexOf(vertex)+1)+" " +vertex+" -> "+(getVertices().indexOf(v2)+1)+" " +v2);
                     return true;
                 }
             }
         }
+        //System.out.println((getVertices().indexOf(v1)+1) + " " + v1+" -> "+(getVertices().indexOf(v2)+1)+" " +v2);
         return false;
     }
     public int VertexDegree(int indexVertex) {
@@ -317,8 +344,8 @@ public class Graph {
     }
 
     private double triangleArea(Vertex A, Vertex B, Vertex C) { // Renvoie l'aire du triangle formé par les sommets A B et C
-        Pair<Integer, Integer> AB = new Pair<>(B.getCoords().getKey() - A.getCoords().getKey(), B.getCoords().getValue() - A.getCoords().getValue());
-        Pair<Integer, Integer> AC = new Pair<>(C.getCoords().getKey() - A.getCoords().getKey(), C.getCoords().getValue() - A.getCoords().getValue());
+        Pair<Integer, Integer> AB = new Pair<>(B.getX() - A.getX(), B.getY() - A.getY());
+        Pair<Integer, Integer> AC = new Pair<>(C.getX() - A.getX(), C.getY() - A.getY());
         double crossProduct = AB.getKey() * AC.getValue() - AB.getValue() * AC.getKey();
         return Math.abs(crossProduct)/2.0;
     }
