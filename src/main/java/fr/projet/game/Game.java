@@ -48,7 +48,7 @@ public class Game {
     private Turn creatorTurn;
     public Game() { this(false, Turn.CUT); }
     public Game(boolean withIA, Turn typeIA) {
-        int nbVertices = 12;
+        int nbVertices = 20;
         graph = new Graph(nbVertices);
         while (graph.getVertices().size() < nbVertices || graph.minDeg() <= 1 || !graph.estConnexe()) {
             graph = new Graph(nbVertices);
@@ -73,7 +73,7 @@ public class Game {
         this.client = client;
         this.serverUri = serverUri;
         this.pvpOnline = true;
-        int nbVertices = 12;
+        int nbVertices = 20;
         graph = new Graph(nbVertices, seed);
         int c = 1;
         while (graph.getVertices().size() < nbVertices || graph.minDeg() <= 1 || !graph.estConnexe()) {
