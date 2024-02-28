@@ -268,7 +268,7 @@ public class Game {
     public void cutEdge(Line line) {
         lastsLines.add(new Pair<>(line, turn));
         line.setStroke(Color.BLUE);
-        line.getStrokeDashArray().addAll(25D, 10D);
+        line.getStrokeDashArray().addAll(25D, 15D);
         setColor();
     }
 
@@ -282,7 +282,7 @@ public class Game {
         if (lastsLines.size() < 2) return;
         if (lastsLines.get(lastsLines.size()-2).getValue() == Turn.CUT) {
             lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.BLACK);
-            lastsLines.get(lastsLines.size()-2).getKey().getStrokeDashArray().addAll(25D, 10D);
+            lastsLines.get(lastsLines.size()-2).getKey().getStrokeDashArray().addAll(25D, 15D);
         }
         else {
             lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.RED);
