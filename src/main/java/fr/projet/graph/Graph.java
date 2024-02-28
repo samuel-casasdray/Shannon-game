@@ -185,7 +185,8 @@ public class Graph {
                                     int yTop = (int) (y+radius);
                                     int yBottom = (int) (y-radius);
                                     if (intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
-                                            xLeft, yTop, xRight, yBottom)) {
+                                            xLeft, yTop, xRight, yBottom) || intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
+                                            xLeft, yBottom, xRight, yTop)) {
                                         intersect = true;
                                     }
                                 }
@@ -214,18 +215,16 @@ public class Graph {
             Vertex v = getVertices().get(i);
             for (int j = 0; j < i; j++) {
                 Vertex v2 = getVertices().get(j);
-                if (!v.getListNeighbors().contains(v2)) { // Si v2 n'est pas voisin de v
-                    boolean intersect = false;
-                    for (Pair<Vertex, Vertex> neighbor : neighbors) {
-                        if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
-                                neighbor.getKey().getX(), neighbor.getKey().getY(), neighbor.getValue().getX(), neighbor.getValue().getY())) {
-                            intersect = true;
-                            break; // S'il y a une intersection, pas la peine de continuer
-                        }
+                boolean intersect = false;
+                for (Pair<Vertex, Vertex> neighbor : neighbors) {
+                    if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
+                            neighbor.getKey().getX(), neighbor.getKey().getY(), neighbor.getValue().getX(), neighbor.getValue().getY())) {
+                        intersect = true;
+                        break; // S'il y a une intersection, pas la peine de continuer
                     }
-                    if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
-                        addNeighbor(new Pair<>(v, v2));
-                    }
+                }
+                if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
+                    addNeighbor(new Pair<>(v, v2));
                 }
             }
         }
@@ -306,9 +305,10 @@ public class Graph {
     }
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
-        neighbors.add(edge);
-        edge.getKey().addNeighborVertex(edge.getValue());
-        //edge.getValue().addNeighborVertex(edge.getKey());
+        if (!getNeighbors().contains(edge)) {
+            neighbors.add(edge);
+            edge.getKey().addNeighborVertex(edge.getValue());
+        }
     }
 
 
