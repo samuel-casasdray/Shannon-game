@@ -141,7 +141,7 @@ public class Graph {
     private void generateGraphPlanaire() {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 80;
-        double radius = Gui.CIRCLE_SIZE*3;
+        double radius = Gui.CIRCLE_SIZE*2;
         int maxIter = nbVertices*10000;
         int iterCount = 0;
         while (vertices.size() < nbVertices) {
@@ -215,6 +215,7 @@ public class Graph {
             Vertex v = getVertices().get(i);
             for (int j = 0; j < i; j++) {
                 Vertex v2 = getVertices().get(j);
+                if (v.equals(v2) || v.getListNeighbors().contains(v2)) continue;
                 boolean intersect = false;
                 for (Pair<Vertex, Vertex> neighbor : neighbors) {
                     if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
