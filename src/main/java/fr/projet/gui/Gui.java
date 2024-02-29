@@ -35,6 +35,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -302,13 +303,18 @@ public class Gui extends Application {
         alert.setContentText("Etes vous sûr de vouloir quitter ?");
 
 
-        ButtonType buttonAcept = new ButtonType("Accepter");
+        ButtonType buttonAccept = new ButtonType("Accepter");
         ButtonType buttonCancel = new ButtonType("Annuler");
-        alert.getButtonTypes().setAll(buttonAcept,buttonCancel);
+        alert.getButtonTypes().setAll(buttonAccept,buttonCancel);
 
         alert.showAndWait().ifPresent(response ->{
-            if (response==buttonAcept){
+            if (response==buttonAccept){
                 stage.setScene(home());
+                if (game.isPvpOnline()) {
+                    try {
+                        game.getClient().close();
+                    } catch (Exception ignored) {}
+                }
             }
         });
     }
@@ -357,7 +363,13 @@ public class Gui extends Application {
             Text text = new Text(String.valueOf(i + 1));
             text.setBoundsType(TextBoundsType.VISUAL);
             text.setFont(Font.font("Consolas", FontWeight.BOLD,15));
-            text.relocate(coord.getKey() + 16D, coord.getValue() + 16D);
+            // Centrage du texte
+            if (i >= 9) {
+                text.relocate(coord.getKey() + 13.50, coord.getValue() + 15.50);
+            }
+            else {
+                text.relocate(coord.getKey() + 16.50, coord.getValue() + 15.50);
+            }
             // Un cercle pour représenter le sommet
             Circle vertex = new Circle(CIRCLE_SIZE,
                     new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
