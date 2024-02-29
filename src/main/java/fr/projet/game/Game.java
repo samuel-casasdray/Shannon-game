@@ -1,13 +1,15 @@
 package fr.projet.game;
 import java.io.IOException;
+
+import fr.projet.IA.BasicAI;
+import fr.projet.IA.Minimax;
 import fr.projet.WebSocket.WebSocketClient;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
-import fr.projet.IA.BasicAI;
+
 import fr.projet.IA.InterfaceIA;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
@@ -21,8 +23,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.websocket.DeploymentException;
-
 @Getter
 @Slf4j
 public class Game {
@@ -31,6 +31,7 @@ public class Game {
     private Turn turn = Turn.CUT;
     @Setter
     private boolean cutWon = false;
+    @Setter
     private boolean shortWon = false;
     private boolean againstAI = false;
     private Turn typeIA;
@@ -46,17 +47,19 @@ public class Game {
     private long id;
     private ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
     private Turn creatorTurn;
+    private int nbVertices;
     public Game() { this(false, Turn.CUT); }
     public Game(boolean withIA, Turn typeIA) {
-        int nbVertices = 20;
+        nbVertices = 20;
         graph = new Graph(nbVertices);
-        while (graph.getVertices().size() < nbVertices || graph.minDeg() <= 1 || !graph.estConnexe()) {
+        while (!graphIsOkay()) {
             graph = new Graph(nbVertices);
         }
         if (withIA) {
-            ia = new BasicAI(this, turn);
+            ia = new BasicAI(this, turn); // Ou new Minimax(this, turn, 2);
             this.againstAI = true;
             this.typeIA = typeIA;
+
         }
         Random rngSeed = new Random();
         seed = rngSeed.nextLong();
@@ -73,10 +76,10 @@ public class Game {
         this.client = client;
         this.serverUri = serverUri;
         this.pvpOnline = true;
-        int nbVertices = 20;
+        nbVertices = 20;
         graph = new Graph(nbVertices, seed);
         int c = 1;
-        while (graph.getVertices().size() < nbVertices || graph.minDeg() <= 1 || !graph.estConnexe()) {
+        while (!graphIsOkay()) {
             graph = new Graph(nbVertices, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
             c++;
         }
@@ -125,6 +128,7 @@ public class Game {
                     if (!pvpOnline)
                         turn = turn.flip();
                     if (againstAI) {
+                        detectWinner();
                         play(key, value);
                         return null;
                     }
@@ -139,10 +143,10 @@ public class Game {
 
     public void showWinner() {
         if (cutWon()) {
-            Gui.PopupMessage(Turn.CUT);
+            Platform.runLater(() -> Gui.PopupMessage(Turn.CUT));
         }
         else if (shortWon()) {
-            Gui.PopupMessage(Turn.SHORT);
+            Platform.runLater(() -> Gui.PopupMessage(Turn.SHORT));
         }
     }
 
@@ -178,6 +182,7 @@ public class Game {
     }
 
     public boolean shortWon() {
+        if (shortWon) return true;
         if (!cutWon && cutted.size()+secured.size() >= graph.getNeighbors().size()) {
             shortWon = true;
         }
@@ -185,6 +190,7 @@ public class Game {
     }
 
     public boolean cutWon() {
+        if (cutWon) return true;
         List<Vertex> notCuttedVerticices = graph.getVertices();
         notCuttedVerticices.forEach(
             x -> x.setListNeighbors(x.getListNeighbors().stream().filter(y -> !x.isCut(y) && !y.isCut(x)).collect(Collectors.toCollection(ArrayList::new)))
@@ -212,13 +218,16 @@ public class Game {
         if (message.isEmpty()) return;
         if (message.equals("L'adversaire a quitté la partie")) {
             if (cutWon || shortWon) return;
-            client.sendMessage(turn.toString());
+            if (!getClient().isClosed())
+                client.sendMessage(turn.toString());
             if (turn == Turn.CUT) {
                 cutWon = true;
             }
             else {
                 shortWon = true;
             }
+            if (!getClient().isClosed())
+                showWinner();
             return;
         }
         if (message.chars().toArray()[0] == '[') {
@@ -289,6 +298,9 @@ public class Game {
         }
     }
 
+    public boolean graphIsOkay() {
+        return graph.getVertices().size() == nbVertices && graph.minDeg() >= 3 && graph.estConnexe();
+    }
     public boolean getCutWon() {
         return cutWon;
     }
