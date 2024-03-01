@@ -36,24 +36,20 @@ public class Graph {
         }
         else {
             if (liste.getFirst() instanceof Vertex) {
-                //log.info("création a partir de sommet");
                 this.vertices = (List<Vertex>) new ArrayList<>(liste);
                 this.nbVertices = liste.size();
             }
             if (liste.getFirst() instanceof Pair) {
-                //log.info("création a partir d'arretes");
                 this.neighbors = (List<Pair<Vertex, Vertex>>) new ArrayList<>(liste);
-                ;
-                this.nbVertices = liste.size();
                 List<Vertex> vertices = new ArrayList<>();
                 for (Pair<Vertex, Vertex> element : neighbors) {
                     if (!vertices.contains(element.getKey())) vertices.add(element.getKey());
                     if (!vertices.contains(element.getValue())) vertices.add(element.getValue());
                 }
                 this.vertices = vertices;
+                this.nbVertices = vertices.size();
             }
         }
-        //this.printGraph();
     }
 
     public Graph(int nbVertices) {
@@ -278,20 +274,19 @@ public class Graph {
     }
 
     public boolean estConnexe() {
-        HashSet<Vertex> marked = new HashSet<>();
-        ArrayList<Vertex> pile = new ArrayList<>();
         if (vertices.isEmpty()) {
             return true;
         }
-        pile.add(vertices.getFirst());
-        while (!pile.isEmpty()) {
-            var s = pile.getLast();
-            pile.removeLast();
-            if (!marked.contains(s)) {
-                marked.add(s);
-                for (var t: s.getListNeighbors()) {
+        HashSet<Vertex> marked = new HashSet<>();
+        Stack<Vertex> pile = new Stack<>();
+        pile.push(vertices.getFirst());
+        while (!pile.empty()) {
+            Vertex v = pile.pop();
+            if (!marked.contains(v)) {
+                marked.add(v);
+                for (Vertex t: v.getListNeighbors()) {
                     if (!marked.contains(t)) {
-                        pile.add(t);
+                        pile.push(t);
                     }
                 }
             }
@@ -322,15 +317,19 @@ public class Graph {
 
 
     public boolean estCouvrant (Graph G) { //true si G est couvrant de this
-        boolean couvrant = true;
-        List<Vertex> VerticeG = G.getVertices();
-        for (Vertex v : this.vertices) {
-            if (!VerticeG.contains(v)) {
-                couvrant = false;
-                break;
-            }
-        }
-        return couvrant && G.estConnexe();
+//        boolean couvrant = true;
+//        List<Vertex> VerticeG = G.getVertices();
+//        for (Vertex v : this.vertices) {
+//            if (!VerticeG.contains(v)) {
+//                couvrant = false;
+//                break;
+//            }
+//        }
+//        return couvrant && G.estConnexe();
+
+        // OU
+        // Je pense que cela suffit, l'algo commenté juste au dessus devrait être équivalent à :
+        return G.getNbVertices() == nbVertices && G.estConnexe();
     }
 
     public boolean difference (List<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
