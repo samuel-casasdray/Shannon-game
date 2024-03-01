@@ -270,12 +270,12 @@ public class Gui extends Application {
     // TODO : Rajouter level lorsqu'il sera mis en place
     public void handleButtonClick(TypeJeu type, Level level){
         if (type == TypeJeu.SHORT_VS_IA){
-            this.game = new Game(true, Turn.CUT);
+            this.game = new Game(true, Turn.CUT, level);
             stage.setScene(run());
             game.play(null, null);
         }
         else if (type == TypeJeu.CUT_VS_IA){
-            this.game = new Game(true, Turn.SHORT);
+            this.game = new Game(true, Turn.SHORT, level);
             stage.setScene(run());
         }
         else if (type == TypeJeu.IA_VS_IA){
