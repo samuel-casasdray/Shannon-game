@@ -48,18 +48,24 @@ public class Game {
     private ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
     private Turn creatorTurn;
     private int nbVertices;
-    public Game() { this(false, Turn.CUT); }
-    public Game(boolean withIA, Turn typeIA) {
+    public Game() { this(false, Turn.CUT, Level.EASY); }
+    public Game(boolean withIA, Turn typeIA, Level level) {
         nbVertices = 20;
         graph = new Graph(nbVertices);
         while (!graphIsOkay()) {
             graph = new Graph(nbVertices);
         }
         if (withIA) {
-            ia = new BasicAI(this, turn); // Ou new Minimax(this, turn, 2);
-            this.againstAI = true;
-            this.typeIA = typeIA;
-
+            if (level == Level.EASY) {
+                ia = new BasicAI(this, turn);
+                this.againstAI = true;
+                this.typeIA = typeIA;
+            }
+            else if (level == Level.MEDIUM) {
+                ia = new Minimax(this, turn, 2);
+                this.againstAI = true;
+                this.typeIA = typeIA;
+            }
         }
         Random rngSeed = new Random();
         seed = rngSeed.nextLong();
@@ -88,9 +94,9 @@ public class Game {
         Gui.setHandler(this::handleEvent);
     }
 
-    public Pair<Vertex, Vertex> play(Vertex key, Vertex value) {
-        if (cutWon || shortWon) return null;
-        Pair<Vertex, Vertex> played = null;
+    public void play(Vertex key, Vertex value) {
+        if (cutWon || shortWon) return;
+        Pair<Vertex, Vertex> played;
         if (againstAI && turn == typeIA) {
             if (typeIA == Turn.CUT) {
                 Pair<Vertex, Vertex> v = ia.playCUT();
@@ -104,14 +110,23 @@ public class Game {
                     }
                 }
             } else {
-                // TODO : Implementer IA PlayShort
+                Pair<Vertex, Vertex> v = ia.playSHORT();
+                v.getKey().paint(v.getValue());
+                played = new Pair<>(v.getKey(), v.getValue());
+                secured.add(played);
+                for (var element : Gui.getEdges()) {
+                    if (element.getKey().equals(v)) {
+                        paintEdge(element.getValue());
+                        break;
+                    }
+                }
             }
             turn = turn.flip();
         } else {
             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                 if (Vertex.isSameCouple(new Pair<>(key, value), neighbors.getKey())) {
                     if (key.isCutOrPanted(value)) {
-                        return null;
+                        return;
                     }
                     if (turn == Turn.CUT) {
                         key.cut(value);
@@ -130,15 +145,14 @@ public class Game {
                     if (againstAI) {
                         detectWinner();
                         play(key, value);
-                        return null;
+                        return;
                     }
                     detectWinner();
-                    return played;
+                    return;
                 }
             }
         }
         detectWinner();
-        return played;
     }
 
     public void showWinner() {
