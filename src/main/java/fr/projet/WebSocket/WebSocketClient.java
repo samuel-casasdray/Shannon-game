@@ -55,7 +55,8 @@ public class WebSocketClient {
                 return; // Le serveur ne répond pas
             }
             response = this.getResponse();
-            Thread.sleep(100); // On attend que le serveur réponde
+            if (response == null)
+                Thread.sleep(100); // On attend que le serveur réponde
             count++;
         }
         JsonElement jsonElement = JsonParser.parseString(response);
@@ -155,7 +156,7 @@ public class WebSocketClient {
     }
 
     @OnMessage
-    public void onMessage(String message) throws IOException, DeploymentException, URISyntaxException, InterruptedException {
+    public void onMessage(String message) throws IOException {
         response = message;
         log.info("Received message: " + message);
         if (message.startsWith("{")) {

@@ -16,7 +16,6 @@ use tokio::sync::broadcast;
 async fn main() {
     let games = Arc::new(futures::lock::Mutex::new(Games { games: vec![] }));
     let app = Router::new()
-        .route("/", get(get_handshake))
         .route("/create_game/:creator_turn", get(create_game_handler)) // Ici, c'est pour créer une game
         .route("/join_game/:id", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
@@ -31,10 +30,6 @@ async fn main() {
     )
     .await
     .unwrap();
-}
-
-async fn get_handshake(ws: WebSocketUpgrade) -> impl IntoResponse {
-    ws.on_upgrade(|_| async {})
 }
 
 async fn create_game_handler(

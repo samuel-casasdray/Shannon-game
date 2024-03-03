@@ -34,6 +34,7 @@ import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -201,27 +202,31 @@ public class Gui extends Application {
             }
             });
 
-        Text textCreate = createText("");
+        Text textCreate = createText("                       ");
 
         Text textTurn = createText("Choisir son joueur");
         ComboBox<String> choixTurn = new ComboBox<>();
-        choixTurn.setPromptText("indifférent");
-        choixTurn.getItems().addAll("CUT","SHORT");
-        choixTurn.setOnAction(s ->{
+        choixTurn.getItems().addAll("aléatoire", "CUT","SHORT");
+        choixTurn.getSelectionModel().selectFirst();
+
+        Button buttonCreate= createButton("Créer", event -> {
             String selectedOption = choixTurn.getSelectionModel().getSelectedItem();
             if (selectedOption.equals("SHORT") ) {
                 creatorTurn = Turn.SHORT;
             }
-        });
-
-        Button buttonCreate= createButton("Créer", event -> {
+            else if (selectedOption.equals("CUT")) {
+                creatorTurn = Turn.CUT;
+            }
+            else {
+                creatorTurn = random.nextInt(2) == 0 ? Turn.CUT : Turn.SHORT;
+            }
             try {
                 try {
                     game.getClient().close();
                 }
                 catch (Exception ignored) {}
                 WebSocketClient client = new WebSocketClient(0L, false, creatorTurn);
-                textCreate.setText("Code de la partie: " + client.getId());
+                textCreate.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(client.getId()), 4));
                 this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
             } catch (Exception e) {
                 log.error(e.getMessage());
