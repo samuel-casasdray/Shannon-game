@@ -5,9 +5,7 @@ import fr.projet.IA.BasicAI;
 import fr.projet.IA.Minimax;
 import fr.projet.WebSocket.WebSocketClient;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import fr.projet.IA.InterfaceIA;
@@ -197,10 +195,30 @@ public class Game {
 
     public boolean shortWon() {
         if (shortWon) return true;
-        if (!cutWon && cutted.size()+secured.size() >= graph.getNeighbors().size()) {
-            shortWon = true;
-        }
+        Graph redGraph = new Graph(getSecured());
+        shortWon = redGraph.getNbVertices() == graph.getNbVertices() && redGraphIsConnexe(redGraph);
         return shortWon;
+    }
+
+    private boolean redGraphIsConnexe(Graph redGraph) {
+        if (redGraph.getVertices().isEmpty()) {
+            return true;
+        }
+        HashSet<Vertex> marked = new HashSet<>();
+        Stack<Vertex> pile = new Stack<>();
+        pile.push(redGraph.getVertices().getFirst());
+        while (!pile.empty()) {
+            Vertex v = pile.pop();
+            if (!marked.contains(v)) {
+                marked.add(v);
+                for (Vertex t: v.getListNeighbors().stream().filter(x -> x.isPainted(v) || v.isPainted(x)).toList()) {
+                    if (!marked.contains(t)) {
+                        pile.push(t);
+                    }
+                }
+            }
+        }
+        return marked.size() == redGraph.getVertices().size();
     }
 
     public boolean cutWon() {
@@ -313,7 +331,7 @@ public class Game {
     }
 
     public boolean graphIsOkay() {
-        return graph.getVertices().size() == nbVertices && graph.minDeg() >= 3 && graph.estConnexe();
+        return graph.getVertices().size() == nbVertices && graph.minDeg() >= 3 && graph.maxDeg() < 8 && graph.estConnexe();
     }
     public boolean getCutWon() {
         return cutWon;

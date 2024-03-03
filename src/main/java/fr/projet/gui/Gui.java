@@ -189,6 +189,10 @@ public class Gui extends Application {
         Turn creatorTurn = Turn.CUT; // Faire un menu déroulant pour laisser le choix ou une case à cocher, ou autre
         Button button2 = createButton("Create", event -> {
             try {
+                try {
+                    game.getClient().close();
+                }
+                catch (Exception ignored) {}
                 WebSocketClient client = new WebSocketClient(0L, false, creatorTurn);
                 textCreate.setText(String.valueOf(client.getId()));
                 this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
@@ -289,6 +293,10 @@ public class Gui extends Application {
             PopupMessage();
         }
         else if (nomscene.equals("Choix 1")){
+            try {
+                game.getClient().close();
+            }
+            catch (Exception ignored) {}
             stage.setScene(home());
         }
         else if (nomscene.equals("Choix 2")) {

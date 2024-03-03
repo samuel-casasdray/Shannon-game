@@ -138,9 +138,9 @@ public class Graph {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 80;
         double radius = Gui.CIRCLE_SIZE*2;
-        int maxIter = nbVertices*10000;
+        int maxIter = getNbVertices()*10000;
         int iterCount = 0;
-        while (vertices.size() < nbVertices) {
+        while (getVertices().size() < getNbVertices()) {
             iterCount++;
             Pair<Integer, Integer> coord;
             // Coord aléatoire
@@ -172,7 +172,7 @@ public class Graph {
                             if (distanceOk && !thereAreACircleCollision(radius, newVertex, v))
                             {
                                 // Cette boucle permet de placer le sommet ssi il n'est pas traversé par une arête déjà présente
-                                for (Pair<Vertex, Vertex> neighbor: neighbors) {
+                                for (Pair<Vertex, Vertex> neighbor: getNeighbors()) {
                                     Vertex v1 = neighbor.getKey();
                                     Vertex v2 = neighbor.getValue();
                                     int xLeft = (int) (newVertex.getX()-radius);
@@ -184,17 +184,13 @@ public class Graph {
                                             xLeft, yTop, xRight, yBottom) || intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
                                             xLeft, yBottom, xRight, yTop)) {
                                         intersect = true;
+                                        break;
                                     }
                                 }
                                 if (!intersect) {
                                     addVertice(newVertex);
                                     addNeighbor(new Pair<>(newVertex, v));
-                                    break;
                                 }
-                            }
-                            else {
-                                vertices.remove(newVertex);
-                                break;
                             }
                         }
                     }
@@ -213,7 +209,7 @@ public class Graph {
                 Vertex v2 = getVertices().get(j);
                 if (v.equals(v2) || v.getListNeighbors().contains(v2)) continue;
                 boolean intersect = false;
-                for (Pair<Vertex, Vertex> neighbor : neighbors) {
+                for (Pair<Vertex, Vertex> neighbor : getNeighbors()) {
                     if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
                             neighbor.getKey().getX(), neighbor.getKey().getY(), neighbor.getValue().getX(), neighbor.getValue().getY())) {
                         intersect = true;
@@ -238,19 +234,15 @@ public class Graph {
                 if (intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
                         xLeft, yTop, xRight, yBottom) || intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
                         xLeft, yBottom, xRight, yTop))
-                {
-                    //System.out.println((getVertices().indexOf(v1)+1) + " " + v1+" -> " + (getVertices().indexOf(vertex)+1)+" " +vertex+" -> "+(getVertices().indexOf(v2)+1)+" " +v2);
                     return true;
-                }
             }
         }
-        //System.out.println((getVertices().indexOf(v1)+1) + " " + v1+" -> "+(getVertices().indexOf(v2)+1)+" " +v2);
         return false;
     }
     public int VertexDegree(int indexVertex) {
-        Vertex vertex= this.vertices.get(indexVertex);
+        Vertex vertex= getVertices().get(indexVertex);
         int count =0;
-        for(Pair<Vertex,Vertex> p: neighbors){
+        for(Pair<Vertex,Vertex> p: getNeighbors()){
             if (p.getKey().equals(vertex)){
                 count++;
             }
@@ -268,18 +260,28 @@ public class Graph {
         return minDeg;
     }
 
+    public int maxDeg() {
+        int maxDeg = getVertices().getFirst().getListNeighbors().size();
+        for (Vertex v: getVertices()) {
+            if (v.getListNeighbors().size() > maxDeg) {
+                maxDeg = v.getListNeighbors().size();
+            }
+        }
+        return maxDeg;
+    }
+
     public void setNbVertices(int nbVertices) {
         this.nbVertices = nbVertices;
         this.generateGraphPlanaire();
     }
 
     public boolean estConnexe() {
-        if (vertices.isEmpty()) {
+        if (getVertices().isEmpty()) {
             return true;
         }
         HashSet<Vertex> marked = new HashSet<>();
         Stack<Vertex> pile = new Stack<>();
-        pile.push(vertices.getFirst());
+        pile.push(getVertices().getFirst());
         while (!pile.empty()) {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
@@ -291,7 +293,7 @@ public class Graph {
                 }
             }
         }
-        return marked.size() == vertices.size();
+        return marked.size() == getVertices().size();
     }
 
     public void removeNeighbor(Pair<Vertex, Vertex> edge) {
