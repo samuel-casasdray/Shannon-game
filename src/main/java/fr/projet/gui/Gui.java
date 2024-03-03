@@ -166,18 +166,18 @@ public class Gui extends Application {
     }
 
     private Scene PvP() {
-        VBox root = getBasicScene();
-
+        VBox scene = getBasicScene();
+        GridPane root = new GridPane();
+        root.setAlignment(Pos.CENTER);
+        root.setHgap(90);
+        root.setVgap(25);
+        root.setPadding(new Insets(30,5,5,5));
 
         Text text1 = createText("Joueur vs Joueur", true);
 
-        HBox type = new HBox(60);
-
-        VBox join = new VBox(30);
         TextField textJoin = new TextField();
         textJoin.setPromptText("code de partie");
-        Button button1 = createButton("Rejoindre", event -> {
-            textJoin.setVisible(true);
+        Button buttonJoin = createButton("Rejoindre", event -> {
             try {
                 WebSocketClient client = new WebSocketClient(Long.parseLong(textJoin.getText()), true, null);
                 this.game = client.connect(() -> {});
@@ -201,62 +201,43 @@ public class Gui extends Application {
             }
             });
 
-
-        join.getChildren().addAll(button1, textJoin);
-
-        VBox create = new VBox(30);
         Text textCreate = createText("");
-
 
         Text textTurn = createText("Choisir son joueur");
         ComboBox<String> choixTurn = new ComboBox<>();
-        choixTurn.getItems().addAll("indifférent","CUT","SHORT");
+        choixTurn.setPromptText("indifférent");
+        choixTurn.getItems().addAll("CUT","SHORT");
         choixTurn.setOnAction(s ->{
             String selectedOption = choixTurn.getSelectionModel().getSelectedItem();
             if (selectedOption.equals("SHORT") ) {
                 creatorTurn = Turn.SHORT;
-                try {
-                    try {
-                        game.getClient().close();
-                    } catch (Exception ignored) {
-                    }
-                    WebSocketClient client = new WebSocketClient(0L, false, creatorTurn);
-                    textCreate.setText(String.valueOf(client.getId()));
-                    this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
-                } catch (Exception e) {
-                    log.error(e.getMessage());
-                }
             }
         });
 
-        Button button3 = createButton("Créer", event -> {
-            textTurn.setVisible(true);
-            choixTurn.setVisible(true);
+        Button buttonCreate= createButton("Créer", event -> {
             try {
                 try {
                     game.getClient().close();
                 }
                 catch (Exception ignored) {}
                 WebSocketClient client = new WebSocketClient(0L, false, creatorTurn);
-                textCreate.setText(String.valueOf(client.getId()));
+                textCreate.setText("Code de la partie: " + client.getId());
                 this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
         });
 
+        root.add(textJoin, 0, 1);
+        root.add(buttonJoin, 0, 0);
+        root.add(textCreate, 1, 3);
+        root.add(buttonCreate, 1, 0);
+        root.add(textTurn, 1, 1);
+        root.add(choixTurn, 1, 2);
 
-        textTurn.setVisible(false);
-        choixTurn.setVisible(false);
-        textJoin.setVisible(false);
-        create.getChildren().addAll(button3, textCreate,textTurn,choixTurn);
+        scene.getChildren().addAll(getSceneWithReturn("Choix 1"),text1,root);
 
-        type.getChildren().addAll(join, create);
-        type.setAlignment(Pos.CENTER);
-
-        root.getChildren().addAll(getSceneWithReturn("Choix 1"),text1,type);
-
-        return new Scene(root, WINDOW_SIZE, WINDOW_SIZE);
+        return new Scene(scene, WINDOW_SIZE, WINDOW_SIZE);
     }
 
     private Scene Joueur(Level level){
