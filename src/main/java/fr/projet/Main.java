@@ -1,6 +1,6 @@
 package fr.projet;
 
-import fr.projet.WebSocket.WebSocketClient;
+import fr.projet.server.WebSocketClient;
 import fr.projet.gui.Gui;
 import javafx.application.Application;
 
