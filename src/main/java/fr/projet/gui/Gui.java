@@ -62,6 +62,7 @@ public class Gui extends Application {
     @Setter
     private static long seed;
     private Random random = new Random();
+    private Turn creatorTurn = Turn.CUT;
     private Stage stage;
 
 
@@ -167,13 +168,16 @@ public class Gui extends Application {
     private Scene PvP() {
         VBox root = getBasicScene();
 
-        Text text1 = createText("Player vs Player", true);
+
+        Text text1 = createText("Joueur vs Joueur", true);
 
         HBox type = new HBox(60);
 
         VBox join = new VBox(30);
         TextField textJoin = new TextField();
-        Button button1 = createButton("Join", event -> {
+        textJoin.setPromptText("code de partie");
+        Button button1 = createButton("Rejoindre", event -> {
+            textJoin.setVisible(true);
             try {
                 WebSocketClient client = new WebSocketClient(Long.parseLong(textJoin.getText()), true, null);
                 this.game = client.connect(() -> {});
@@ -182,12 +186,52 @@ public class Gui extends Application {
                 log.error(e.getMessage());
             }
         });
+
+        textJoin.setOnKeyPressed(event -> {
+            if (event.getCode().getName().equals("Enter")) {
+                textJoin.setVisible(true);
+                try {
+                    WebSocketClient client = new WebSocketClient(Long.parseLong(textJoin.getText()), true, null);
+                    this.game = client.connect(() -> {
+                    });
+                    stage.setScene(run());
+                } catch (Exception e) {
+                    log.error(e.getMessage());
+                }
+            }
+            });
+
+
         join.getChildren().addAll(button1, textJoin);
 
         VBox create = new VBox(30);
         Text textCreate = createText("");
-        Turn creatorTurn = Turn.CUT; // Faire un menu déroulant pour laisser le choix ou une case à cocher, ou autre
-        Button button2 = createButton("Create", event -> {
+
+
+        Text textTurn = createText("Choisir son joueur");
+        ComboBox<String> choixTurn = new ComboBox<>();
+        choixTurn.getItems().addAll("indifférent","CUT","SHORT");
+        choixTurn.setOnAction(s ->{
+            String selectedOption = choixTurn.getSelectionModel().getSelectedItem();
+            if (selectedOption.equals("SHORT") ) {
+                creatorTurn = Turn.SHORT;
+                try {
+                    try {
+                        game.getClient().close();
+                    } catch (Exception ignored) {
+                    }
+                    WebSocketClient client = new WebSocketClient(0L, false, creatorTurn);
+                    textCreate.setText(String.valueOf(client.getId()));
+                    this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+                } catch (Exception e) {
+                    log.error(e.getMessage());
+                }
+            }
+        });
+
+        Button button3 = createButton("Créer", event -> {
+            textTurn.setVisible(true);
+            choixTurn.setVisible(true);
             try {
                 try {
                     game.getClient().close();
@@ -200,7 +244,12 @@ public class Gui extends Application {
                 log.error(e.getMessage());
             }
         });
-        create.getChildren().addAll(button2, textCreate);
+
+
+        textTurn.setVisible(false);
+        choixTurn.setVisible(false);
+        textJoin.setVisible(false);
+        create.getChildren().addAll(button3, textCreate,textTurn,choixTurn);
 
         type.getChildren().addAll(join, create);
         type.setAlignment(Pos.CENTER);
@@ -232,6 +281,8 @@ public class Gui extends Application {
         root.getChildren().addAll(getSceneWithReturn("Choix 1"),title,text1,facile,normal,difficile);
         return new Scene(root, WINDOW_SIZE, WINDOW_SIZE);
     }
+
+
 
     //Fonction qui change la taille des boutons lorsqu'on les survole
    private void addHoverEffect(Button button) {
