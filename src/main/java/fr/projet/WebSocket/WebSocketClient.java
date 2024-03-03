@@ -79,7 +79,7 @@ public class WebSocketClient {
     public WebSocketClient() {}
     private Game game = null;
 
-    public void reConnect(String serverUri) throws DeploymentException, URISyntaxException, IOException, InterruptedException {
+    public void reConnect(String serverUri) throws URISyntaxException, IOException {
         if (isClosed()) {
             connectServer(serverUri);
         }
@@ -141,7 +141,10 @@ public class WebSocketClient {
 
     public void close() throws IOException {
         if (session != null && session.isOpen())
+        {
             session.close();
+            if (timer != null) timer.cancel();
+        }
     }
 
     @OnOpen

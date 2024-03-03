@@ -111,7 +111,8 @@ async fn join_game(
     payload: i64,
 ) {
     let (mut sender, _receiver) = socket.split();
-    let games = games.lock().await;
+    let mut games = games.lock().await;
+    games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
     let (mut games, current_game_indice) = get_current_indice(games, payload);
     if current_game_indice == -1 {
         println!("No game has been found to join");
@@ -184,7 +185,7 @@ async fn handle_socket(
                 games.games[current_game_indice].ended = true;
                 return;
             }
-            if vertices == *"CUT" || vertices == *"SHORT" { // Un des deux joueurs a déconnecté, et celui qui est resté à répondu
+            if vertices == *"CUT" || vertices == *"SHORT" { // Un des deux joueurs s'est déconnecté, et celui qui est resté à répondu
                 let _ = tx.send(vertices + " a gagné"); // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
                 games.games[current_game_indice].ended = true;
                 return;
@@ -226,7 +227,9 @@ async fn handle_socket(
         if current_game_indice != -1 {
             games.games[current_game_indice as usize].ended = true;
             let tx = games.games[current_game_indice as usize].tx.clone().unwrap();
-            let _ = tx.send("L'adversaire a quitté la partie".to_string()); // On envoie au joueur restant l'information
+            if games.games[current_game_indice as usize].joined {
+                let _ = tx.send("L'adversaire a quitté la partie".to_string()); // On envoie au joueur restant l'information
+            }
         }
     });
     println!("WebSocket context destroyed"); // On ferme la connexion websocket
