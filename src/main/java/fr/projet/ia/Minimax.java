@@ -1,4 +1,4 @@
-package fr.projet.IA;
+package fr.projet.ia;
 
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
@@ -90,10 +90,10 @@ public class Minimax extends InterfaceIA {
 //        return this.graph.estCouvrant(testSecured) || this.graph.difference(cutted);
 //    }
 
-    public int evaluate (Graph G, ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted) {
+    public int evaluate (Graph graph, List<Pair<Vertex, Vertex>> secured, List<Pair<Vertex, Vertex>> cutted) {
         Graph testSecured = new Graph(secured);
-        if (G.estCouvrant(testSecured)) return -10;
-        if (G.difference(cutted)) return 10;
+        if (graph.estCouvrant(testSecured)) return -10;
+        if (graph.difference(cutted)) return 10;
         return 0;
     }
 
@@ -103,26 +103,23 @@ public class Minimax extends InterfaceIA {
     }
 
     public Pair<Vertex, Vertex> playCUT () {
-        //log.info("debut");
-        ArrayList<Pair<Vertex, Vertex>> secured = game.getSecured();
-        ArrayList<Pair<Vertex, Vertex>> cutted = game.getCutted();
-        //log.info(cutted);
-        List<Pair<Integer, Pair<Vertex, Vertex>>> score = MinMaxF(secured, cutted, depth);
+        List<Pair<Vertex, Vertex>> secured = game.getSecured();
+        List<Pair<Vertex, Vertex>> cutted = game.getCutted();
+        List<Pair<Integer, Pair<Vertex, Vertex>>> score = minMaxF(secured, cutted, depth);
         if (score.isEmpty()) return null; // Cas à gérer quand l'IA ne peut plus jouer
         Pair<Integer, Pair<Vertex, Vertex>> max = score.getFirst();
         for (Pair<Integer, Pair<Vertex, Vertex>> element : score){
             if (element.getKey()>max.getKey()) max=element;
         }
-        //log.info("fin ---- "+max.getValue());
         return max.getValue();
     }
 
-    public List<Pair<Integer, Pair<Vertex, Vertex>>> MinMaxF (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted, int depth) {
+    public List<Pair<Integer, Pair<Vertex, Vertex>>> minMaxF(List<Pair<Vertex, Vertex>> secured, List<Pair<Vertex, Vertex>> cutted, int depth) {
         //score contient en fait des paire qui corresponde à une arrete le score qu'on lui a calculé
         List<Pair<Integer, Pair<Vertex, Vertex>>> score = new ArrayList<>(); //Les scores associé aux arrete
-        List<Pair<Vertex, Vertex>> AllEdges = this.graph.getNeighbors();
+        List<Pair<Vertex, Vertex>> allEdges = this.graph.getNeighbors();
         List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
-        for (Pair<Vertex, Vertex> toCut : AllEdges) { // Liste des arrete jouables
+        for (Pair<Vertex, Vertex> toCut : allEdges) { // Liste des arrete jouables
             if (!secured.contains(toCut) && !cutted.contains(toCut)) {
                 edges.add(toCut);
             }
@@ -148,7 +145,7 @@ public class Minimax extends InterfaceIA {
                     copieSecure.add(toSecure);
                     //Une fois qu'on a immaginé notre coup et celui de l'adversaire c'est à nous de jouer à nouveau donc on fait l'appel récursif
                     //On ajoute donc au tableau scoreEdge les sommes des evalutations des arretes restante en fonction de chaque securisation
-                    scoreEdge.add(sum (MinMaxF(copieSecure,copieCutted, depth-1) ));
+                    scoreEdge.add(sum (minMaxF(copieSecure,copieCutted, depth-1) ));
                 }
             }
             //Maintenant scoreEdge contient pour chaque securisation de CUT, les valeur des evaluations de nos coup suivant, le score de l'arrete est donc la somme de ces valeurs
@@ -199,6 +196,28 @@ public class Minimax extends InterfaceIA {
 //        }
 //        return score;
 //    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // public int minimax(int depth, Turn turn) {
     //     if (depth == 0) {
