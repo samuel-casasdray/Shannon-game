@@ -1,4 +1,4 @@
-package fr.projet.WebSocket;
+package fr.projet.server;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -29,10 +29,10 @@ public class WebSocketClient {
     private Callback callback;
     @Getter
     private static Timer timer;
-    private static final String serverHostname = "wss://cryp.tf/";
-    private static final String serverUri = serverHostname+"ws/";
-    private static final String CreateGameUri = serverHostname+"create_game/"; // Le nom de domaine de mon serveur
-    private static final String JoinGameUri = serverHostname+"join_game/";
+    private static final String SERVER_HOSTNAME = "wss://cryp.tf/";
+    private static final String SERVER_URI = SERVER_HOSTNAME +"ws/";
+    private static final String CREATE_GAME_URI = SERVER_HOSTNAME +"create_game/"; // Le nom de domaine de mon serveur
+    private static final String JOIN_GAME_URI = SERVER_HOSTNAME +"join_game/";
     private boolean joiner;
     @Getter
     private long id;
@@ -41,12 +41,12 @@ public class WebSocketClient {
         if (joiner) {
             if (!this.isClosed())
                 this.close();
-            this.connectServer(JoinGameUri + id);
+            this.connectServer(JOIN_GAME_URI + id);
         }
         else {
             if (!this.isClosed())
                 this.close();
-            this.connectServer(CreateGameUri+creatorTurn);
+            this.connectServer(CREATE_GAME_URI +creatorTurn);
         }
         this.joiner = joiner;
         int count = 0;
@@ -89,10 +89,9 @@ public class WebSocketClient {
         try {
             JsonElement jsonElement = JsonParser.parseString(response);
             long seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
-            this.connectServer(serverUri + this.id);
+            this.connectServer(SERVER_URI + this.id);
             Turn turn = jsonElement.getAsJsonObject().get("creator_turn").getAsString().equals("Short") ? Turn.SHORT : Turn.CUT;
-            Game game = new Game(this.id, joiner, this, serverUri + this.id, seed, turn);
-            this.setGame(game);
+            this.game = new Game(this.id, joiner, this, SERVER_URI + this.id, seed, turn);
             this.setCallback(function);
             return game;
         } catch (Exception e) {
@@ -127,7 +126,7 @@ public class WebSocketClient {
     public static void getHandshake() {
         try {
             WebSocketClient clientHandshake = new WebSocketClient();
-            clientHandshake.connectServer(serverHostname);
+            clientHandshake.connectServer(SERVER_HOSTNAME);
             if (!clientHandshake.isClosed())
                 clientHandshake.close();
         } catch (Exception e) {
