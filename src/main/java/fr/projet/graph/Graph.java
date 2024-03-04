@@ -1,6 +1,6 @@
 package fr.projet.graph;
 
-import fr.projet.gui.Gui;
+import fr.projet.gui.UtilsGui;
 import javafx.util.Pair;
 import lombok.Data;
 import lombok.Getter;
@@ -35,19 +35,21 @@ public class Graph {
             this.neighbors= new ArrayList<>();
         }
         else {
+            // Création à partir de sommet
             if (liste.getFirst() instanceof Vertex) {
                 this.vertices = (List<Vertex>) new ArrayList<>(liste);
                 this.nbVertices = liste.size();
             }
+            // Création à partir d'arretes
             if (liste.getFirst() instanceof Pair) {
                 this.neighbors = (List<Pair<Vertex, Vertex>>) new ArrayList<>(liste);
-                List<Vertex> vertices = new ArrayList<>();
+                List<Vertex> vertexList = new ArrayList<>();
                 for (Pair<Vertex, Vertex> element : neighbors) {
-                    if (!vertices.contains(element.getKey())) vertices.add(element.getKey());
-                    if (!vertices.contains(element.getValue())) vertices.add(element.getValue());
+                    if (!vertexList.contains(element.getKey())) vertexList.add(element.getKey());
+                    if (!vertexList.contains(element.getValue())) vertexList.add(element.getValue());
                 }
-                this.vertices = vertices;
-                this.nbVertices = vertices.size();
+                this.vertices = vertexList;
+                this.nbVertices = vertexList.size();
             }
         }
     }
@@ -64,19 +66,6 @@ public class Graph {
         random = new Random(seed);
         this.generateGraphPlanaire();
     }
-
-
-//    public Graph (List<Pair<Vertex, Vertex>> neighbors) {
-//        this.neighbors=neighbors;
-//        this.nbVertices= neighbors.size();
-//        List<Vertex> vertices = new ArrayList<>();
-//        for (Pair<Vertex, Vertex> element : neighbors) {
-//            if (!vertices.contains(element.getKey())) vertices.add(element.getKey());
-//            if (!vertices.contains(element.getValue())) vertices.add(element.getValue());
-//        }
-//        this.vertices=vertices;
-//    }
-
 
     public Graph() {
         this.vertices = new ArrayList<>();
@@ -103,13 +92,13 @@ public class Graph {
                 // Coord autour d'un cercle
                 double toRad = Math.toRadians((double) i * 360F / nbVertices);
                 coord = new Pair<>(
-                        (int) (Math.cos(toRad) * (Gui.WINDOW_SIZE / 2D - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE / 2D),
-                        (int) (Math.sin(toRad) * (Gui.WINDOW_SIZE / 2D - Gui.WINDOW_MARGE) + Gui.WINDOW_SIZE / 2D));
+                        (int) (Math.cos(toRad) * (UtilsGui.WINDOW_SIZE / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_SIZE / 2D),
+                        (int) (Math.sin(toRad) * (UtilsGui.WINDOW_SIZE / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_SIZE / 2D));
             } else {
                 // Coord aléatoire
                 coord = new Pair<>(
-                        random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE),
-                        random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE));
+                        random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
+                        random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
             }
             // On ajoute le sommet au graphe
             addVertice(new Vertex(coord.getKey(), coord.getValue()));
@@ -125,9 +114,9 @@ public class Graph {
         }
         //ajout d'aretes si jamais le sommet a moins de 2 voisins
         for (int i=0; i< nbVertices; i++) {
-            while(VertexDegree(i)<2){
+            while(vertexDegree(i)<2){
                 int r;
-                do{
+                do {
                     r=random.nextInt(nbVertices);
                 } while(r==i || this.vertices.get(i).getListNeighbors().contains(this.vertices.get(r)));
                 addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
@@ -137,7 +126,7 @@ public class Graph {
     private void generateGraphPlanaire() {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 80;
-        double radius = Gui.CIRCLE_SIZE*2;
+        double radius = UtilsGui.CIRCLE_SIZE*2;
         int maxIter = getNbVertices()*10000;
         int iterCount = 0;
         while (getVertices().size() < getNbVertices()) {
@@ -145,8 +134,8 @@ public class Graph {
             Pair<Integer, Integer> coord;
             // Coord aléatoire
             coord = new Pair<>(
-                    random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE),
-                    random.nextInt(Gui.WINDOW_MARGE, Gui.WINDOW_SIZE - Gui.WINDOW_MARGE));
+                    random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
+                    random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
             if (getVertices().size() >= 2) {
                 for (int j = 0; j < getVertices().size(); j++)  {
@@ -239,7 +228,7 @@ public class Graph {
         }
         return false;
     }
-    public int VertexDegree(int indexVertex) {
+    public int vertexDegree(int indexVertex) {
         Vertex vertex= getVertices().get(indexVertex);
         int count =0;
         for(Pair<Vertex,Vertex> p: getNeighbors()){
@@ -317,7 +306,6 @@ public class Graph {
         log.info(ToStringBuilder.reflectionToString(this.vertices));
     }
 
-
     public boolean estCouvrant (Graph G) { //true si G est couvrant de this
 //        boolean couvrant = true;
 //        List<Vertex> VerticeG = G.getVertices();
@@ -335,20 +323,20 @@ public class Graph {
     }
 
     public boolean difference (List<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
-        List<Pair<Vertex, Vertex>> VerticeNew = new ArrayList<>();
+        List<Pair<Vertex, Vertex>> verticeNew = new ArrayList<>();
         for (Pair<Vertex, Vertex> edge : neighbors) {
             if (!cutted.contains(edge)) {
-                VerticeNew.add(edge);
+                verticeNew.add(edge);
             }
         }
-        Graph toTest = new Graph(VerticeNew);
+        Graph toTest = new Graph(verticeNew);
         return !toTest.estConnexe();
     }
 
-    private double triangleArea(Vertex A, Vertex B, Vertex C) { // Renvoie l'aire du triangle formé par les sommets A B et C
-        Pair<Integer, Integer> AB = new Pair<>(B.getX() - A.getX(), B.getY() - A.getY());
-        Pair<Integer, Integer> AC = new Pair<>(C.getX() - A.getX(), C.getY() - A.getY());
-        double crossProduct = AB.getKey() * AC.getValue() - AB.getValue() * AC.getKey();
+    private double triangleArea(Vertex a, Vertex b, Vertex c) { // Renvoie l'aire du triangle formé par les sommets A B et C
+        Pair<Double, Double> ab = new Pair<>((double) (b.getX() - a.getX()), (double) (b.getY() - a.getY()));
+        Pair<Double, Double> ac = new Pair<>((double) (c.getX() - a.getX()), (double) (c.getY() - a.getY()));
+        double crossProduct = ab.getKey() * ac.getValue() - ab.getValue() * ac.getKey();
         return Math.abs(crossProduct)/2.0;
     }
 

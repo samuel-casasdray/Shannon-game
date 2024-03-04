@@ -1,4 +1,4 @@
-package fr.projet.IA;
+package fr.projet.ia;
 
 import fr.projet.game.Game;
 import fr.projet.game.Turn;

@@ -1,4 +1,4 @@
-package fr.projet.IA;
+package fr.projet.ia;
 
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
@@ -24,7 +24,7 @@ public class BasicAI extends InterfaceIA {
                 for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                     if (Vertex.isSameCouple(new Pair<>(element.getKey(), element.getValue()), neighbors.getKey())) {
                         if (!element.getKey().isCut(element.getValue())
-                                && !element.getKey().isPainted(element.getValue()))
+                            && !element.getKey().isPainted(element.getValue()))
                         {
                             game.setCutWon(cutWonState);
                             return element;
@@ -43,7 +43,9 @@ public class BasicAI extends InterfaceIA {
         return graph.getNeighbors().getFirst();
     }
 
+    @Override
     public Pair<Vertex, Vertex> playSHORT() {
         return playCUT(); // Move de génie
     }
+
 }
