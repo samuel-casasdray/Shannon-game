@@ -43,13 +43,13 @@ public class Graph {
             // Création à partir d'arretes
             if (liste.getFirst() instanceof Pair) {
                 this.neighbors = (List<Pair<Vertex, Vertex>>) new ArrayList<>(liste);
-                List<Vertex> vertexList = new ArrayList<>();
+                HashSet<Vertex> vertexSet = new HashSet<>();
                 for (Pair<Vertex, Vertex> element : neighbors) {
-                    if (!vertexList.contains(element.getKey())) vertexList.add(element.getKey());
-                    if (!vertexList.contains(element.getValue())) vertexList.add(element.getValue());
+                    vertexSet.add(element.getKey());
+                    vertexSet.add(element.getValue());
                 }
-                this.vertices = vertexList;
-                this.nbVertices = vertexList.size();
+                this.vertices = new ArrayList<>(vertexSet);
+                this.nbVertices = vertexSet.size();
             }
         }
     }
@@ -125,73 +125,38 @@ public class Graph {
     }
     private void generateGraphPlanaire() {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
-        double minDist = 80;
+        double minDist = 100;
         double radius = UtilsGui.CIRCLE_SIZE*2;
         int maxIter = getNbVertices()*10000;
         int iterCount = 0;
         while (getVertices().size() < getNbVertices()) {
             iterCount++;
-            Pair<Integer, Integer> coord;
             // Coord aléatoire
-            coord = new Pair<>(
+            Pair<Integer, Integer> coord = new Pair<>(
                     random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
                     random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
-            if (getVertices().size() >= 2) {
+            // Ce if est dans le cas où on place le premier sommet
+            if (getVertices().isEmpty()) {
+                addVertice(newVertex);
+            }
+            else {
                 for (int j = 0; j < getVertices().size(); j++)  {
-                    Vertex v = getVertices().get(random.nextInt(getVertices().size()));
-                    boolean intersect = false;
-                    if (!v.equals(newVertex)) {
-                        for (int k = 0; k < getNeighbors().size(); k++) {
-                            Pair<Vertex, Vertex> neighbor = getNeighbors().get(k);
-                            if (intersect(newVertex.getX(), newVertex.getY(), v.getX(), v.getY(),
-                                    neighbor.getKey().getX(), neighbor.getKey().getY(), neighbor.getValue().getX(), neighbor.getValue().getY())) {
-                                intersect = true; // Si ya au moins une intersection, intersect = true
-                                break; // S'il y a une intersection, pas la peine de continuer
-                            }
-                        }
-                        if (!intersect) { // S'il n'y a aucune intersection, on place le sommet
-                            boolean distanceOk = true;
-                            for (Vertex v1: getVertices()) {
-                                if (newVertex.distance(v1) < minDist) { // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
-                                    distanceOk = false;
-                                    break;
-                                }
-                            }
-                            if (distanceOk && !thereAreACircleCollision(radius, newVertex, v))
-                            {
-                                // Cette boucle permet de placer le sommet ssi il n'est pas traversé par une arête déjà présente
-                                for (Pair<Vertex, Vertex> neighbor: getNeighbors()) {
-                                    Vertex v1 = neighbor.getKey();
-                                    Vertex v2 = neighbor.getValue();
-                                    int xLeft = (int) (newVertex.getX()-radius);
-                                    int xRight = (int) (newVertex.getX()+radius);
-                                    int y = newVertex.getY();
-                                    int yTop = (int) (y+radius);
-                                    int yBottom = (int) (y-radius);
-                                    if (intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
-                                            xLeft, yTop, xRight, yBottom) || intersect(v1.getX(), v1.getY(), v2.getX(), v2.getY(),
-                                            xLeft, yBottom, xRight, yTop)) {
-                                        intersect = true;
-                                        break;
-                                    }
-                                }
-                                if (!intersect) {
-                                    addVertice(newVertex);
-                                    addNeighbor(new Pair<>(newVertex, v));
-                                }
-                            }
+                    boolean distanceOk = true;
+                    for (Vertex v1: getVertices()) {
+                        // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
+                        if (newVertex.distance(v1) < minDist) {
+                            distanceOk = false;
+                            break;
                         }
                     }
+                    if (distanceOk)
+                        addVertice(newVertex);
                 }
-            }
-            else { // Ce else est dans le cas où on place les deux premiers sommets (dans ce cas aucun risque d'intersection)
-                if (getVertices().isEmpty() || newVertex.distance(getVertices().getFirst()) >= minDist)
-                    addVertice(newVertex);
             }
             if (iterCount >= maxIter) return;
         }
-        // Ces boucles imbriquées permettent d'éviter au maximum les sommets isolés
+        // Ces boucles imbriquées permettent de relier un maximum de sommets
         for (int i = 0; i < getVertices().size(); i++) {
             Vertex v = getVertices().get(i);
             for (int j = 0; j < i; j++) {
@@ -230,7 +195,7 @@ public class Graph {
     }
     public int vertexDegree(int indexVertex) {
         Vertex vertex= getVertices().get(indexVertex);
-        int count =0;
+        int count = 0;
         for(Pair<Vertex,Vertex> p: getNeighbors()){
             if (p.getKey().equals(vertex)){
                 count++;
