@@ -31,9 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Slf4j
 public class Gui extends Application {
@@ -56,6 +54,8 @@ public class Gui extends Application {
     private Random random = new Random();
     private Stage stage;
     private Level level;
+    @Getter
+    private Optional<Long> gameCode = Optional.empty();
 
 
     @Override
@@ -147,6 +147,13 @@ public class Gui extends Application {
         alert.show();
     }
 
+    public static void popupMessage(String title, String message){
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(message);
+        alert.show();
+    }
+
     public Scene run() {
         Pane pane = new Pane();
         // On définit la taille de notre affichage
@@ -204,7 +211,8 @@ public class Gui extends Application {
         }
         try {
             WebSocketClient client = new WebSocketClient(0L, false, turn);
-            textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(client.getId()), 4));
+            gameCode = Optional.of(client.getId());
+            textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
             this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
         } catch (IOException | URISyntaxException | InterruptedException e) {
             log.error(e.getMessage());
@@ -213,7 +221,10 @@ public class Gui extends Application {
 
     public void join(TextField textField, Turn turn) {
         try {
-            WebSocketClient client = new WebSocketClient(Long.parseLong(textField.getText()), true, turn);
+            long code = Long.parseLong(textField.getText());
+            // On ne rentre pas le code que l'on vient de générer
+            if (getGameCode().isPresent() && getGameCode().get() == code) return;
+            WebSocketClient client = new WebSocketClient(code, true, turn);
             game = client.connect(() -> {});
             stage.setScene(run());
         } catch (IOException | URISyntaxException | InterruptedException e) {
