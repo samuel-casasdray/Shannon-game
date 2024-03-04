@@ -5,6 +5,8 @@ import com.google.gson.JsonParser;
 import fr.projet.Callback;
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
+import fr.projet.gui.Gui;
+import javafx.application.Platform;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +60,10 @@ public class WebSocketClient {
             if (response == null)
                 Thread.sleep(100); // On attend que le serveur réponde
             count++;
+        }
+        if (response.equals("Not found")) {
+            Platform.runLater(() -> Gui.popupMessage("Le code rentré est incorrect", "Aucune partie trouvée."));
+            throw new IOException();
         }
         JsonElement jsonElement = JsonParser.parseString(response);
         this.id = jsonElement.getAsJsonObject().get("id").getAsLong();
