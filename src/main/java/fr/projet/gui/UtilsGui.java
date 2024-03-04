@@ -4,9 +4,11 @@ import javafx.animation.ScaleTransition;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -59,6 +61,11 @@ public class UtilsGui {
             text.setFont(Font.font(FONT, 20));
         }
         return text;
+    }
+    public void addEnterOnText(TextField text, EventHandler<KeyEvent> action) {
+        text.setOnKeyPressed(event -> {
+            if (event.getCode().getName().equals("Enter")) action.handle(event);
+        });
     }
     public Button createButton(String text, EventHandler<ActionEvent> action) {
         Button button = new Button(text);

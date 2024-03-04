@@ -26,6 +26,7 @@ import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -85,7 +86,7 @@ public class Gui extends Application {
                 GuiScene.pvp(
                     this::handleButtonClick,
                     (textField, turn) -> join((TextField) textField, turn),
-                    (textField, turn) -> create((Text) textField)
+                    (textField, turn) -> create((Text) textField, turn)
                 )
             );
             case HOME_IAVIA -> stage.setScene(run()); //TODO : Changer quand IA_VS_IA existe
@@ -194,11 +195,17 @@ public class Gui extends Application {
         }
     }
 
-    public void create(Text textField) {
+    public void create(Text textField, Turn turn) {
         try {
-            WebSocketClient client = new WebSocketClient(0L, false, null);
-            textField.setText(String.valueOf(client.getId()));
-            game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+            game.getClient().close();
+        }
+        catch (IOException | NullPointerException e) {
+            log.info(e.getMessage());
+        }
+        try {
+            WebSocketClient client = new WebSocketClient(0L, false, turn);
+            textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(client.getId()), 4));
+            this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
         } catch (IOException | URISyntaxException | InterruptedException e) {
             log.error(e.getMessage());
         }
