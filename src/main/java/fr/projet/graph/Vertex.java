@@ -49,18 +49,6 @@ public class Vertex {
         listNeighbors.remove(i);
     }
 
-    // @Override
-    // public boolean equals(Object o) {
-    //     if (this == o) return true;
-    //     if (o == null || getClass() != o.getClass()) return false;
-    //     Vertex vertex = (Vertex) o;
-    //     return Objects.equals(coords, vertex.coords);
-    // }
-
-    // @Override
-    // public int hashCode() {
-    //     return Objects.hash(coords);
-    // }
     @Override
     public boolean equals(Object o) { 
         // à mon avis il faut garder le equals par défaut pour comparer les instances

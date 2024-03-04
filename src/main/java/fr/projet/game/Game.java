@@ -1,14 +1,14 @@
 package fr.projet.game;
 import java.io.IOException;
 
-import fr.projet.IA.BasicAI;
-import fr.projet.IA.Minimax;
-import fr.projet.WebSocket.WebSocketClient;
+import fr.projet.ia.BasicAI;
+import fr.projet.ia.Minimax;
+import fr.projet.server.WebSocketClient;
 
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import fr.projet.IA.InterfaceIA;
+import fr.projet.ia.InterfaceIA;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
@@ -34,8 +34,8 @@ public class Game {
     private boolean againstAI = false;
     private Turn typeIA;
     private InterfaceIA ia;
-    private ArrayList<Pair<Vertex, Vertex>> secured = new ArrayList<>();
-    public ArrayList<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
+    private List<Pair<Vertex, Vertex>> secured = new ArrayList<>();
+    private List<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
     private boolean pvpOnline = false;
     private long seed;
     @Getter
@@ -54,16 +54,13 @@ public class Game {
             graph = new Graph(nbVertices);
         }
         if (withIA) {
-            if (level == Level.EASY) {
-                ia = new BasicAI(this, turn);
-                this.againstAI = true;
-                this.typeIA = typeIA;
+            switch (level) {
+                case EASY -> ia = new BasicAI(this, turn);
+                case MEDIUM -> ia = new Minimax(this, turn, 1);
+                case HARD -> ia = new Minimax(this, turn, 2);
             }
-            else if (level == Level.MEDIUM) {
-                ia = new Minimax(this, turn, 2);
-                this.againstAI = true;
-                this.typeIA = typeIA;
-            }
+            this.againstAI = true;
+            this.typeIA = typeIA;
         }
         Random rngSeed = new Random();
         seed = rngSeed.nextLong();
@@ -155,10 +152,10 @@ public class Game {
 
     public void showWinner() {
         if (cutWon()) {
-            Platform.runLater(() -> Gui.PopupMessage(Turn.CUT));
+            Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
         }
         else if (shortWon()) {
-            Platform.runLater(() -> Gui.PopupMessage(Turn.SHORT));
+            Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
         }
     }
 
@@ -232,7 +229,7 @@ public class Game {
         return cutWon;
     }
 
-    public void sendMove(Pair<Vertex, Vertex> move) {
+    public void sendMove(Pair<Vertex, Vertex> move) throws IOException {
         int turnValue;
         if (joiner) turnValue = creatorTurn == Turn.CUT ? 1: 0;
         else turnValue = creatorTurn == Turn.CUT ? 0: 1;
@@ -241,8 +238,9 @@ public class Game {
             client.reConnect(serverUri);
             if (!shortWon && !cutWon)
                 client.sendMessage(data);
-        } catch (Exception e) {
-            log.error(e.getMessage());
+        } catch (URISyntaxException | IOException e) {
+            log.error("Can't reconnect to serveur : ", e);
+            throw new IOException("Can't reconnect");
         }
     }
 
@@ -263,7 +261,7 @@ public class Game {
             return;
         }
         if (message.chars().toArray()[0] == '[') {
-            String[] items = message.replaceAll("\\[", "").replaceAll("]", "").replaceAll("\\s", "").split(",");
+            String[] items = message.replace("[", "").replace("]", "").replaceAll("\\s", "").split(",");
 
             int[] results = new int[items.length];
 
