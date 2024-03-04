@@ -5,19 +5,20 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Random;
+
 @Slf4j
 @UtilityClass
 public class GuiScene {
+    private static Random random = new Random();
     private VBox getBasicScene() {
         VBox root = new VBox(50); // Espacement vertical entre les éléments
         root.setPadding(new Insets(-40,0,10,0));
@@ -48,29 +49,81 @@ public class GuiScene {
     }
 
     public Scene pvp(HandleClick handleButtonClick, JoinCreateField joinField, JoinCreateField createField) {
-        VBox root = getBasicScene();
+//        VBox root = getBasicScene();
+//
+//        Text text1 = UtilsGui.createText("Player vs Player", true);
+//
+//        HBox type = new HBox(60);
+//
+//        VBox join = new VBox(30);
+//        TextField textJoin = new TextField();
+//        Turn creatorTurn = Turn.CUT;
+//        Button button1 = UtilsGui.createButton("Join", event -> joinField.call(textJoin, creatorTurn));
+//        join.getChildren().addAll(button1, textJoin);
+//
+//        VBox create = new VBox(30);
+//        Text textCreate = UtilsGui.createText("");
+//        Button button2 = UtilsGui.createButton("Create", event -> createField.call(textCreate, null));
+//        create.getChildren().addAll(button2, textCreate);
+//
+//        type.getChildren().addAll(join, create);
+//        type.setAlignment(Pos.CENTER);
+//
+//        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick),text1,type);
 
-        Text text1 = UtilsGui.createText("Player vs Player", true);
+        VBox scene = getBasicScene();
 
-        HBox type = new HBox(60);
+        GridPane root = new GridPane();
+        root.setAlignment(Pos.CENTER);
+        root.setHgap(90);
+        root.setVgap(25);
+        root.setPadding(new Insets(30,5,5,5));
 
-        VBox join = new VBox(30);
-        TextField textJoin = new TextField();
+        Text text1 = UtilsGui.createText("Joueur vs Joueur", true);
+
         Turn creatorTurn = Turn.CUT;
-        Button button1 = UtilsGui.createButton("Join", event -> joinField.call(textJoin, creatorTurn));
-        join.getChildren().addAll(button1, textJoin);
 
-        VBox create = new VBox(30);
-        Text textCreate = UtilsGui.createText("");
-        Button button2 = UtilsGui.createButton("Create", event -> createField.call(textCreate, null));
-        create.getChildren().addAll(button2, textCreate);
+        TextField textJoin = new TextField();
+        textJoin.setPromptText("code de partie");
+        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin, creatorTurn));
 
-        type.getChildren().addAll(join, create);
-        type.setAlignment(Pos.CENTER);
+        UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin, creatorTurn));
 
-        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick),text1,type);
+        Text textCreate = UtilsGui.createText("                       ");
 
-        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        Text textTurn = UtilsGui.createText("Choisir son joueur");
+        ComboBox<String> choixTurn = new ComboBox<>();
+        choixTurn.getItems().addAll("aléatoire", "CUT","SHORT");
+        choixTurn.getSelectionModel().selectFirst();
+
+        Button buttonCreate = UtilsGui.createButton(
+            "Create",
+            event -> {
+                String selectedOption = choixTurn.getSelectionModel().getSelectedItem();
+                Turn turn;
+                if (selectedOption.equals("SHORT") ) {
+                    turn = Turn.SHORT;
+                }
+                else if (selectedOption.equals("CUT")) {
+                    turn = Turn.CUT;
+                }
+                else {
+                    turn = random.nextInt(2) == 0 ? Turn.CUT : Turn.SHORT;
+                }
+                createField.call(textCreate, turn);
+            });
+
+        root.add(textJoin, 0, 1);
+        root.add(buttonJoin, 0, 0);
+        root.add(textCreate, 1, 3);
+        root.add(buttonCreate, 1, 0);
+        root.add(textTurn, 1, 1);
+        root.add(choixTurn, 1, 2);
+
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
+
+
+        return new Scene(scene, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
     }
 
     public Scene joueur(HandleClick handleButtonClick){
