@@ -167,7 +167,7 @@ public class Gui extends Application {
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
         showGraph(pane);
-
+        pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
 
