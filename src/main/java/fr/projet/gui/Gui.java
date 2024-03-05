@@ -8,7 +8,11 @@ import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -56,7 +60,6 @@ public class Gui extends Application {
     private Level level;
     @Getter
     private Optional<Long> gameCode = Optional.empty();
-
 
     @Override
     public void start(Stage stage) {
@@ -155,14 +158,75 @@ public class Gui extends Application {
     }
 
     public Scene run() {
+        // Création d'un BorderPane pour centrer le contenu
+        BorderPane borderPane = new BorderPane();
+        borderPane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+
+        // Création du Pane pour afficher le graphique
         Pane pane = new Pane();
-        // On définit la taille de notre affichage
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
         showGraph(pane);
-        pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
-        return new Scene(pane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+
+        borderPane.setCenter(pane);
+        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+
+        // Ajout d'un écouteur pour détecter les changements de taille de la fenêtre
+        scene.widthProperty().addListener((observableValue, oldWidth, newWidth) -> {
+            Platform.runLater(() -> {
+                pane.setPrefWidth((double) newWidth);
+                updateGraphLayout(pane);
+            });
+        });
+
+        scene.heightProperty().addListener((observableValue, oldHeight, newHeight) -> {
+            Platform.runLater(() -> {
+                pane.setPrefHeight((double) newHeight);
+                updateGraphLayout(pane);
+            });
+        });
+        return scene;
 }
+
+//fonction qui recalcule les position des aretes et sommets lors d'un redimensionnement
+    private void updateGraphLayout(Pane pane) {
+        double xOffset = (pane.getWidth() - UtilsGui.WINDOW_SIZE) / 2;
+        double yOffset = (pane.getHeight() - UtilsGui.WINDOW_SIZE) / 2;
+
+        // Mise à jour des positions des arêtes
+        for (Pair<Pair<Vertex, Vertex>, Line> edge : edges) {
+            //System.out.println("aretes");
+            Line line = edge.getValue();
+            Pair<Vertex, Vertex> pair = edge.getKey();
+            line.setStartX(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE + xOffset);
+            line.setStartY(pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE + yOffset);
+            line.setEndX(pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE + xOffset);
+            line.setEndY(pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE + yOffset);
+        }
+
+        int nodeIndex=0;
+        // Mise à jour des positions des sommets et des textes
+        for (Node node : pane.getChildren()) {
+            if (node instanceof Circle) {
+                //System.out.println("cercle");
+                Circle vertex = (Circle) node;
+                Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(nodeIndex).getCoords();
+                vertex.relocate(coord.getKey()+ xOffset,coord.getValue() + yOffset);
+                nodeIndex++;
+            } else if (node instanceof Text) {
+                //System.out.println("texte");
+                Text text = (Text) node;
+                int i = Integer.parseInt(text.getText());
+                Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i-1).getCoords();
+                // Centrage du texte
+                if (i >= 9) {
+                    text.relocate(coord.getKey() + 13.50 + xOffset, coord.getValue() + 15.50 + yOffset);
+                } else {
+                    text.relocate(coord.getKey() + 16.50 + xOffset, coord.getValue() + 15.50 + yOffset);
+                }
+            }
+        }
+    }
 
 
     public void showGraph(Pane pane) {
