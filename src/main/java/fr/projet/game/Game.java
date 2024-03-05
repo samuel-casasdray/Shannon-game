@@ -1,17 +1,12 @@
 package fr.projet.game;
-import java.io.IOException;
 
-import fr.projet.ia.BasicAI;
-import fr.projet.ia.Minimax;
-import fr.projet.server.WebSocketClient;
-
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.stream.Collectors;
-import fr.projet.ia.InterfaceIA;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
+import fr.projet.ia.BasicAI;
+import fr.projet.ia.InterfaceIA;
+import fr.projet.ia.Minimax;
+import fr.projet.server.WebSocketClient;
 import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -20,6 +15,10 @@ import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.*;
 
 @Getter
 @Slf4j
@@ -34,8 +33,8 @@ public class Game {
     private boolean againstAI = false;
     private Turn typeIA;
     private InterfaceIA ia;
-    private List<Pair<Vertex, Vertex>> secured = new ArrayList<>();
-    private List<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
+    private final List<Pair<Vertex, Vertex>> secured = new ArrayList<>();
+    private final List<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
     private boolean pvpOnline = false;
     private long seed;
     @Getter
@@ -43,16 +42,15 @@ public class Game {
     private WebSocketClient client;
     private String serverUri;
     private long id;
-    private ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
+    private final ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
     private Turn creatorTurn;
-    private int nbVertices;
+    private final int nbVertices;
     public Game() { this(false, Turn.CUT, Level.EASY); }
     public Game(boolean withIA, Turn typeIA, Level level) {
         nbVertices = 20;
-        graph = new Graph(nbVertices);
-        while (!graphIsOkay()) {
+        do {
             graph = new Graph(nbVertices);
-        }
+        } while (graphIsNotOkay());
         if (withIA) {
             switch (level) {
                 case EASY -> ia = new BasicAI(this, turn);
@@ -78,12 +76,11 @@ public class Game {
         this.serverUri = serverUri;
         this.pvpOnline = true;
         nbVertices = 20;
-        graph = new Graph(nbVertices, seed);
-        int c = 1;
-        while (!graphIsOkay()) {
+        int c = 0;
+        do {
             graph = new Graph(nbVertices, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
             c++;
-        }
+        } while (graphIsNotOkay());
         Gui.setGraph(graph);
         Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
@@ -95,23 +92,21 @@ public class Game {
         if (againstAI && turn == typeIA) {
             if (typeIA == Turn.CUT) {
                 Pair<Vertex, Vertex> v = ia.playCUT();
-                v.getKey().cut(v.getValue());
                 played = new Pair<>(v.getKey(), v.getValue());
-                cutted.add(played);
+                cutEdge(played);
                 for (var element : Gui.getEdges()) {
                     if (element.getKey().equals(v)) {
-                        cutEdge(element.getValue());
+                        cutLine(element.getValue());
                         break;
                     }
                 }
             } else {
                 Pair<Vertex, Vertex> v = ia.playSHORT();
-                v.getKey().paint(v.getValue());
                 played = new Pair<>(v.getKey(), v.getValue());
-                secured.add(played);
+                secureEdge(played);
                 for (var element : Gui.getEdges()) {
                     if (element.getKey().equals(v)) {
-                        paintEdge(element.getValue());
+                        paintLine(element.getValue());
                         break;
                     }
                 }
@@ -124,16 +119,14 @@ public class Game {
                         return;
                     }
                     if (turn == Turn.CUT) {
-                        key.cut(value);
                         played = new Pair<>(key, value);
-                        cutted.add(played);
-                        cutEdge(neighbors.getValue());
+                        cutEdge(played);
+                        cutLine(neighbors.getValue());
 
                     } else {
-                        key.paint(value);
                         played = new Pair<>(key, value);
-                        secured.add(played);
-                        paintEdge(neighbors.getValue());
+                        secureEdge(played);
+                        paintLine(neighbors.getValue());
                     }
                     if (!pvpOnline)
                         turn = turn.flip();
@@ -190,6 +183,15 @@ public class Game {
 
     }
 
+    public void cutEdge(Pair<Vertex, Vertex> edge) {
+        edge.getKey().cut(edge.getValue());
+        getCutted().add(edge);
+    }
+
+    public void secureEdge(Pair<Vertex, Vertex> edge) {
+        edge.getKey().paint(edge.getValue());
+        getSecured().add(edge);
+    }
     public boolean shortWon() {
         if (shortWon) return true;
         Graph redGraph = new Graph(getSecured());
@@ -220,13 +222,29 @@ public class Game {
 
     public boolean cutWon() {
         if (cutWon) return true;
-        List<Vertex> notCuttedVerticices = graph.getVertices();
-        notCuttedVerticices.forEach(
-            x -> x.setListNeighbors(x.getListNeighbors().stream().filter(y -> !x.isCut(y) && !y.isCut(x)).collect(Collectors.toCollection(ArrayList::new)))
-        );
-        Graph notCuttedGraph = new Graph(notCuttedVerticices);
-        cutWon = !notCuttedGraph.estConnexe();
+        cutWon = !graphWithoutCuttedIsConnexe();
         return cutWon;
+    }
+
+    private boolean graphWithoutCuttedIsConnexe() {
+        if (graph.getVertices().isEmpty()) {
+            return true;
+        }
+        HashSet<Vertex> marked = new HashSet<>();
+        Stack<Vertex> pile = new Stack<>();
+        pile.push(graph.getVertices().getFirst());
+        while (!pile.empty()) {
+            Vertex v = pile.pop();
+            if (!marked.contains(v)) {
+                marked.add(v);
+                for (Vertex t: v.getListNeighbors().stream().filter(x -> !x.isCut(v) && !v.isCut(x)).toList()) {
+                    if (!marked.contains(t)) {
+                        pile.push(t);
+                    }
+                }
+            }
+        }
+        return marked.size() == graph.getVertices().size();
     }
 
     public void sendMove(Pair<Vertex, Vertex> move) throws IOException {
@@ -304,14 +322,14 @@ public class Game {
         }
     }
 
-    public void cutEdge(Line line) {
+    public void cutLine(Line line) {
         lastsLines.add(new Pair<>(line, turn));
         line.setStroke(Color.BLUE);
         line.getStrokeDashArray().addAll(25D, 15D);
         setColor();
     }
 
-    public void paintEdge(Line line) {
+    public void paintLine(Line line) {
         lastsLines.add(new Pair<>(line, turn));
         line.setStroke(Color.BLUE);
         setColor();
@@ -328,8 +346,8 @@ public class Game {
         }
     }
 
-    public boolean graphIsOkay() {
-        return graph.getVertices().size() == nbVertices && graph.minDeg() >= 3 && graph.maxDeg() < 8 && graph.estConnexe();
+    public boolean graphIsNotOkay() {
+        return graph.getVertices().size() != nbVertices || graph.minDeg() < 3 || graph.maxDeg() >= 8 || !graph.estConnexe();
     }
     public boolean getCutWon() {
         return cutWon;
