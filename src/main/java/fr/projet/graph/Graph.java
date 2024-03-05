@@ -28,30 +28,15 @@ public class Graph {
 
     @Getter
     private List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>();
-    public Graph(List<?> liste) {
-        if (liste.isEmpty()) {
-            this.nbVertices=0;
-            this.vertices= new ArrayList<>();
-            this.neighbors= new ArrayList<>();
+    public Graph(List<Pair<Vertex, Vertex>> neighbors) {
+        this.neighbors = new ArrayList<>(neighbors);
+        HashSet<Vertex> vertexSet = new HashSet<>();
+        for (Pair<Vertex, Vertex> element : this.neighbors) {
+            vertexSet.add(element.getKey());
+            vertexSet.add(element.getValue());
         }
-        else {
-            // Création à partir de sommet
-            if (liste.getFirst() instanceof Vertex) {
-                this.vertices = (List<Vertex>) new ArrayList<>(liste);
-                this.nbVertices = liste.size();
-            }
-            // Création à partir d'arretes
-            if (liste.getFirst() instanceof Pair) {
-                this.neighbors = (List<Pair<Vertex, Vertex>>) new ArrayList<>(liste);
-                HashSet<Vertex> vertexSet = new HashSet<>();
-                for (Pair<Vertex, Vertex> element : neighbors) {
-                    vertexSet.add(element.getKey());
-                    vertexSet.add(element.getValue());
-                }
-                this.vertices = new ArrayList<>(vertexSet);
-                this.nbVertices = vertexSet.size();
-            }
-        }
+        this.vertices = new ArrayList<>(vertexSet);
+        this.nbVertices = vertexSet.size();
     }
 
     public Graph(int nbVertices) {
@@ -141,18 +126,16 @@ public class Graph {
                 addVertice(newVertex);
             }
             else {
-                for (int j = 0; j < getVertices().size(); j++)  {
-                    boolean distanceOk = true;
-                    for (Vertex v1: getVertices()) {
-                        // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
-                        if (newVertex.distance(v1) < minDist) {
-                            distanceOk = false;
-                            break;
-                        }
+                boolean distanceOk = true;
+                for (Vertex v1: getVertices()) {
+                    // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
+                    if (newVertex.distance(v1) < minDist) {
+                        distanceOk = false;
+                        break;
                     }
-                    if (distanceOk)
-                        addVertice(newVertex);
                 }
+                if (distanceOk)
+                    addVertice(newVertex);
             }
             if (iterCount >= maxIter) return;
         }
@@ -161,7 +144,7 @@ public class Graph {
             Vertex v = getVertices().get(i);
             for (int j = 0; j < i; j++) {
                 Vertex v2 = getVertices().get(j);
-                if (v.equals(v2) || v.getListNeighbors().contains(v2)) continue;
+                if (v.getListNeighbors().contains(v2)) continue;
                 boolean intersect = false;
                 for (Pair<Vertex, Vertex> neighbor : getNeighbors()) {
                     if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),

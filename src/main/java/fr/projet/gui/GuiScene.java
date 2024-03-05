@@ -19,7 +19,7 @@ import java.util.Random;
 @Slf4j
 @UtilityClass
 public class GuiScene {
-    private static Random random = new Random();
+    private static final Random random = new Random();
     private VBox getBasicScene() {
         VBox root = new VBox(50); // Espacement vertical entre les éléments
         root.setPadding(new Insets(-40,0,10,0));
