@@ -44,10 +44,12 @@ public class Game {
     private long id;
     private final ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
     private Turn creatorTurn;
-    private final int nbVertices;
-    public Game() { this(false, Turn.CUT, Level.EASY); }
-    public Game(boolean withIA, Turn typeIA, Level level) {
-        nbVertices = 20;
+    private int nbVertices;
+    public Game(int nbv) { this(nbv,false, Turn.CUT, Level.EASY); }
+    public Game() { this(20,false, Turn.CUT, Level.EASY); }
+
+    public Game(int nbv, boolean withIA, Turn typeIA, Level level) {
+        nbVertices = nbv;
         do {
             graph = new Graph(nbVertices);
         } while (graphIsNotOkay());
