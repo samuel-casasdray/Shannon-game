@@ -58,6 +58,10 @@ public class Gui extends Application {
     private Random random = new Random();
     private Stage stage;
     private Level level;
+    private Turn turn;
+    private Boolean withIA;
+    @Setter
+    private int nbVertices;
     @Getter
     private Optional<Long> gameCode = Optional.empty();
 
@@ -80,10 +84,14 @@ public class Gui extends Application {
     public void handleButtonClick(ButtonClickType buttonClickType) {
         switch (buttonClickType) {
             case HOME -> stage.setScene(GuiScene.home(this::handleButtonClick));
-            case HOME_PVIA, JOUEUR -> stage.setScene(GuiScene.pvia(this::handleButtonClick));
+            case HOME_PVIA-> {
+                withIA=true;
+                stage.setScene(GuiScene.pvia(this::handleButtonClick));
+            }
+            case JOUEUR -> stage.setScene(GuiScene.joueur(this::handleButtonClick));
             case HOME_PVPL -> {
-                this.game = new Game();
-                stage.setScene(run());
+                withIA=false;
+                stage.setScene(GuiScene.nbVertices(this::handleButtonClick,withIA));
             }
             case HOME_PVPO -> stage.setScene(
                 GuiScene.pvp(
@@ -94,13 +102,12 @@ public class Gui extends Application {
             );
             case HOME_IAVIA -> stage.setScene(run()); //TODO : Changer quand IA_VS_IA existe
             case JOUEUR_SHORT -> {
-                this.game = new Game(true, Turn.CUT, level);
-                stage.setScene(run());
-                game.play(null, null);
+                turn=Turn.CUT;
+                stage.setScene(GuiScene.nbVertices(this::handleButtonClick,withIA));
             }
             case JOUEUR_CUT -> {
-                this.game = new Game(true, Turn.SHORT, level);
-                stage.setScene(run());
+                turn=Turn.SHORT;
+                stage.setScene(GuiScene.nbVertices(this::handleButtonClick, withIA));
             }
             case PVIA_EASY -> {
                 this.level = Level.EASY;
@@ -115,6 +122,13 @@ public class Gui extends Application {
                 stage.setScene(GuiScene.joueur(this::handleButtonClick));
             }
             case JEU -> popupMessage();
+            case VERTICES -> {
+                this.nbVertices=GuiScene.getNbVertices();
+                this.game = new Game(nbVertices, withIA, turn, level);
+                stage.setScene(run());
+                if (turn==Turn.CUT) game.play(null, null);
+            }
+
         }
     }
 
@@ -185,6 +199,7 @@ public class Gui extends Application {
                 updateGraphLayout(pane);
             });
         });
+
         return scene;
 }
 
@@ -295,5 +310,9 @@ public class Gui extends Application {
             log.error(e.getMessage());
         }
     }
+
+
+
+
 }
 
