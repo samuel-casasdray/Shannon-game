@@ -4,6 +4,7 @@ import fr.projet.gui.UtilsGui;
 import javafx.util.Pair;
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -16,6 +17,7 @@ import java.util.*;
 public class Graph {
 
     // nombre de vertex
+    @Setter
     private int nbVertices = 5;
 
     private boolean aroundCircle = false;
