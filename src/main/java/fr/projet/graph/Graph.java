@@ -29,9 +29,9 @@ public class Graph {
     private List<Vertex> vertices;
 
     @Getter
-    private List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>();
-    public Graph(List<Pair<Vertex, Vertex>> neighbors) {
-        this.neighbors = new ArrayList<>(neighbors);
+    private HashSet<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
+    public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
+        this.neighbors = new HashSet<>(neighbors);
         HashSet<Vertex> vertexSet = new HashSet<>();
         for (Pair<Vertex, Vertex> element : this.neighbors) {
             vertexSet.add(element.getKey());
@@ -105,7 +105,7 @@ public class Graph {
                 int r;
                 do {
                     r=random.nextInt(nbVertices);
-                } while(r==i || this.vertices.get(i).getListNeighbors().contains(this.vertices.get(r)));
+                } while(r==i || this.vertices.get(i).getNeighbors().contains(this.vertices.get(r)));
                 addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
             }
         } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
@@ -146,7 +146,7 @@ public class Graph {
             Vertex v = getVertices().get(i);
             for (int j = 0; j < i; j++) {
                 Vertex v2 = getVertices().get(j);
-                if (v.getListNeighbors().contains(v2)) continue;
+                if (v.getNeighbors().contains(v2)) continue;
                 boolean intersect = false;
                 for (Pair<Vertex, Vertex> neighbor : getNeighbors()) {
                     if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
@@ -190,20 +190,20 @@ public class Graph {
     }
 
     public int minDeg() {
-        int minDeg = getVertices().getFirst().getListNeighbors().size();
+        int minDeg = getVertices().getFirst().getNeighbors().size();
         for (Vertex v: getVertices()) {
-            if (v.getListNeighbors().size() < minDeg) {
-                minDeg = v.getListNeighbors().size();
+            if (v.getNeighbors().size() < minDeg) {
+                minDeg = v.getNeighbors().size();
             }
         }
         return minDeg;
     }
 
     public int maxDeg() {
-        int maxDeg = getVertices().getFirst().getListNeighbors().size();
+        int maxDeg = getVertices().getFirst().getNeighbors().size();
         for (Vertex v: getVertices()) {
-            if (v.getListNeighbors().size() > maxDeg) {
-                maxDeg = v.getListNeighbors().size();
+            if (v.getNeighbors().size() > maxDeg) {
+                maxDeg = v.getNeighbors().size();
             }
         }
         return maxDeg;
@@ -225,7 +225,7 @@ public class Graph {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                for (Vertex t: v.getListNeighbors()) {
+                for (Vertex t: v.getNeighbors()) {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }
@@ -242,10 +242,8 @@ public class Graph {
     }
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
-        if (!getNeighbors().contains(edge)) {
-            neighbors.add(edge);
-            edge.getKey().addNeighborVertex(edge.getValue());
-        }
+        neighbors.add(edge);
+        edge.getKey().addNeighborVertex(edge.getValue());
     }
 
 
@@ -257,22 +255,10 @@ public class Graph {
     }
 
     public boolean estCouvrant (Graph G) { //true si G est couvrant de this
-//        boolean couvrant = true;
-//        List<Vertex> VerticeG = G.getVertices();
-//        for (Vertex v : this.vertices) {
-//            if (!VerticeG.contains(v)) {
-//                couvrant = false;
-//                break;
-//            }
-//        }
-//        return couvrant && G.estConnexe();
-
-        // OU
-        // Je pense que cela suffit, l'algo commenté juste au dessus devrait être équivalent à :
         return G.getNbVertices() == nbVertices && G.estConnexe();
     }
 
-    public boolean difference (List<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
+    public boolean difference (HashSet<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
         List<Pair<Vertex, Vertex>> verticeNew = new ArrayList<>();
         for (Pair<Vertex, Vertex> edge : neighbors) {
             if (!cutted.contains(edge)) {
