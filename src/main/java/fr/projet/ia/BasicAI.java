@@ -7,6 +7,8 @@ import javafx.util.Pair;
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
 
+import java.util.List;
+
 public class BasicAI extends InterfaceIA {
 
     public BasicAI(Game game, Turn plays) {
@@ -15,8 +17,9 @@ public class BasicAI extends InterfaceIA {
 
     public Pair<Vertex, Vertex> playCUT() {
         boolean cutWonState = game.getCutWon();
-        for (int i = graph.getNeighbors().size() - 1; i > 0; i--) {
-            var element = graph.getNeighbors().get(i);
+        List<Pair<Vertex, Vertex>> neighborsList = graph.getNeighbors().stream().toList();
+        for (int i = neighborsList.size() - 1; i > 0; i--) {
+            var element = neighborsList.get(i);
             graph.removeNeighbor(element);
             if (game.cutWon()) {
                 graph.addNeighbor(element);
@@ -40,7 +43,7 @@ public class BasicAI extends InterfaceIA {
             if (!x.getKey().isCut(x.getValue()) && !x.getKey().isPainted(x.getValue()))
                 return x;
         }
-        return graph.getNeighbors().getFirst();
+        return neighborsList.getFirst();
     }
 
     @Override

@@ -33,8 +33,8 @@ public class Game {
     private boolean againstAI = false;
     private Turn typeIA;
     private InterfaceIA ia;
-    private final List<Pair<Vertex, Vertex>> secured = new ArrayList<>();
-    private final List<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
+    private final HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>();
+    private final HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>();
     private boolean pvpOnline = false;
     private long seed;
     @Getter
@@ -132,12 +132,10 @@ public class Game {
                     }
                     if (!pvpOnline)
                         turn = turn.flip();
-                    if (againstAI) {
-                        detectWinner();
-                        play(key, value);
-                        return;
-                    }
                     detectWinner();
+                    if (againstAI) {
+                        play(key, value);
+                    }
                     return;
                 }
             }
@@ -212,11 +210,11 @@ public class Game {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                for (Vertex t: v.getListNeighbors().stream().filter(x -> x.isPainted(v) || v.isPainted(x)).toList()) {
+                v.getNeighbors().stream().filter(x -> x.isPainted(v) || v.isPainted(x)).forEach(t -> {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }
-                }
+                });
             }
         }
         return marked.size() == redGraph.getVertices().size();
@@ -239,11 +237,11 @@ public class Game {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                for (Vertex t: v.getListNeighbors().stream().filter(x -> !x.isCut(v) && !v.isCut(x)).toList()) {
+                v.getNeighbors().stream().filter(x -> !x.isCut(v) && !v.isCut(x)).forEach(t -> {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }
-                }
+                });
             }
         }
         return marked.size() == graph.getVertices().size();
