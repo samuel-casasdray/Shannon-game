@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.function.BiPredicate;
 
 @Getter
 @Slf4j
@@ -195,38 +196,18 @@ public class Game {
     public boolean shortWon() {
         if (shortWon) return true;
         Graph redGraph = new Graph(getSecured());
-        shortWon = redGraph.getNbVertices() == graph.getNbVertices() && redGraphIsConnexe(redGraph);
+        shortWon = redGraph.getNbVertices() == graph.getNbVertices() &&
+                graphWithoutSomeNeighborsIsConnected(redGraph, (x,v) -> x.isPainted(v) || v.isPainted(x));
         return shortWon;
-    }
-
-    private boolean redGraphIsConnexe(Graph redGraph) {
-        if (redGraph.getVertices().isEmpty()) {
-            return true;
-        }
-        HashSet<Vertex> marked = new HashSet<>();
-        Stack<Vertex> pile = new Stack<>();
-        pile.push(redGraph.getVertices().getFirst());
-        while (!pile.empty()) {
-            Vertex v = pile.pop();
-            if (!marked.contains(v)) {
-                marked.add(v);
-                v.getNeighbors().stream().filter(x -> x.isPainted(v) || v.isPainted(x)).forEach(t -> {
-                    if (!marked.contains(t)) {
-                        pile.push(t);
-                    }
-                });
-            }
-        }
-        return marked.size() == redGraph.getVertices().size();
     }
 
     public boolean cutWon() {
         if (cutWon) return true;
-        cutWon = !graphWithoutCuttedIsConnexe();
+        cutWon = !graphWithoutSomeNeighborsIsConnected(graph, (x,v) -> !x.isCut(v) && !v.isCut(x));
         return cutWon;
     }
 
-    private boolean graphWithoutCuttedIsConnexe() {
+    private boolean graphWithoutSomeNeighborsIsConnected(Graph graph, BiPredicate<Vertex, Vertex> predicate) {
         if (graph.getVertices().isEmpty()) {
             return true;
         }
@@ -237,7 +218,7 @@ public class Game {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                v.getNeighbors().stream().filter(x -> !x.isCut(v) && !v.isCut(x)).forEach(t -> {
+                v.getNeighbors().stream().filter(x -> predicate.test(x,v)).forEach(t -> {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }

@@ -56,7 +56,6 @@ public class Graph {
 
     public Graph() {
         this.vertices = new ArrayList<>();
-        this.generateGraphPlanaire();
     }
 
     public void addVertice(Vertex v) {

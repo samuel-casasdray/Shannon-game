@@ -243,7 +243,6 @@ public class Gui extends Application {
         }
     }
 
-
     public void showGraph(Pane pane) {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
@@ -310,9 +309,5 @@ public class Gui extends Application {
             log.error(e.getMessage());
         }
     }
-
-
-
-
 }
 
