@@ -16,7 +16,7 @@ use tokio::sync::broadcast;
 async fn main() {
     let games = Arc::new(futures::lock::Mutex::new(Games { games: vec![] }));
     let app = Router::new()
-        .route("/create_game/:creator_turn", get(create_game_handler)) // Ici, c'est pour créer une game
+        .route("/create_game/:creator_turn/:nb_vertices", get(create_game_handler)) // Ici, c'est pour créer une game
         .route("/join_game/:id", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
         .with_state(games);
@@ -35,12 +35,12 @@ async fn main() {
 async fn create_game_handler(
     ws: WebSocketUpgrade,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
-    Path(creator_turn): Path<u8>
+    Path(params): Path<(u8, u32)>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| create_game(socket, State(games), creator_turn))
+    ws.on_upgrade(move |socket| create_game(socket, State(games), params))
 }
 
-async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::Mutex<Games>>>, creator_turn: u8) {
+async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::Mutex<Games>>>, (creator_turn, nb_vertices): (u8, u32)) {
     let (mut sender, _receiver) = socket.split();
     let mut games = games.lock().await;
     let mut rng = rand::thread_rng();
@@ -60,14 +60,15 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
         previous_move: Turn::Short, // C'est à cut de commencer, donc le previous move est SHORT
         joined: false,  // Personne n'a rejoint jusque là
         ended: false, // La game n'est pas encore finie
-        creator_turn
+        creator_turn,
+        nb_vertices
     });
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
     while games.games.len() > 10 {
         games.games.remove(0); // On ne garde que les 10 dernières games (potentiellement à ajuster/enlever)
     }
     println!("{:?}", games.games);
-    let partial = PartialGame { id: n, seed, creator_turn }; // On créé une "Game Partielle" pour pouvoir sérializer certaines informations
+    let partial = PartialGame { id: n, seed, creator_turn, nb_vertices }; // On créé une "Game Partielle" pour pouvoir sérializer certaines informations
     let tx = games.games.last().unwrap().tx.clone().unwrap();
     // Partie compliquée qui consiste à envoyer la Game au Client
     let mut rx = tx.subscribe();
@@ -118,7 +119,8 @@ async fn join_game(
     let partial = PartialGame {
         id: games.games[current_game_indice].id,
         seed: games.games[current_game_indice].seed,
-        creator_turn: games.games[current_game_indice].creator_turn
+        creator_turn: games.games[current_game_indice].creator_turn,
+        nb_vertices: games.games[current_game_indice].nb_vertices
     };
     games.games[current_game_indice].joined = true;
     let msg = json!(partial).to_string();
@@ -249,7 +251,8 @@ pub struct Game {
     previous_move: Turn,
     joined: bool,
     ended: bool,
-    creator_turn: Turn
+    creator_turn: Turn,
+    nb_vertices: u32
 }
 
 #[derive(Debug)]
@@ -259,10 +262,11 @@ pub struct Games {
 
 #[derive(Debug, Serialize)]
 pub struct PartialGame {
-    // ça permet de pouvoir sérialiser une Game, en gardant seulement l'id, la seed et le tour du créateur
+    // ça permet de pouvoir sérialiser une Game, en gardant seulement l'id, la seed, le tour du créateur et le nombre de sommets du graphe
     id: i64,
     seed: i64,
-    creator_turn: Turn
+    creator_turn: Turn,
+    nb_vertices: u32
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Copy)]

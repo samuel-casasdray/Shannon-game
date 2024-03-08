@@ -69,7 +69,7 @@ public class Game {
         Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
     }
-    public Game(long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
+    public Game(int nbVertices, long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
         this.creatorTurn = creatorTurn;
         if (joiner) turn = creatorTurn.flip();
         else turn = creatorTurn;
@@ -78,7 +78,7 @@ public class Game {
         this.client = client;
         this.serverUri = serverUri;
         this.pvpOnline = true;
-        nbVertices = 20;
+        this.nbVertices = nbVertices;
         int c = 0;
         do {
             graph = new Graph(nbVertices, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client

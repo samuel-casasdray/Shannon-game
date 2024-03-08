@@ -61,7 +61,7 @@ public class Gui extends Application {
     private Turn turn;
     private Boolean withIA;
     @Setter
-    private int nbVertices;
+    private int nbVertices = 20;
     @Getter
     private Optional<Long> gameCode = Optional.empty();
 
@@ -288,7 +288,8 @@ public class Gui extends Application {
             log.info(e.getMessage());
         }
         try {
-            WebSocketClient client = new WebSocketClient(0L, false, turn);
+            this.nbVertices = 20;
+            WebSocketClient client = new WebSocketClient(nbVertices, 0L, false, turn);
             gameCode = Optional.of(client.getId());
             textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
             this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
@@ -302,7 +303,8 @@ public class Gui extends Application {
             long code = Long.parseLong(textField.getText());
             // On ne rentre pas le code que l'on vient de générer
             if (getGameCode().isPresent() && getGameCode().get() == code) return;
-            WebSocketClient client = new WebSocketClient(code, true, turn);
+            this.nbVertices = 20;
+            WebSocketClient client = new WebSocketClient(nbVertices, code, true, turn);
             game = client.connect(() -> {});
             stage.setScene(run());
         } catch (IOException | URISyntaxException | InterruptedException e) {
