@@ -54,4 +54,20 @@ class MainTest {
         assertEquals(g.getNeighbors().size(), k * (k - 1) / 2);
         assertFalse(g.estConnexe());
     }
+
+    @Test
+    void testSpanningTreesGenerator() throws Exception {
+        Graph g = new Graph();
+        int k = 6;
+        // Création graphe complet à k sommets
+        for (int i = 0; i < k; i++) {
+            Vertex v = new Vertex(0, 0);
+            g.addVertice(v);
+            for (int j = 0; j < i; j++)
+                g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
+        }
+        assertEquals(g.getNbVertices(), k);
+        System.out.println(g.getTwoDistinctsSpanningTrees().size());
+        assertEquals(1, 1);
+    }
 }

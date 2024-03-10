@@ -8,9 +8,6 @@ import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.InvalidationListener;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -181,6 +178,26 @@ public class Gui extends Application {
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
         showGraph(pane);
+        List<Graph> result = graph.getTwoDistinctsSpanningTrees();
+        for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
+            Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+                    pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+                    pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+                    pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+            line.setStroke(Color.BLUE);
+            line.setStrokeWidth(5);
+            pane.getChildren().add(line);
+        }
+
+        for (Pair<Vertex, Vertex> pair : result.getLast().getNeighbors()) {
+            Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+                    pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+                    pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+                    pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+            line.setStroke(Color.RED);
+            line.setStrokeWidth(5);
+            pane.getChildren().add(line);
+        }
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
