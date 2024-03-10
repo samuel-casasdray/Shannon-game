@@ -4,7 +4,6 @@ import fr.projet.gui.UtilsGui;
 import javafx.util.Pair;
 import lombok.Data;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -17,7 +16,6 @@ import java.util.*;
 public class Graph {
 
     // nombre de vertex
-    @Setter
     private int nbVertices = 5;
 
     private boolean aroundCircle = false;
@@ -61,6 +59,8 @@ public class Graph {
     public void addVertice(Vertex v) {
         vertices.add(v);
     }
+
+    public int getNbVertices() {return getVertices().size();}
 
     private static boolean det(int x1, int y1, int x2, int y2, int x3, int y3) {
         return (y3-y1)*(x2-x1) > (y2-y1)*(x3-x1);
@@ -113,9 +113,9 @@ public class Graph {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 100;
         double radius = UtilsGui.CIRCLE_SIZE*2;
-        int maxIter = getNbVertices()*10000;
+        int maxIter = nbVertices*10000;
         int iterCount = 0;
-        while (getVertices().size() < getNbVertices()) {
+        while (getNbVertices() < nbVertices) {
             iterCount++;
             // Coord aléatoire
             Pair<Integer, Integer> coord = new Pair<>(
@@ -241,7 +241,12 @@ public class Graph {
     }
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
-        neighbors.add(edge);
+        if (!neighbors.contains(new Pair<>(edge.getValue(), edge.getKey())))
+            neighbors.add(edge);
+        if (!vertices.contains(edge.getKey()))
+            vertices.add(edge.getKey());
+        if (!vertices.contains(edge.getValue()))
+            vertices.add(edge.getValue());
         edge.getKey().addNeighborVertex(edge.getValue());
     }
 
@@ -268,15 +273,110 @@ public class Graph {
         return !toTest.estConnexe();
     }
 
-    private double triangleArea(Vertex a, Vertex b, Vertex c) { // Renvoie l'aire du triangle formé par les sommets A B et C
-        Pair<Double, Double> ab = new Pair<>((double) (b.getX() - a.getX()), (double) (b.getY() - a.getY()));
-        Pair<Double, Double> ac = new Pair<>((double) (c.getX() - a.getX()), (double) (c.getY() - a.getY()));
-        double crossProduct = ab.getKey() * ac.getValue() - ab.getValue() * ac.getKey();
-        return Math.abs(crossProduct)/2.0;
+    private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Integer, Pair<Integer, Integer>> edgNum) {
+        List<Pair<Integer, Integer>> edges1 = new ArrayList<>();
+        List<Pair<Integer, Integer>> edges2 = new ArrayList<>();
+
+        for (Integer edge : tree1) {
+            edges1.add(edgNum.get(edge));
+        }
+
+        for (Integer edge : tree2) {
+            edges2.add(edgNum.get(edge));
+        }
+
+        edges1.retainAll(edges2);
+        return edges1.isEmpty();
+    }
+    private List<List<Integer>> cartesianProduct(List<List<Integer>> lists) {
+        List<List<Integer>> resultLists = new ArrayList<>();
+        if (lists.isEmpty()) {
+            resultLists.add(new ArrayList<>());
+            return resultLists;
+        } else {
+            List<Integer> firstList = lists.getFirst();
+            List<List<Integer>> remainingLists = cartesianProduct(lists.subList(1, lists.size()));
+            for (Integer condition : firstList) {
+                for (List<Integer> remainingList : remainingLists) {
+                    ArrayList<Integer> resultList = new ArrayList<>();
+                    resultList.add(condition);
+                    resultList.addAll(remainingList);
+                    resultLists.add(resultList);
+                }
+            }
+        }
+        return resultLists;
+    }
+    private List<Graph> spanTrees(List<List<Integer>> trs, List<List<List<Integer>>> edg, List<List<Integer>> all_span_trees, int k, Map<Integer, Pair<Integer, Integer>> edgNum) {
+        if (k == 0) {
+            List<List<Integer>> productResult = cartesianProduct(trs);
+            for (List<Integer> tree : productResult) {
+                for (List<Integer> existingTree : all_span_trees) {
+                    if (areDisjoint(tree, existingTree, edgNum)) {
+                        List<Graph> result = new ArrayList<>(2);
+                        for (List<Integer> element : Arrays.asList(tree, existingTree)) {
+                            Graph gr = new Graph();
+                            for (Integer t : element) {
+                                Pair<Integer, Integer> edgeIndices = edgNum.get(t);
+                                Vertex v1 = getVertices().get(edgeIndices.getKey());
+                                Vertex v2 = getVertices().get(edgeIndices.getValue());
+                                gr.addNeighbor(new Pair<>(v1, v2));
+                            }
+                            result.add(gr);
+                        }
+                        return result;
+                    }
+                }
+            }
+            all_span_trees.addAll(productResult);
+            System.out.println(all_span_trees.size());
+        }
+        for (int i = 0; i < k; i++) {
+            if (edg.get(k).get(i).isEmpty()) continue;
+            trs.add(edg.get(k).get(i));
+            List<List<Integer>> concat = new ArrayList<>();
+            for (int j = 0; j < i; j++) {
+                List<Integer> tempList = new ArrayList<>();
+                tempList.addAll(edg.get(i).get(j));
+                tempList.addAll(edg.get(k).get(j));
+                concat.add(tempList);
+            }
+            edg.set(i, concat);
+            List<Graph> r = spanTrees(trs, edg, all_span_trees, k - 1, edgNum);
+            if (!r.isEmpty()) return r;
+            trs.removeLast();
+            for (int j = 0; j < i; j++) {
+                for (int m = 0; m < edg.get(k).get(j).size(); m++) {
+                    edg.get(i).get(j).removeLast();
+                }
+            }
+        }
+        return new ArrayList<>();
     }
 
-    private boolean lineCircleCollision(double radius, Vertex O, Vertex P, Vertex Q) {
-        double minimumDistance = (2*triangleArea(O, P, Q))/P.distance(Q);
-        return minimumDistance <= radius;
+    // Algorithme permettant d'énumérer tous les arbres couvrants trouvé ici :
+    // Tag, M. A., & Mansour, M. E. (2019). Automatic computing of the grand potential in finite temperature many-body
+    // perturbation theory. International Journal of Modern Physics C, 30(11), 1950100.
+    public List<Graph> getTwoDistinctsSpanningTrees() {
+        if (!estConnexe()) return new ArrayList<>();
+        int n = getNbVertices();
+        List<List<List<Integer>>> edg = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            edg.add(new ArrayList<>(Collections.nCopies(n, new ArrayList<>())));
+        }
+        int mx = getNeighbors().size();
+        Map<Integer, Pair<Integer, Integer>> edgNum = new HashMap<>();
+        for (Pair<Vertex, Vertex> ed : getNeighbors()) {
+            int index1 = getVertices().indexOf(ed.getKey());
+            int index2 = getVertices().indexOf(ed.getValue());
+            int i = Math.min(index1, index2);
+            int j = Math.max(index1, index2);
+            List<Integer> lMx = new ArrayList<>();
+            lMx.add(mx);
+            edg.get(j).set(i, lMx);
+            edgNum.put(mx, new Pair<>(i, j));
+            mx--;
+        }
+        return spanTrees(new ArrayList<>(), edg, new ArrayList<>(), n-1, edgNum);
     }
 }
