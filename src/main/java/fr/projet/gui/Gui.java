@@ -179,24 +179,26 @@ public class Gui extends Application {
         random = new Random(seed);
         showGraph(pane);
         List<Graph> result = graph.getTwoDistinctsSpanningTrees();
-        for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
-            Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
-            line.setStroke(Color.BLUE);
-            line.setStrokeWidth(5);
-            pane.getChildren().add(line);
-        }
+        if (!result.isEmpty()) {
+            for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
+                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+                line.setStroke(Color.BLUE);
+                line.setStrokeWidth(10);
+                pane.getChildren().add(line);
+            }
 
-        for (Pair<Vertex, Vertex> pair : result.getLast().getNeighbors()) {
-            Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
-            line.setStroke(Color.RED);
-            line.setStrokeWidth(5);
-            pane.getChildren().add(line);
+            for (Pair<Vertex, Vertex> pair : result.getLast().getNeighbors()) {
+                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+                line.setStroke(Color.RED);
+                line.setStrokeWidth(5);
+                pane.getChildren().add(line);
+            }
         }
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);

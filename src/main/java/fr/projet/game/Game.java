@@ -6,6 +6,7 @@ import fr.projet.gui.Gui;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.InterfaceIA;
 import fr.projet.ia.Minimax;
+import fr.projet.ia.WinnerStrat;
 import fr.projet.server.WebSocketClient;
 import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
@@ -58,7 +59,8 @@ public class Game {
             switch (level) {
                 case EASY -> ia = new BasicAI(this, turn);
                 case MEDIUM -> ia = new Minimax(this, turn, 1);
-                case HARD -> ia = new Minimax(this, turn, 2);
+//                case HARD -> ia = new Minimax(this, turn, 2);
+                case HARD -> ia = new WinnerStrat(this, turn);
             }
             this.againstAI = true;
             this.typeIA = typeIA;
@@ -187,6 +189,7 @@ public class Game {
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
         getCutted().add(edge);
+        graph.removeNeighbor(edge);
     }
 
     public void secureEdge(Pair<Vertex, Vertex> edge) {
