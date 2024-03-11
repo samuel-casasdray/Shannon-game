@@ -14,17 +14,30 @@ public class Vertex {
     private HashSet<Vertex> neighborsCut = new HashSet<>(); // Pour avoir un contains en O(1) et aucune répétition ?
     private HashSet<Vertex> neighborsPaint = new HashSet<>();
     private Pair<Integer, Integer> coords;
+    private int id;
 
-    public Vertex(List<Vertex> vertices, int x, int y) {
+    public Vertex(List<Vertex> vertices, int x, int y, int id) {
         this.neighbors = new HashSet<>(vertices);
         this.coords = new Pair<>(x, y);
+        this.id = id;
     }
 
-    public Vertex(int x, int y) {
+    public Vertex(int x, int y, int id) {
         this.neighbors = new HashSet<>();
         this.coords = new Pair<>(x, y);
+        this.id = id;
     }
 
+    public static Vertex clone(Vertex v) {
+        Vertex newVertex = new Vertex(v.getX(), v.getY(), v.getId());
+        newVertex.neighbors = new HashSet<>();
+        for (Vertex neighbor : v.getNeighbors()) {
+            newVertex.addNeighborVertex(new Vertex(neighbor.getX(), neighbor.getY(), neighbor.getId()));
+        }
+        newVertex.coords = new Pair<>(v.getX(), v.getY());
+        newVertex.id = v.getId();
+        return newVertex;
+    }
     public void addNeighborVertex(Vertex v) {
         neighbors.add(v);
         v.getNeighbors().add(this);
