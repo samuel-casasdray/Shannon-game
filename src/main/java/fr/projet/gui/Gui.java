@@ -177,7 +177,6 @@ public class Gui extends Application {
         Pane pane = new Pane();
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
-        showGraph(pane);
         List<Graph> result = graph.getTwoDistinctsSpanningTrees();
         if (!result.isEmpty()) {
             for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
@@ -185,7 +184,7 @@ public class Gui extends Application {
                         pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
                         pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
                         pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
-                line.setStroke(Color.BLUE);
+                line.setStroke(Color.LIGHTBLUE);
                 line.setStrokeWidth(10);
                 pane.getChildren().add(line);
             }
@@ -196,10 +195,11 @@ public class Gui extends Application {
                         pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
                         pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
                 line.setStroke(Color.RED);
-                line.setStrokeWidth(5);
+                line.setStrokeWidth(10);
                 pane.getChildren().add(line);
             }
         }
+        showGraph(pane);
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
