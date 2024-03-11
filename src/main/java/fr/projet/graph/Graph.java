@@ -375,9 +375,14 @@ public class Graph {
                         }
                     }
                 }
+//                Graph diff = new Graph();
+//                for (var edge : getNeighbors()) {
+//                    if (!gr.getNeighbors().contains(edge) && !gr.getNeighbors().contains(new Pair<>(edge.getValue(), edge.getKey()))) {
+//                        diff.addNeighbor(edge);
+//                    }
+//                }
                 if (diff.estConnexe()) {
                     Graph kruskal = diff.Kruskal();
-                    System.out.println("Test");
                     if (kruskal.getNbVertices() != getNbVertices()) continue;
                     Graph second = new Graph();
                     for (var v : kruskal.getNeighbors()) {
@@ -471,20 +476,15 @@ public class Graph {
             parent.add(node);
             rank.add(0);
         }
-        while (e < getNbVertices() - 1) {
-           try {
-               Pair<Vertex, Vertex> uv = neighbors.get(i);
-               i++;
-               int x = find(parent, getVertices().indexOf(uv.getKey()));
-               int y = find(parent, getVertices().indexOf(uv.getValue()));
-               if (x != y) {
-                   e++;
-                   result.add(new Pair<>(getVertices().get(getVertices().indexOf(uv.getKey())), getVertices().get(getVertices().indexOf(uv.getValue()))));
-                   union(parent, rank, x, y);
-               }
-           }
-           catch (Exception ignored) {
-               return new Graph(result);
+        while (e < getNbVertices() - 1 && i < neighbors.size()) {
+           Pair<Vertex, Vertex> uv = neighbors.get(i);
+           i++;
+           int x = find(parent, getVertices().indexOf(uv.getKey()));
+           int y = find(parent, getVertices().indexOf(uv.getValue()));
+           if (x != y) {
+               e++;
+               result.add(new Pair<>(getVertices().get(getVertices().indexOf(uv.getKey())), getVertices().get(getVertices().indexOf(uv.getValue()))));
+               union(parent, rank, x, y);
            }
         }
         return new Graph(result);
