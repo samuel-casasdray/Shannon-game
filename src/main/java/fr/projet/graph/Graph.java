@@ -377,6 +377,8 @@ public class Graph {
                 }
                 if (diff.estConnexe()) {
                     Graph kruskal = diff.Kruskal();
+                    System.out.println("Test");
+                    if (kruskal.getNbVertices() != getNbVertices()) continue;
                     Graph second = new Graph();
                     for (var v : kruskal.getNeighbors()) {
                         for (var v2 : getNeighbors()) {
