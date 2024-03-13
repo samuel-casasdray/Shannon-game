@@ -219,7 +219,7 @@ public class Game {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                v.getNeighbors().stream().filter(x -> predicate.test(x,v)).forEach(t -> {
+                graph.getAdjVertices().get(v).stream().filter(x -> predicate.test(x,v)).forEach(t -> {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }

@@ -25,15 +25,19 @@ public class Graph {
     private Random random = new Random();
 
     private List<Vertex> vertices;
+    private Map<Vertex, List<Vertex>> adjVertices;
 
     @Getter
     private HashSet<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
     public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
         this.neighbors = new HashSet<>(neighbors);
+        this.vertices = new ArrayList<>();
+        this.adjVertices= new HashMap<>();
         HashSet<Vertex> vertexSet = new HashSet<>();
         for (Pair<Vertex, Vertex> element : this.neighbors) {
             vertexSet.add(element.getKey());
             vertexSet.add(element.getValue());
+            addNeighbor(element);
         }
         this.vertices = new ArrayList<>(vertexSet);
         this.nbVertices = vertexSet.size();
@@ -42,46 +46,24 @@ public class Graph {
     public Graph(int nbVertices) {
         this.nbVertices = nbVertices;
         this.vertices = new ArrayList<>();
+        this.adjVertices = new HashMap<>();
         this.generateGraphPlanaire();
     }
 
     public Graph(int nbVertices, long seed) {
         this.nbVertices = nbVertices;
         this.vertices = new ArrayList<>();
+        this.adjVertices = new HashMap<>();
         random = new Random(seed);
         this.generateGraphPlanaire();
     }
 
     public Graph() {
         this.vertices = new ArrayList<>();
+        this.adjVertices = new HashMap<>();
     }
-
-    public static Graph clone(Graph g) {
-        Graph newGraph = new Graph();
-        for (Vertex v : g.getVertices()) {
-            Vertex clone = Vertex.clone(v);
-            clone.setNeighbors(new HashSet<>());
-            newGraph.addVertice(clone);
-        }
-        for (var n : g.getNeighbors()) {
-            Vertex v1 = null;
-            for (var v : newGraph.getVertices()) {
-                if (v.getId() == n.getKey().getId()) {
-                    v1 = v;
-                }
-            }
-            Vertex v2 = null;
-            for (var v : newGraph.getVertices()) {
-                if (v.getId() == n.getValue().getId()) {
-                    v2 = v;
-                }
-            }
-            if (v1 != null && v2 != null)
-                newGraph.addNeighbor(new Pair<>(v1, v2));
-        }
-        return newGraph;
-    }
-    public void addVertice(Vertex v) {
+    public void addVertex(Vertex v) {
+        adjVertices.putIfAbsent(v, new ArrayList<>());
         vertices.add(v);
     }
 
@@ -112,7 +94,7 @@ public class Graph {
                         random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
             }
             // On ajoute le sommet au graphe
-            addVertice(new Vertex(coord.getKey(), coord.getValue(), getNbVertices()));
+            addVertex(new Vertex(coord.getKey(), coord.getValue()));
         }
         //Instantiation des aretes selon une probabilité (proba) entre 2 sommets
         for (int i = 0; i < nbVertices; i++) {
@@ -129,7 +111,7 @@ public class Graph {
                 int r;
                 do {
                     r=random.nextInt(nbVertices);
-                } while(r==i || this.vertices.get(i).getNeighbors().contains(this.vertices.get(r)));
+                } while(r==i || adjVertices.get(this.vertices.get(i)).contains(this.vertices.get(r)));
                 addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
             }
         } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
@@ -146,10 +128,10 @@ public class Graph {
             Pair<Integer, Integer> coord = new Pair<>(
                     random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
                     random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
-            Vertex newVertex = new Vertex(coord.getKey(), coord.getValue(), getNbVertices());
+            Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
             // Ce if est dans le cas où on place le premier sommet
             if (getVertices().isEmpty()) {
-                addVertice(newVertex);
+                addVertex(newVertex);
             }
             else {
                 boolean distanceOk = true;
@@ -161,7 +143,7 @@ public class Graph {
                     }
                 }
                 if (distanceOk)
-                    addVertice(newVertex);
+                    addVertex(newVertex);
             }
             if (iterCount >= maxIter) return;
         }
@@ -170,7 +152,7 @@ public class Graph {
             Vertex v = getVertices().get(i);
             for (int j = 0; j < i; j++) {
                 Vertex v2 = getVertices().get(j);
-                if (v.getNeighbors().contains(v2)) continue;
+                if (getAdjVertices().get(v).contains(v2)) continue;
                 boolean intersect = false;
                 for (Pair<Vertex, Vertex> neighbor : getNeighbors()) {
                     if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
@@ -214,20 +196,21 @@ public class Graph {
     }
 
     public int minDeg() {
-        int minDeg = getVertices().getFirst().getNeighbors().size();
+        //int minDeg = getVertices().getFirst().getNeighbors().size();
+        int minDeg = getAdjVertices().get(getVertices().getFirst()).size();
         for (Vertex v: getVertices()) {
-            if (v.getNeighbors().size() < minDeg) {
-                minDeg = v.getNeighbors().size();
+            if (getAdjVertices().get(v).size() < minDeg) {
+                minDeg = getAdjVertices().get(v).size();
             }
         }
         return minDeg;
     }
 
     public int maxDeg() {
-        int maxDeg = getVertices().getFirst().getNeighbors().size();
+        int maxDeg = getAdjVertices().get(getVertices().getFirst()).size();
         for (Vertex v: getVertices()) {
-            if (v.getNeighbors().size() > maxDeg) {
-                maxDeg = v.getNeighbors().size();
+            if (getAdjVertices().get(v).size() > maxDeg) {
+                maxDeg = getAdjVertices().get(v).size();
             }
         }
         return maxDeg;
@@ -249,7 +232,7 @@ public class Graph {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                for (Vertex t: v.getNeighbors()) {
+                for (Vertex t: getAdjVertices().get(v)) {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }
@@ -261,8 +244,8 @@ public class Graph {
 
     public void removeNeighbor(Pair<Vertex, Vertex> edge) {
         neighbors.remove(edge);
-        edge.getKey().removeNeighborVertex(edge.getValue());
-        edge.getValue().removeNeighborVertex(edge.getKey());
+        adjVertices.get(edge.getKey()).remove(edge.getValue());
+        adjVertices.get(edge.getValue()).remove(edge.getKey());
     }
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
@@ -272,7 +255,12 @@ public class Graph {
             vertices.add(edge.getKey());
         if (!vertices.contains(edge.getValue()))
             vertices.add(edge.getValue());
-        edge.getKey().addNeighborVertex(edge.getValue());
+        getAdjVertices().putIfAbsent(edge.getKey(), new ArrayList<>());
+        getAdjVertices().putIfAbsent(edge.getValue(), new ArrayList<>());
+        if (!getAdjVertices().get(edge.getKey()).contains(edge.getValue()))
+            getAdjVertices().get(edge.getKey()).add(edge.getValue());
+        if (!getAdjVertices().get(edge.getValue()).contains(edge.getKey()))
+            getAdjVertices().get(edge.getValue()).add(edge.getKey());
     }
 
 
@@ -335,6 +323,7 @@ public class Graph {
     private List<Graph> spanTrees(List<List<Integer>> trs, List<List<List<Integer>>> edg, List<List<Integer>> all_span_trees, int k, Map<Integer, Pair<Integer, Integer>> edgNum) {
         if (k == 0) {
             List<List<Integer>> productResult = cartesianProduct(trs);
+            // Code pour renvoyer deux arbres couvrants par énumération
 //            for (List<Integer> tree : productResult) {
 //                for (List<Integer> existingTree : all_span_trees) {
 //                    if (areDisjoint(tree, existingTree, edgNum)) {
@@ -354,7 +343,10 @@ public class Graph {
 //                }
 //            }
             all_span_trees.addAll(productResult);
-            for (var tree : all_span_trees) {
+            // On regarde si le graphe moins l'arbre couvrant est connexe (=diff),
+            // si oui on prend un arbre couvrant grâce à Kruskal, s'il est couvrant du graphe de base
+            // nous avons nos deux arbres couvrants disjoints
+            for (List<Integer> tree : all_span_trees) {
                 Graph gr = new Graph();
                 for (Integer t : tree) {
                     Pair<Integer, Integer> edgeIndices = edgNum.get(t);
@@ -362,41 +354,18 @@ public class Graph {
                     Vertex v2 = getVertices().get(edgeIndices.getValue());
                     gr.addNeighbor(new Pair<>(v1, v2));
                 }
-                Graph diff = Graph.clone(this);
-                diff.setNeighbors(new HashSet<>());
-                for (var n : getNeighbors()) {
-                    if (!gr.getNeighbors().contains(n) && !gr.getNeighbors().contains(new Pair<>(n.getValue(), n.getKey()))) {
-                        for (var v: diff.getVertices()) {
-                            for (var v2 : diff.getVertices()) {
-                                if (v.getId() == n.getKey().getId() && v2.getId() == n.getValue().getId()) {
-                                    diff.addNeighbor(new Pair<>(v, v2));
-                                }
-                            }
-                        }
+                Graph diff = new Graph();
+                for (Pair<Vertex, Vertex> edge : getNeighbors()) {
+                    if (!gr.getNeighbors().contains(edge) && !gr.getNeighbors().contains(new Pair<>(edge.getValue(), edge.getKey()))) {
+                        diff.addNeighbor(edge);
                     }
                 }
-//                Graph diff = new Graph();
-//                for (var edge : getNeighbors()) {
-//                    if (!gr.getNeighbors().contains(edge) && !gr.getNeighbors().contains(new Pair<>(edge.getValue(), edge.getKey()))) {
-//                        diff.addNeighbor(edge);
-//                    }
-//                }
                 if (diff.estConnexe()) {
                     Graph kruskal = diff.Kruskal();
                     if (kruskal.getNbVertices() != getNbVertices()) continue;
-                    Graph second = new Graph();
-                    for (var v : kruskal.getNeighbors()) {
-                        for (var v2 : getNeighbors()) {
-                            if (v.getKey().getId() == v2.getKey().getId() && v.getValue().getId() == v2.getValue().getId()) {
-                                second.addNeighbor(v2);
-                            }
-                        }
-                    }
-                    return Arrays.asList(gr, second);
+                    return Arrays.asList(gr, kruskal);
                 }
-                //return Arrays.asList(gr, diff);
             }
-            //System.out.println(all_span_trees.size());
         }
             for (int i = 0; i < k; i++) {
                 if (edg.get(k).get(i).isEmpty()) continue;
@@ -476,14 +445,14 @@ public class Graph {
             parent.add(node);
             rank.add(0);
         }
-        while (e < getNbVertices() - 1 && i < neighbors.size()) {
+        while (e < getNbVertices() - 1) {
            Pair<Vertex, Vertex> uv = neighbors.get(i);
            i++;
            int x = find(parent, getVertices().indexOf(uv.getKey()));
            int y = find(parent, getVertices().indexOf(uv.getValue()));
            if (x != y) {
                e++;
-               result.add(new Pair<>(getVertices().get(getVertices().indexOf(uv.getKey())), getVertices().get(getVertices().indexOf(uv.getValue()))));
+               result.add(uv);
                union(parent, rank, x, y);
            }
         }
@@ -493,7 +462,7 @@ public class Graph {
     public String toString() {
         StringBuilder r = new StringBuilder();
         for (Vertex v : getVertices())
-            r.append(v.getId()).append(" ");
+            r.append(getVertices().indexOf(v)).append(" ");
         return r.toString();
     }
 }
