@@ -139,7 +139,7 @@ public class GuiScene {
     public Scene nbVertices(HandleClick handleButtonClick, boolean IA) {
         VBox root = getBasicScene();
         Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe",true);
-        Spinner<Integer> spinner = new Spinner<>(5, 20, 5);
+        Spinner<Integer> spinner = new Spinner<>(5, 20, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
         Button enter = UtilsGui.createButton("Confirmer",e -> {

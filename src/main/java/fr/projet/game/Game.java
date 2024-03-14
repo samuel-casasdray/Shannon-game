@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.function.BiPredicate;
 
 @Getter
 @Slf4j
@@ -33,8 +34,8 @@ public class Game {
     private boolean againstAI = false;
     private Turn typeIA;
     private InterfaceIA ia;
-    private final List<Pair<Vertex, Vertex>> secured = new ArrayList<>();
-    private final List<Pair<Vertex, Vertex>> cutted = new ArrayList<>();
+    private final HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>();
+    private final HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>();
     private boolean pvpOnline = false;
     private long seed;
     @Getter
@@ -68,7 +69,7 @@ public class Game {
         Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
     }
-    public Game(long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
+    public Game(int nbVertices, long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
         this.creatorTurn = creatorTurn;
         if (joiner) turn = creatorTurn.flip();
         else turn = creatorTurn;
@@ -77,7 +78,7 @@ public class Game {
         this.client = client;
         this.serverUri = serverUri;
         this.pvpOnline = true;
-        nbVertices = 20;
+        this.nbVertices = nbVertices;
         int c = 0;
         do {
             graph = new Graph(nbVertices, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
@@ -132,12 +133,10 @@ public class Game {
                     }
                     if (!pvpOnline)
                         turn = turn.flip();
-                    if (againstAI) {
-                        detectWinner();
-                        play(key, value);
-                        return;
-                    }
                     detectWinner();
+                    if (againstAI) {
+                        play(key, value);
+                    }
                     return;
                 }
             }
@@ -188,6 +187,7 @@ public class Game {
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
         getCutted().add(edge);
+        graph.removeNeighbor(edge);
     }
 
     public void secureEdge(Pair<Vertex, Vertex> edge) {
@@ -197,38 +197,18 @@ public class Game {
     public boolean shortWon() {
         if (shortWon) return true;
         Graph redGraph = new Graph(getSecured());
-        shortWon = redGraph.getNbVertices() == graph.getNbVertices() && redGraphIsConnexe(redGraph);
+        shortWon = redGraph.getNbVertices() == graph.getNbVertices() &&
+                graphWithoutSomeNeighborsIsConnected(redGraph, (x,v) -> x.isPainted(v) || v.isPainted(x));
         return shortWon;
-    }
-
-    private boolean redGraphIsConnexe(Graph redGraph) {
-        if (redGraph.getVertices().isEmpty()) {
-            return true;
-        }
-        HashSet<Vertex> marked = new HashSet<>();
-        Stack<Vertex> pile = new Stack<>();
-        pile.push(redGraph.getVertices().getFirst());
-        while (!pile.empty()) {
-            Vertex v = pile.pop();
-            if (!marked.contains(v)) {
-                marked.add(v);
-                for (Vertex t: v.getListNeighbors().stream().filter(x -> x.isPainted(v) || v.isPainted(x)).toList()) {
-                    if (!marked.contains(t)) {
-                        pile.push(t);
-                    }
-                }
-            }
-        }
-        return marked.size() == redGraph.getVertices().size();
     }
 
     public boolean cutWon() {
         if (cutWon) return true;
-        cutWon = !graphWithoutCuttedIsConnexe();
+        cutWon = !graphWithoutSomeNeighborsIsConnected(graph, (x,v) -> !x.isCut(v) && !v.isCut(x));
         return cutWon;
     }
 
-    private boolean graphWithoutCuttedIsConnexe() {
+    private boolean graphWithoutSomeNeighborsIsConnected(Graph graph, BiPredicate<Vertex, Vertex> predicate) {
         if (graph.getVertices().isEmpty()) {
             return true;
         }
@@ -239,11 +219,11 @@ public class Game {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                for (Vertex t: v.getListNeighbors().stream().filter(x -> !x.isCut(v) && !v.isCut(x)).toList()) {
+                graph.getAdjVertices().get(v).stream().filter(x -> predicate.test(x,v)).forEach(t -> {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }
-                }
+                });
             }
         }
         return marked.size() == graph.getVertices().size();

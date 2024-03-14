@@ -7,7 +7,9 @@ import fr.projet.graph.Vertex;
 import javafx.util.Pair;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Minimax extends InterfaceIA {
 
@@ -90,7 +92,7 @@ public class Minimax extends InterfaceIA {
 //        return this.graph.estCouvrant(testSecured) || this.graph.difference(cutted);
 //    }
 
-    public int evaluate (Graph graph, List<Pair<Vertex, Vertex>> secured, List<Pair<Vertex, Vertex>> cutted) {
+    public int evaluate (Graph graph, HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
         Graph testSecured = new Graph(secured);
         if (graph.estCouvrant(testSecured)) return -10;
         if (graph.difference(cutted)) return 10;
@@ -99,12 +101,12 @@ public class Minimax extends InterfaceIA {
 
     @Override
     public Pair<Vertex, Vertex> playSHORT() {
-        return null;
+        return playCUT();
     }
 
     public Pair<Vertex, Vertex> playCUT () {
-        List<Pair<Vertex, Vertex>> secured = game.getSecured();
-        List<Pair<Vertex, Vertex>> cutted = game.getCutted();
+        HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>(game.getSecured());
+        HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>(game.getCutted());
         List<Pair<Integer, Pair<Vertex, Vertex>>> score = minMaxF(secured, cutted, depth);
         if (score.isEmpty()) return null; // Cas à gérer quand l'IA ne peut plus jouer
         Pair<Integer, Pair<Vertex, Vertex>> max = score.getFirst();
@@ -114,10 +116,10 @@ public class Minimax extends InterfaceIA {
         return max.getValue();
     }
 
-    public List<Pair<Integer, Pair<Vertex, Vertex>>> minMaxF(List<Pair<Vertex, Vertex>> secured, List<Pair<Vertex, Vertex>> cutted, int depth) {
+    public List<Pair<Integer, Pair<Vertex, Vertex>>> minMaxF(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int depth) {
         //score contient en fait des paire qui corresponde à une arrete le score qu'on lui a calculé
         List<Pair<Integer, Pair<Vertex, Vertex>>> score = new ArrayList<>(); //Les scores associé aux arrete
-        List<Pair<Vertex, Vertex>> allEdges = this.graph.getNeighbors();
+        Set<Pair<Vertex, Vertex>> allEdges = this.graph.getNeighbors();
         List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
         for (Pair<Vertex, Vertex> toCut : allEdges) { // Liste des arrete jouables
             if (!secured.contains(toCut) && !cutted.contains(toCut)) {
@@ -136,8 +138,8 @@ public class Minimax extends InterfaceIA {
         for (Pair<Vertex, Vertex> toCut : edges) { //On parcours toutes les arrêtes du graphes pour essayer de couper
 
             List<Integer> scoreEdge = new ArrayList<>(); //Le score associé à une arrete
-            ArrayList<Pair<Vertex, Vertex>> copieSecure = new ArrayList<>(secured); //Comme on veut simuler des coups on recupere les deux tableau de secure et cut
-            ArrayList<Pair<Vertex, Vertex>> copieCutted = new ArrayList<>(cutted);
+            HashSet<Pair<Vertex, Vertex>> copieSecure = new HashSet<>(secured); //Comme on veut simuler des coups on recupere les deux tableau de secure et cut
+            HashSet<Pair<Vertex, Vertex>> copieCutted = new HashSet<>(cutted);
 
             copieCutted.add(toCut);
             for (Pair<Vertex, Vertex> toSecure : edges) { //On a joué maintenant on simule le coup adverse donc on parcours les arretes et on essaie de les sécuriser
