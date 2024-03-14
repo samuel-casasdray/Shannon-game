@@ -38,7 +38,9 @@ public class WebSocketClient {
     private boolean joiner;
     @Getter
     private long id;
-    public WebSocketClient(long id, boolean joiner, Turn turn) throws IOException, URISyntaxException, InterruptedException {
+    @Getter
+    private int nbVertices;
+    public WebSocketClient(int nbVertices, long id, boolean joiner, Turn turn) throws IOException, URISyntaxException, InterruptedException {
         int creatorTurn = turn == Turn.CUT ? 0 : 1;
         if (joiner) {
             if (!this.isClosed())
@@ -48,7 +50,7 @@ public class WebSocketClient {
         else {
             if (!this.isClosed())
                 this.close();
-            this.connectServer(CREATE_GAME_URI +creatorTurn);
+            this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices);
         }
         this.joiner = joiner;
         int count = 0;
@@ -67,6 +69,7 @@ public class WebSocketClient {
         }
         JsonElement jsonElement = JsonParser.parseString(response);
         this.id = jsonElement.getAsJsonObject().get("id").getAsLong();
+        this.nbVertices = jsonElement.getAsJsonObject().get("nb_vertices").getAsInt();
         // Permet d'envoyer à intervalle régulier des ping au serveur pour garder en vie les
         // connexions websocket qui ont une durée de vie de 120s ou 180s
         if (timer != null)
@@ -98,7 +101,7 @@ public class WebSocketClient {
             long seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
             this.connectServer(SERVER_URI + this.id);
             Turn turn = jsonElement.getAsJsonObject().get("creator_turn").getAsString().equals("Short") ? Turn.SHORT : Turn.CUT;
-            this.game = new Game(this.id, joiner, this, SERVER_URI + this.id, seed, turn);
+            this.game = new Game(this.nbVertices, this.id, joiner, this, SERVER_URI + this.id, seed, turn);
             this.setCallback(function);
             return game;
         } catch (Exception e) {

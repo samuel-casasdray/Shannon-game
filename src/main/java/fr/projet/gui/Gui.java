@@ -8,9 +8,6 @@ import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.InvalidationListener;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -61,7 +58,7 @@ public class Gui extends Application {
     private Turn turn;
     private Boolean withIA;
     @Setter
-    private int nbVertices;
+    private int nbVertices = 20;
     @Getter
     private Optional<Long> gameCode = Optional.empty();
 
@@ -180,6 +177,29 @@ public class Gui extends Application {
         Pane pane = new Pane();
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
+        // Code pour afficher les deux arbres couvrants disjoints s'ils existent
+//        List<Graph> result = graph.getTwoDistinctSpanningTrees();
+//        if (!result.isEmpty()) {
+//            for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
+//                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+//                line.setStroke(Color.LIGHTGREEN);
+//                line.setStrokeWidth(10);
+//                pane.getChildren().add(line);
+//            }
+//
+//            for (Pair<Vertex, Vertex> pair : result.getLast().getNeighbors()) {
+//                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+//                line.setStroke(Color.RED);
+//                line.setStrokeWidth(10);
+//                pane.getChildren().add(line);
+//            }
+//        }
         showGraph(pane);
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
@@ -222,15 +242,13 @@ public class Gui extends Application {
         int nodeIndex=0;
         // Mise à jour des positions des sommets et des textes
         for (Node node : pane.getChildren()) {
-            if (node instanceof Circle) {
+            if (node instanceof Circle vertex) {
                 //System.out.println("cercle");
-                Circle vertex = (Circle) node;
                 Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(nodeIndex).getCoords();
                 vertex.relocate(coord.getKey()+ xOffset,coord.getValue() + yOffset);
                 nodeIndex++;
-            } else if (node instanceof Text) {
+            } else if (node instanceof Text text) {
                 //System.out.println("texte");
-                Text text = (Text) node;
                 int i = Integer.parseInt(text.getText());
                 Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i-1).getCoords();
                 // Centrage du texte
@@ -242,7 +260,6 @@ public class Gui extends Application {
             }
         }
     }
-
 
     public void showGraph(Pane pane) {
         // Ajout des aretes sur l'affichage
@@ -289,7 +306,8 @@ public class Gui extends Application {
             log.info(e.getMessage());
         }
         try {
-            WebSocketClient client = new WebSocketClient(0L, false, turn);
+            this.nbVertices = 20;
+            WebSocketClient client = new WebSocketClient(nbVertices, 0L, false, turn);
             gameCode = Optional.of(client.getId());
             textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
             this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
@@ -303,16 +321,13 @@ public class Gui extends Application {
             long code = Long.parseLong(textField.getText());
             // On ne rentre pas le code que l'on vient de générer
             if (getGameCode().isPresent() && getGameCode().get() == code) return;
-            WebSocketClient client = new WebSocketClient(code, true, turn);
+            this.nbVertices = 20;
+            WebSocketClient client = new WebSocketClient(nbVertices, code, true, turn);
             game = client.connect(() -> {});
             stage.setScene(run());
         } catch (IOException | URISyntaxException | InterruptedException e) {
             log.error(e.getMessage());
         }
     }
-
-
-
-
 }
 
