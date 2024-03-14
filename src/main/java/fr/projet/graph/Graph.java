@@ -342,30 +342,31 @@ public class Graph {
 //                    }
 //                }
 //            }
-            all_span_trees.addAll(productResult);
             // On regarde si le graphe moins l'arbre couvrant est connexe (=diff),
             // si oui on prend un arbre couvrant grâce à Kruskal, s'il est couvrant du graphe de base
             // nous avons nos deux arbres couvrants disjoints
-            for (List<Integer> tree : all_span_trees) {
-                Graph gr = new Graph();
+            for (List<Integer> tree : productResult) {
+                Graph spanningTree = new Graph();
                 for (Integer t : tree) {
                     Pair<Integer, Integer> edgeIndices = edgNum.get(t);
                     Vertex v1 = getVertices().get(edgeIndices.getKey());
                     Vertex v2 = getVertices().get(edgeIndices.getValue());
-                    gr.addNeighbor(new Pair<>(v1, v2));
+                    spanningTree.addNeighbor(new Pair<>(v1, v2));
                 }
                 Graph diff = new Graph();
                 for (Pair<Vertex, Vertex> edge : getNeighbors()) {
-                    if (!gr.getNeighbors().contains(edge) && !gr.getNeighbors().contains(new Pair<>(edge.getValue(), edge.getKey()))) {
+                    if (!spanningTree.getNeighbors().contains(edge) && !spanningTree.getNeighbors().contains(new Pair<>(edge.getValue(), edge.getKey()))) {
                         diff.addNeighbor(edge);
                     }
                 }
                 if (diff.estConnexe()) {
+                    // Second spanning tree ?
                     Graph kruskal = diff.Kruskal();
-                    if (kruskal.getNbVertices() != getNbVertices()) continue;
-                    return Arrays.asList(gr, kruskal);
+                    if (kruskal.getNbVertices() == getNbVertices()) // yes
+                        return Arrays.asList(spanningTree, kruskal);
                 }
             }
+            all_span_trees.addAll(productResult);
         }
             for (int i = 0; i < k; i++) {
                 if (edg.get(k).get(i).isEmpty()) continue;
@@ -378,8 +379,8 @@ public class Graph {
                     concat.add(tempList);
                 }
                 edg.set(i, concat);
-                List<Graph> r = spanTrees(trs, edg, all_span_trees, k - 1, edgNum);
-                if (!r.isEmpty()) return r;
+                List<Graph> spanningTrees = spanTrees(trs, edg, all_span_trees, k - 1, edgNum);
+                if (!spanningTrees.isEmpty()) return spanningTrees;
                 trs.removeLast();
                 for (int j = 0; j < i; j++) {
                     for (int m = 0; m < edg.get(k).get(j).size(); m++) {
@@ -393,7 +394,7 @@ public class Graph {
     // Algorithme permettant d'énumérer tous les arbres couvrants trouvé ici :
     // Tag, M. A., & Mansour, M. E. (2019). Automatic computing of the grand potential in finite temperature many-body
     // perturbation theory. International Journal of Modern Physics C, 30(11), 1950100.
-    public List<Graph> getTwoDistinctsSpanningTrees() {
+    public List<Graph> getTwoDistinctSpanningTrees() {
         if (!estConnexe()) return new ArrayList<>();
         int n = getNbVertices();
         List<List<List<Integer>>> edg = new ArrayList<>(n);

@@ -178,15 +178,14 @@ public class Gui extends Application {
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
         // Code pour afficher les deux arbres couvrants disjoints s'ils existent
-
-//        List<Graph> result = graph.getTwoDistinctsSpanningTrees();
+//        List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //        if (!result.isEmpty()) {
 //            for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
 //                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
 //                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
 //                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
 //                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
-//                line.setStroke(Color.LIGHTBLUE);
+//                line.setStroke(Color.LIGHTGREEN);
 //                line.setStrokeWidth(10);
 //                pane.getChildren().add(line);
 //            }
@@ -243,15 +242,13 @@ public class Gui extends Application {
         int nodeIndex=0;
         // Mise à jour des positions des sommets et des textes
         for (Node node : pane.getChildren()) {
-            if (node instanceof Circle) {
+            if (node instanceof Circle vertex) {
                 //System.out.println("cercle");
-                Circle vertex = (Circle) node;
                 Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(nodeIndex).getCoords();
                 vertex.relocate(coord.getKey()+ xOffset,coord.getValue() + yOffset);
                 nodeIndex++;
-            } else if (node instanceof Text) {
+            } else if (node instanceof Text text) {
                 //System.out.println("texte");
-                Text text = (Text) node;
                 int i = Integer.parseInt(text.getText());
                 Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i-1).getCoords();
                 // Centrage du texte

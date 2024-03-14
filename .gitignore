@@ -10,6 +10,8 @@ backend_server/target/
 *.iws
 *.iml
 *.ipr
+**/.idea/
+.idea/*
 
 ### Eclipse ###
 .apt_generated
