@@ -56,7 +56,7 @@ class MainTest {
     }
 
     @Test
-    void testSpanningTreesGenerator() throws Exception {
+    void testSpanningTreesGenerator() {
         Graph g = new Graph();
         int k = 6;
         // Création graphe complet à k sommets
@@ -67,6 +67,6 @@ class MainTest {
                 g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
         }
         assertEquals(g.getNbVertices(), k);
-        assertEquals(g.getTwoDistinctsSpanningTrees().size(), 2);
+        assertEquals(g.getTwoDistinctSpanningTrees().size(), 2);
     }
 }
