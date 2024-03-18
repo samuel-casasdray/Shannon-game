@@ -24,16 +24,15 @@ public class Graph {
 
     private Random random = new Random();
 
-    private List<Vertex> vertices;
+    private List<Vertex> vertices = new ArrayList<>();
     private Map<Vertex, List<Vertex>> adjVertices;
 
     @Getter
-    private HashSet<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
+    private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
     public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
         this.neighbors = new HashSet<>(neighbors);
-        this.vertices = new ArrayList<>();
         this.adjVertices= new HashMap<>();
-        HashSet<Vertex> vertexSet = new HashSet<>();
+        Set<Vertex> vertexSet = new HashSet<>();
         for (Pair<Vertex, Vertex> element : this.neighbors) {
             vertexSet.add(element.getKey());
             vertexSet.add(element.getValue());
@@ -45,26 +44,32 @@ public class Graph {
 
     public Graph(int nbVertices) {
         this.nbVertices = nbVertices;
-        this.vertices = new ArrayList<>();
         this.adjVertices = new HashMap<>();
         this.generateGraphPlanaire();
     }
 
     public Graph(int nbVertices, long seed) {
         this.nbVertices = nbVertices;
-        this.vertices = new ArrayList<>();
         this.adjVertices = new HashMap<>();
         random = new Random(seed);
         this.generateGraphPlanaire();
     }
 
     public Graph() {
-        this.vertices = new ArrayList<>();
         this.adjVertices = new HashMap<>();
     }
     public void addVertex(Vertex v) {
         adjVertices.putIfAbsent(v, new ArrayList<>());
         vertices.add(v);
+    }
+
+    public void removeVertex(Vertex v) {
+        vertices.remove(v);
+        getAdjVertices().remove(v);
+        for (List<Vertex> listVertex : getAdjVertices().values()) {
+            listVertex.remove(v);
+        }
+        neighbors.removeIf(neighbor -> neighbor.getKey().equals(v) || neighbor.getValue().equals(v));
     }
 
     public int getNbVertices() {return getVertices().size();}
@@ -324,27 +329,31 @@ public class Graph {
         if (k == 0) {
             List<List<Integer>> productResult = cartesianProduct(trs);
             // Code pour renvoyer deux arbres couvrants par énumération
-//            for (List<Integer> tree : productResult) {
-//                for (List<Integer> existingTree : all_span_trees) {
-//                    if (areDisjoint(tree, existingTree, edgNum)) {
-//                        List<Graph> result = new ArrayList<>(2);
-//                        for (List<Integer> element : Arrays.asList(tree, existingTree)) {
-//                            Graph gr = new Graph();
-//                            for (Integer t : element) {
-//                                Pair<Integer, Integer> edgeIndices = edgNum.get(t);
-//                                Vertex v1 = getVertices().get(edgeIndices.getKey());
-//                                Vertex v2 = getVertices().get(edgeIndices.getValue());
-//                                gr.addNeighbor(new Pair<>(v1, v2));
+//            if (all_span_trees.size() >= 100)
+//            {
+//                for (List<Integer> tree : productResult) {
+//                    for (List<Integer> existingTree : all_span_trees) {
+//                        if (areDisjoint(tree, existingTree, edgNum)) {
+//                            List<Graph> result = new ArrayList<>(2);
+//                            for (List<Integer> element : Arrays.asList(tree, existingTree)) {
+//                                Graph gr = new Graph();
+//                                for (Integer t : element) {
+//                                    Pair<Integer, Integer> edgeIndices = edgNum.get(t);
+//                                    Vertex v1 = getVertices().get(edgeIndices.getKey());
+//                                    Vertex v2 = getVertices().get(edgeIndices.getValue());
+//                                    gr.addNeighbor(new Pair<>(v1, v2));
+//                                }
+//                                result.add(gr);
 //                            }
-//                            result.add(gr);
+//                            return result;
 //                        }
-//                        return result;
 //                    }
 //                }
 //            }
             // On regarde si le graphe moins l'arbre couvrant est connexe (=diff),
             // si oui on prend un arbre couvrant grâce à Kruskal, s'il est couvrant du graphe de base
             // nous avons nos deux arbres couvrants disjoints
+            //System.out.println(all_span_trees.size());
             for (List<Integer> tree : productResult) {
                 Graph spanningTree = new Graph();
                 for (Integer t : tree) {
@@ -359,14 +368,46 @@ public class Graph {
                         diff.addNeighbor(edge);
                     }
                 }
-                if (diff.estConnexe()) {
+                //if (!diff.estConnexe()) {
                     // Second spanning tree ?
                     Graph kruskal = diff.Kruskal();
-                    if (kruskal.getNbVertices() == getNbVertices()) // yes
+//                    if (!kruskal.estConnexe()) {
+//                        System.out.println("Kruskal non connexe");
+//                        List<Pair<Vertex, Vertex>> edges = new ArrayList<>(spanningTree.getNeighbors());
+//                        for (Pair<Vertex, Vertex> edge : edges) {
+//                            spanningTree.removeNeighbor(edge);
+//                            if (spanningTree.getNbVertices() != getNbVertices()) {
+//                                spanningTree.addNeighbor(edge);
+//                            } else {
+//                                kruskal.addNeighbor(edge);
+//                                System.out.println((getVertices().indexOf(edge.getKey()) + 1) + " -- " + (getVertices().indexOf(edge.getValue()) + 1));
+//                                for (Pair<Vertex, Vertex> edge2 : getNeighbors()) {
+//                                    Pair<Vertex, Vertex> edge3 = new Pair<>(edge2.getValue(), edge2.getKey());
+//                                    if (!kruskal.getNeighbors().contains(edge2) && !kruskal.getNeighbors().contains(edge3) &&
+//                                    !spanningTree.getNeighbors().contains(edge2) && !spanningTree.getNeighbors().contains(edge3)) {
+//                                        spanningTree.addNeighbor(edge2);
+//                                        if (spanningTree.getNbVertices() == getNbVertices() && kruskal.estConnexe() && spanningTree.estConnexe()) {
+//
+//                                            if (kruskal.getNbVertices() == getNbVertices()) // yes
+//                                            {
+//                                                System.out.println("Ok");
+//                                                return Arrays.asList(spanningTree, kruskal);
+//                                            }
+//                                            else
+//                                                spanningTree.removeNeighbor(edge2);
+//                                        }
+//                                    }
+//                                }
+//                                spanningTree.addNeighbor(edge);
+//                                kruskal.removeNeighbor(edge);
+//                            }
+//                        }
+//                    }
+                    if (kruskal.getNbVertices() == getNbVertices() && kruskal.estConnexe()) // yes
                         return Arrays.asList(spanningTree, kruskal);
-                }
+                //}
             }
-            all_span_trees.addAll(productResult);
+            //all_span_trees.addAll(productResult);
         }
             for (int i = 0; i < k; i++) {
                 if (edg.get(k).get(i).isEmpty()) continue;
@@ -446,7 +487,7 @@ public class Graph {
             parent.add(node);
             rank.add(0);
         }
-        while (e < getNbVertices() - 1) {
+        while (e < getNbVertices() - 1 && i < neighbors.size()) {
            Pair<Vertex, Vertex> uv = neighbors.get(i);
            i++;
            int x = find(parent, getVertices().indexOf(uv.getKey()));
