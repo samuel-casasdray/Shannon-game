@@ -25,13 +25,12 @@ public class Graph {
     private Random random = new Random();
 
     private List<Vertex> vertices = new ArrayList<>();
-    private Map<Vertex, List<Vertex>> adjVertices;
+    private Map<Vertex, List<Vertex>> adjVertices = new HashMap<>();
 
     @Getter
     private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
     public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
         this.neighbors = new HashSet<>(neighbors);
-        this.adjVertices= new HashMap<>();
         Set<Vertex> vertexSet = new HashSet<>();
         for (Pair<Vertex, Vertex> element : this.neighbors) {
             vertexSet.add(element.getKey());
@@ -40,6 +39,15 @@ public class Graph {
         }
         this.vertices = new ArrayList<>(vertexSet);
         this.nbVertices = vertexSet.size();
+    }
+
+    public Graph(Collection<Vertex> vertices, Map<Vertex, List<Vertex>> adjVertices) {
+        for (Vertex v : vertices) {
+            addVertex(v);
+            if (adjVertices.get(v) != null)
+                for (Vertex neighbor: adjVertices.get(v))
+                    addNeighbor(new Pair<>(v, neighbor));
+        }
     }
 
     public Graph(int nbVertices) {
