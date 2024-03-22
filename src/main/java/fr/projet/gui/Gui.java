@@ -181,28 +181,28 @@ public class Gui extends Application {
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
          //Code pour afficher les deux arbres couvrants disjoints s'ils existent
-        List<Graph> result = graph.getTwoDistinctSpanningTrees();
-        if (!result.isEmpty()) {
-            for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
-                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
-                line.setStroke(Color.LIGHTGREEN);
-                line.setStrokeWidth(10);
-                pane.getChildren().add(line);
-            }
-
-            for (Pair<Vertex, Vertex> pair : result.getLast().getNeighbors()) {
-                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
-                line.setStroke(Color.RED);
-                line.setStrokeWidth(10);
-                pane.getChildren().add(line);
-            }
-        }
+//        List<Graph> result = graph.getTwoDistinctSpanningTrees();
+//        if (!result.isEmpty()) {
+//            for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
+//                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+//                line.setStroke(Color.LIGHTGREEN);
+//                line.setStrokeWidth(10);
+//                pane.getChildren().add(line);
+//            }
+//
+//            for (Pair<Vertex, Vertex> pair : result.getLast().getNeighbors()) {
+//                Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                        pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+//                line.setStroke(Color.RED);
+//                line.setStrokeWidth(10);
+//                pane.getChildren().add(line);
+//            }
+//        }
         showGraph(pane);
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
@@ -272,12 +272,13 @@ public class Gui extends Application {
         }
         Vertex v = new Vertex(0, 0);
         for (Vertex vertex : graph.getVertices()) {
-            if (graph.getAdjVertices().get(vertex).size() <= 5) {
-                v = vertex;
-                break;
-            }
+            if (graph.getAdjVertices().get(vertex) != null)
+                if (graph.getAdjVertices().get(vertex).size() <= 5) {
+                    v = vertex;
+                    break;
+                }
         }
-        Graph g2 = new Graph(graph.getNeighbors());
+        Graph g2 = new Graph(graph.getVertices(), graph.getAdjVertices());
         g2.removeVertex(v);
         if (g2.getNbVertices() >= 1)
             colorPlanarGraph(g2);
