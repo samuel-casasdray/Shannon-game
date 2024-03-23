@@ -97,7 +97,10 @@ public class Gui extends Application {
                     (textField, turn) -> create((Text) textField, turn)
                 )
             );
-            case HOME_IAVIA -> stage.setScene(run()); //TODO : Changer quand IA_VS_IA existe
+            case HOME_IAVIA -> {
+                game = new Game(nbVertices, false, Turn.CUT, Level.EASY);
+                stage.setScene(run()); //TODO : Changer quand IA_VS_IA existe
+            }
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
                 stage.setScene(GuiScene.nbVertices(this::handleButtonClick,withIA));
@@ -177,7 +180,7 @@ public class Gui extends Application {
         Pane pane = new Pane();
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
-        // Code pour afficher les deux arbres couvrants disjoints s'ils existent
+         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //        if (!result.isEmpty()) {
 //            for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
@@ -260,6 +263,36 @@ public class Gui extends Application {
             }
         }
     }
+    private List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
+    private void colorPlanarGraph(Graph graph) {
+        if (graph.getNbVertices() <= 6) {
+            for (int i = 0; i < graph.getVertices().size(); i++) {
+                graph.getVertices().get(i).setColor(i);
+            }
+        }
+        Vertex v = new Vertex(0, 0);
+        for (Vertex vertex : graph.getVertices()) {
+            if (graph.getAdjVertices().get(vertex) != null)
+                if (graph.getAdjVertices().get(vertex).size() <= 5) {
+                    v = vertex;
+                    break;
+                }
+        }
+        Graph g2 = new Graph(graph.getVertices(), graph.getAdjVertices());
+        g2.removeVertex(v);
+        if (g2.getNbVertices() >= 1)
+            colorPlanarGraph(g2);
+        List<Boolean> boolColors = new ArrayList<>(List.of(true, true, true, true, true, true));
+        for (Vertex u : graph.getAdjVertices().get(v)) {
+            boolColors.set(u.getColor(), false);
+        }
+        for (int i = 0; i < 5; i++) {
+            if (boolColors.get(i)) {
+                v.setColor(i);
+                break;
+            }
+        }
+    }
 
     public void showGraph(Pane pane) {
         // Ajout des aretes sur l'affichage
@@ -291,7 +324,9 @@ public class Gui extends Application {
                 text.relocate(coord.getKey() + 16.50, coord.getValue() + 15.50);
             }
             // Un cercle pour représenter le sommet
-            Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
+            //Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
+            colorPlanarGraph(game.getGraph());
+            Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.web(colors.get(game.getGraph().getVertices().get(i).getColor())));
             vertex.relocate(coord.getKey(), coord.getValue());
             // On ajoute les 2 élements sur l'affichage
             pane.getChildren().addAll(vertex, text);
