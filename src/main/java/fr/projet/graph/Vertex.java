@@ -14,6 +14,7 @@ public class Vertex {
     private HashSet<Vertex> neighborsCut = new HashSet<>(); // Pour avoir un contains en O(1) et aucune répétition ?
     private HashSet<Vertex> neighborsPaint = new HashSet<>();
     private Pair<Integer, Integer> coords;
+    private int color = 0;
 
     public Vertex(List<Vertex> vertices, int x, int y) {
         this.coords = new Pair<>(x, y);

@@ -29,7 +29,7 @@ public class GuiScene {
     int nbVertices;
     private static final Random random = new Random();
 
-    private VBox getBasicScene() {
+    public VBox getBasicScene() {
         VBox root = new VBox(50); // Espacement vertical entre les éléments
         root.setPadding(new Insets(-40, 0, 10, 0));
 
