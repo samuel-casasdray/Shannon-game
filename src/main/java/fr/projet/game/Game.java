@@ -57,8 +57,8 @@ public class Game {
         if (withIA) {
             switch (level) {
                 case EASY -> ia = new BasicAI(this, turn);
-                case MEDIUM -> ia = new Minimax(this, turn, 1);
-                case HARD -> ia = new Minimax(this, turn, 2);
+                case MEDIUM -> ia = new Minimax(this, turn, 2);
+                case HARD -> ia = new Minimax(this, turn, 4);
             }
             this.againstAI = true;
             this.typeIA = typeIA;
