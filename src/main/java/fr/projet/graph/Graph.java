@@ -29,6 +29,7 @@ public class Graph {
 
     @Getter
     private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
+
     public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
         this.neighbors = new HashSet<>(neighbors);
         Set<Vertex> vertexSet = new HashSet<>();
@@ -289,17 +290,24 @@ public class Graph {
     }
 
     public boolean difference (HashSet<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
-        List<Pair<Vertex, Vertex>> verticeNew = new ArrayList<>();
+        HashSet<Pair<Vertex, Vertex>> VerticeNew = new HashSet<>();
         for (Pair<Vertex, Vertex> edge : neighbors) {
             if (!cutted.contains(edge)) {
-                verticeNew.add(edge);
+                VerticeNew.add(edge);
             }
         }
-        Graph toTest = new Graph(verticeNew);
+        Graph toTest = new Graph(VerticeNew);
+
+        for (Vertex v : this.getVertices()) {
+            if (!toTest.getVertices().contains(v)) return true;
+        }
+
         return !toTest.estConnexe();
     }
 
-    private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Integer, Pair<Integer, Integer>> edgNum) {
+
+
+private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Integer, Pair<Integer, Integer>> edgNum) {
         List<Pair<Integer, Integer>> edges1 = new ArrayList<>();
         List<Pair<Integer, Integer>> edges2 = new ArrayList<>();
 
