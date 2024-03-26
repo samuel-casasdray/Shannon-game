@@ -100,8 +100,8 @@ public class Gui extends Application {
                 )
             );
             case HOME_IAVIA -> {
-                this.nbVertices=20;
-                this.game = new Game(nbVertices, Level.MEDIUM, Level.EASY);
+                this.nbVertices = 20;
+                this.game = new Game(nbVertices, Level.MEDIUM, Level.MEDIUM);
                 stage.setScene(run());
                 new Thread(game::aiVsAi).start();
             }
