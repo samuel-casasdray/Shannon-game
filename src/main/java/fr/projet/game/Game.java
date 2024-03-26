@@ -117,14 +117,14 @@ public class Game {
 
     public void aiVsAi() {
         while (!cutWon && !shortWon) {
-            AIPlay();
+            AIPlay(ia, ia2, turn);
             detectWinner();
         }
         //Platform.runLater(this::aiVsAi);
     }
     public void play(Vertex key, Vertex value) {
         if (againstAI && turn == typeIA) {
-            AIPlay();
+            AIPlay(ia, ia, typeIA);
         } else {
             Pair<Vertex, Vertex> played;
             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
@@ -144,20 +144,20 @@ public class Game {
                     }
                     if (!pvpOnline)
                         turn = turn.flip();
-                    detectWinner();
+                    showWinner();
                     if (cutWon || shortWon) return;
-                    if (againstAI) new Thread(this::AIPlay).start();
+                    if (againstAI) new Thread(() -> AIPlay(ia, ia, typeIA)).start();
                 }
             }
         }
         detectWinner();
     }
 
-    public void AIPlay() {
+    public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
         AIIsPlaying = true;
         Pair<Vertex, Vertex> played;
-        if (typeIA == Turn.CUT) {
-            Pair<Vertex, Vertex> v = ia.playCUT();
+        if (turn == Turn.CUT) {
+            Pair<Vertex, Vertex> v = ia1.playCUT();
             played = new Pair<>(v.getKey(), v.getValue());
             cutEdge(played);
             for (var element : Gui.getEdges()) {
@@ -167,7 +167,7 @@ public class Game {
                 }
             }
         } else {
-            Pair<Vertex, Vertex> v = ia.playSHORT();
+            Pair<Vertex, Vertex> v = ia2.playSHORT();
             played = new Pair<>(v.getKey(), v.getValue());
             secureEdge(played);
             for (var element : Gui.getEdges()) {
@@ -177,7 +177,7 @@ public class Game {
                 }
             }
         }
-        turn = turn.flip();
+        this.turn = this.turn.flip();
         AIIsPlaying = false;
     }
     public void showWinner() {
