@@ -127,7 +127,7 @@ public class GuiScene {
     public Scene pvia(HandleClick handleButtonClick) {
         VBox root = getBasicScene();
         Text title = UtilsGui.createText("JOUEUR VS IA", true);
-        Text text1 = UtilsGui.createText("Choisissez la dificulté");
+        Text text1 = UtilsGui.createText("Choisissez la difficulté");
         Button facile = UtilsGui.createButton("facile", event -> handleButtonClick.call(ButtonClickType.PVIA_EASY));
         Button normal = UtilsGui.createButton("normal", event -> handleButtonClick.call(ButtonClickType.PVIA_MEDIUM));
         Button difficile = UtilsGui.createButton("difficile", event -> handleButtonClick.call(ButtonClickType.PVIA_HARD));
