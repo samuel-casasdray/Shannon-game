@@ -135,7 +135,7 @@ public class Minimax extends InterfaceIA {
         //System.out.println(cutted+"    "+secured);
         //System.out.println(eval+" lol "+eval* (d + 1) * (d + 1));
         if (d == 0 || eval != 0) {
-            return eval * (d + 1) * (d + 1);
+            return eval;
         }
         int val = 0;
         if (player == 1) {

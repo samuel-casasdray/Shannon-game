@@ -10,6 +10,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.*;
 
+import static java.lang.Math.random;
+
 @Accessors(chain = true)
 @Data
 @Slf4j
@@ -176,7 +178,8 @@ public class Graph {
                     }
                 }
                 if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
-                    addNeighbor(new Pair<>(v, v2));
+                    double x=random();
+                    if (x<1.1) addNeighbor(new Pair<>(v, v2)); //à modifier pour moins d'arrêtes
                 }
             }
         }
