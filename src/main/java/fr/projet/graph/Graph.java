@@ -29,7 +29,6 @@ public class Graph {
 
     @Getter
     private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
-
     public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
         this.neighbors = new HashSet<>(neighbors);
         Set<Vertex> vertexSet = new HashSet<>();
@@ -51,17 +50,17 @@ public class Graph {
         }
     }
 
-    public Graph(int nbVertices) {
+    public Graph(int nbVertices, int maxDeg) {
         this.nbVertices = nbVertices;
         this.adjVertices = new HashMap<>();
-        this.generateGraphPlanaire();
+        this.generateGraphPlanaire(maxDeg);
     }
 
-    public Graph(int nbVertices, long seed) {
+    public Graph(int nbVertices, int maxDeg, long seed) {
         this.nbVertices = nbVertices;
         this.adjVertices = new HashMap<>();
         random = new Random(seed);
-        this.generateGraphPlanaire();
+        this.generateGraphPlanaire(maxDeg);
     }
 
     public Graph() {
@@ -130,11 +129,11 @@ public class Graph {
             }
         } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
     }
-    private void generateGraphPlanaire() {
+    private void generateGraphPlanaire(int maxDeg) {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 100;
         double radius = UtilsGui.CIRCLE_SIZE*2;
-        int maxIter = nbVertices*10000;
+        int maxIter = nbVertices*1000;
         int iterCount = 0;
         while (getNbVertices() < nbVertices) {
             iterCount++;
@@ -176,7 +175,8 @@ public class Graph {
                     }
                 }
                 if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
-                    addNeighbor(new Pair<>(v, v2));
+                    if (getAdjVertices().get(v).size() < maxDeg && getAdjVertices().get(v2).size() < maxDeg)
+                        addNeighbor(new Pair<>(v, v2));
                 }
             }
         }
@@ -228,11 +228,6 @@ public class Graph {
             }
         }
         return maxDeg;
-    }
-
-    public void setNbVertices(int nbVertices) {
-        this.nbVertices = nbVertices;
-        this.generateGraphPlanaire();
     }
 
     public boolean estConnexe() {
