@@ -118,9 +118,7 @@ public class Game {
     public void aiVsAi() {
         while (!cutWon && !shortWon) {
             AIPlay(ia, ia2, turn);
-            detectWinner();
         }
-        //Platform.runLater(this::aiVsAi);
     }
     public void play(Vertex key, Vertex value) {
         if (againstAI && turn == typeIA) {
@@ -142,10 +140,11 @@ public class Game {
                         secureEdge(played);
                         paintLine(neighbors.getValue());
                     }
-                    if (!pvpOnline)
+                    if (!pvpOnline) {
                         turn = turn.flip();
-                    showWinner();
-                    if (cutWon || shortWon) return;
+                        detectWinner();
+                        if (cutWon || shortWon) return;
+                    }
                     if (againstAI) new Thread(() -> AIPlay(ia, ia, typeIA)).start();
                 }
             }
@@ -179,6 +178,7 @@ public class Game {
         }
         this.turn = this.turn.flip();
         AIIsPlaying = false;
+        detectWinner();
     }
     public void showWinner() {
         if (cutWon()) {
