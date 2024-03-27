@@ -253,8 +253,10 @@ public class Graph {
 
     public void removeNeighbor(Pair<Vertex, Vertex> edge) {
         neighbors.remove(edge);
-        adjVertices.get(edge.getKey()).remove(edge.getValue());
-        adjVertices.get(edge.getValue()).remove(edge.getKey());
+        if (adjVertices.containsKey(edge.getKey()))
+            adjVertices.get(edge.getKey()).remove(edge.getValue());
+        if (adjVertices.containsKey(edge.getValue()))
+            adjVertices.get(edge.getValue()).remove(edge.getKey());
     }
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {

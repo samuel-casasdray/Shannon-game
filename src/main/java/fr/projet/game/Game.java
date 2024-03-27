@@ -49,7 +49,10 @@ public class Game {
     private final int nbVertices;
     private final int minDeg = 3;
     private final int maxDeg = 8;
+    @Setter
     private static boolean AIIsPlaying = false;
+    @Setter
+    private boolean gameIsCanceled = false;
     public Game(int nbv) { this(nbv,false, Turn.CUT, Level.EASY); }
     public Game() { this(20,false, Turn.CUT, Level.EASY); }
 
@@ -153,6 +156,7 @@ public class Game {
     }
 
     public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
+        if (gameIsCanceled) return;
         AIIsPlaying = true;
         Pair<Vertex, Vertex> played;
         if (turn == Turn.CUT) {
