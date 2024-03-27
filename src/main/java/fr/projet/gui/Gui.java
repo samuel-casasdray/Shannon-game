@@ -1,5 +1,7 @@
 package fr.projet.gui;
 
+import fr.projet.ia.BasicAI;
+import fr.projet.ia.Minimax;
 import fr.projet.server.WebSocketClient;
 import fr.projet.game.Game;
 import fr.projet.game.Level;
@@ -98,8 +100,10 @@ public class Gui extends Application {
                 )
             );
             case HOME_IAVIA -> {
-                game = new Game(nbVertices, false, Turn.CUT, Level.EASY);
-                stage.setScene(run()); //TODO : Changer quand IA_VS_IA existe
+                this.nbVertices = 20;
+                this.game = new Game(nbVertices, Level.MEDIUM, Level.MEDIUM);
+                stage.setScene(run());
+                new Thread(game::aiVsAi).start();
             }
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
@@ -126,9 +130,8 @@ public class Gui extends Application {
                 this.nbVertices=GuiScene.getNbVertices();
                 this.game = new Game(nbVertices, withIA, turn, level);
                 stage.setScene(run());
-                if (withIA && turn==Turn.CUT) game.play(null, null);
+                if (withIA && turn==Turn.CUT) new Thread(() -> game.play(null, null)).start();
             }
-
         }
     }
 
