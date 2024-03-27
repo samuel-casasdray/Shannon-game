@@ -63,6 +63,7 @@ public class Gui extends Application {
     private int nbVertices = 20;
     @Getter
     private Optional<Long> gameCode = Optional.empty();
+    private Thread gameThread;
 
     @Override
     public void start(Stage stage) {
@@ -103,7 +104,9 @@ public class Gui extends Application {
                 this.nbVertices = 20;
                 this.game = new Game(nbVertices, Level.MEDIUM, Level.MEDIUM);
                 stage.setScene(run());
-                new Thread(game::aiVsAi).start();
+                gameThread = new Thread(game::aiVsAi);
+                gameThread.setDaemon(true);
+                gameThread.start();
             }
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
@@ -130,7 +133,11 @@ public class Gui extends Application {
                 this.nbVertices=GuiScene.getNbVertices();
                 this.game = new Game(nbVertices, withIA, turn, level);
                 stage.setScene(run());
-                if (withIA && turn==Turn.CUT) new Thread(() -> game.play(null, null)).start();
+                if (withIA && turn==Turn.CUT) {
+                    gameThread = new Thread(() -> game.play(null, null));
+                    gameThread.setDaemon(true);
+                    gameThread.start();
+                }
             }
         }
     }
@@ -154,6 +161,10 @@ public class Gui extends Application {
                     } catch (Exception ignored) {}
                 }
             }
+            Game.setAIIsPlaying(false);
+            game.setGameIsCanceled(true);
+            if (gameThread != null)
+                gameThread.interrupt();
         });
     }
 
@@ -281,6 +292,7 @@ public class Gui extends Application {
                     break;
                 }
         }
+        if (!graph.getAdjVertices().containsKey(v)) return;
         Graph g2 = new Graph(graph.getVertices(), graph.getAdjVertices());
         g2.removeVertex(v);
         if (g2.getNbVertices() >= 1)
