@@ -206,41 +206,37 @@ public class Game {
         }
         if (u.isEmpty()) return;
         HashSet<Vertex> secondComponent = graph.getComponent(u.get());
-        HashSet<Vertex> smallestComponent = new HashSet<>();
+        HashSet<Vertex> smallestComponent;
         if (component.size() > secondComponent.size()) {
             smallestComponent = secondComponent;
         }
         else {
             smallestComponent = component;
         }
-        //for (Pair<Pair<Vertex, Vertex>, Line> pair : Gui.getEdges()) {
-        //for (int i = 0; i < Gui.getEdges().size(); i++) {
         HashSet<Vertex> finalSmallestComponent = smallestComponent;
+        List<Pair<Pair<Vertex, Vertex>, Line>> edgesGreen = Gui.getEdges().stream().filter(pair -> finalSmallestComponent.contains(pair.getKey().getKey())
+                && finalSmallestComponent.contains(pair.getKey().getValue())
+                && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
         Timer t = new Timer();
         TimerTask tt = new TimerTask() {
-            private static int i = 0;
+            private int i = 0;
             @Override
             public void run() {
-                if (i < Gui.getEdges().size())
+                if (i < edgesGreen.size())
                 {
-                    Pair<Pair<Vertex, Vertex>, Line> pair = Gui.getEdges().get(i);
-//            if (smallestComponent.contains(pair.getKey().getKey()) && !smallestComponent.contains(pair.getKey().getValue())
-//                    || smallestComponent.contains(pair.getKey().getValue()) && !smallestComponent.contains(pair.getKey().getKey())) {
-//                pair.getValue().getStrokeDashArray().add(1D);
-//                pair.getValue().setStroke(Color.LIGHTGREEN);
-                    if (finalSmallestComponent.contains(pair.getKey().getKey()) && finalSmallestComponent.contains(pair.getKey().getValue())
-                    && !pair.getKey().getKey().isCut(pair.getKey().getValue())) {
-                        pair.getValue().setStroke(Color.LIGHTGREEN);
-                    }
+                    Pair<Pair<Vertex, Vertex>, Line> pair = edgesGreen.get(i);
+                    pair.getValue().setStroke(Color.LIGHTGREEN);
+                    System.out.println(i);
+                    i++;
                 }
                 else {
                     t.cancel();
+                    t.purge();
+                    System.out.println("Canceled");
                 }
-                i++;
             }
         };
-        t.scheduleAtFixedRate(tt, 50, 100);
-       // }
+        t.scheduleAtFixedRate(tt, 100, 250);
     }
 
     private void detectWinner() {

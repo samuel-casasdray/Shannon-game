@@ -65,7 +65,7 @@ public class Gui extends Application {
     private Optional<Long> gameCode = Optional.empty();
     private Thread gameThread;
     @Getter
-    private static Pane pane;
+    private Pane pane;
 
     @Override
     public void start(Stage stage) {
@@ -219,6 +219,7 @@ public class Gui extends Application {
 //                pane.getChildren().add(line);
 //            }
 //        }
+        edges.clear();
         showGraph();
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
