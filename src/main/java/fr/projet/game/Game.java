@@ -3,6 +3,7 @@ package fr.projet.game;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
+import fr.projet.gui.UtilsGui;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.InterfaceIA;
 import fr.projet.ia.Minimax;
@@ -59,7 +60,7 @@ public class Game {
     public Game(int nbv, boolean withIA, Turn typeIA, Level level) {
         nbVertices = nbv;
         do {
-            graph = new Graph(nbVertices, maxDeg);
+            graph = new Graph(nbVertices, maxDeg, minDeg);
         } while (graphIsNotOkay());
         if (withIA) {
             switch (level) {
@@ -88,7 +89,7 @@ public class Game {
         this.nbVertices = nbVertices;
         int c = 0;
         do {
-            graph = new Graph(nbVertices, maxDeg, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
+            graph = new Graph(nbVertices, maxDeg, minDeg, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
             c++;
         } while (graphIsNotOkay());
         Gui.setGraph(graph);
@@ -99,7 +100,7 @@ public class Game {
     public Game(int nbVertices, Level levelIACut, Level levelIAShort) {
         this.nbVertices = nbVertices;
         do {
-            graph = new Graph(nbVertices, maxDeg);
+            graph = new Graph(nbVertices, maxDeg, minDeg);
         } while (graphIsNotOkay());
         switch (levelIACut) {
             case EASY -> ia = new BasicAI(this, turn);
@@ -187,9 +188,39 @@ public class Game {
     public void showWinner() {
         if (cutWon()) {
             Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
+            isolateComonent();
         }
         else if (shortWon()) {
             Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
+        }
+    }
+
+    public void isolateComonent() {
+        HashSet<Vertex> component = graph.getComponent(graph.getVertices().getFirst());
+        Optional<Vertex> u = Optional.empty();
+        for (Vertex x : getGraph().getVertices()) {
+            if (!component.contains(x)) {
+                u = Optional.of(x);
+                break;
+            }
+        }
+        if (u.isEmpty()) return;
+        HashSet<Vertex> secondComponent = graph.getComponent(u.get());
+        HashSet<Vertex> smallestComponent = new HashSet<>();
+        if (component.size() > secondComponent.size()) {
+            smallestComponent = secondComponent;
+        }
+        else {
+            smallestComponent = component;
+        }
+        for (Pair<Pair<Vertex, Vertex>, Line> pair : Gui.getEdges()) {
+//            if (smallestComponent.contains(pair.getKey().getKey()) && !smallestComponent.contains(pair.getKey().getValue())
+//                    || smallestComponent.contains(pair.getKey().getValue()) && !smallestComponent.contains(pair.getKey().getKey())) {
+//                pair.getValue().getStrokeDashArray().add(1D);
+//                pair.getValue().setStroke(Color.LIGHTGREEN);
+            if (smallestComponent.contains(pair.getKey().getKey()) && smallestComponent.contains(pair.getKey().getValue())) {
+                pair.getValue().setStroke(Color.LIGHTGREEN);
+            }
         }
     }
 
