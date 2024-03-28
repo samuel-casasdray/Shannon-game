@@ -188,14 +188,14 @@ public class Game {
     public void showWinner() {
         if (cutWon()) {
             Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
-            isolateComonent();
+            isolateComponent();
         }
         else if (shortWon()) {
             Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
         }
     }
 
-    public void isolateComonent() {
+    public void isolateComponent() {
         HashSet<Vertex> component = graph.getComponent(graph.getVertices().getFirst());
         Optional<Vertex> u = Optional.empty();
         for (Vertex x : getGraph().getVertices()) {
@@ -213,15 +213,34 @@ public class Game {
         else {
             smallestComponent = component;
         }
-        for (Pair<Pair<Vertex, Vertex>, Line> pair : Gui.getEdges()) {
+        //for (Pair<Pair<Vertex, Vertex>, Line> pair : Gui.getEdges()) {
+        //for (int i = 0; i < Gui.getEdges().size(); i++) {
+        HashSet<Vertex> finalSmallestComponent = smallestComponent;
+        Timer t = new Timer();
+        TimerTask tt = new TimerTask() {
+            private static int i = 0;
+            @Override
+            public void run() {
+                if (i < Gui.getEdges().size())
+                {
+                    Pair<Pair<Vertex, Vertex>, Line> pair = Gui.getEdges().get(i);
 //            if (smallestComponent.contains(pair.getKey().getKey()) && !smallestComponent.contains(pair.getKey().getValue())
 //                    || smallestComponent.contains(pair.getKey().getValue()) && !smallestComponent.contains(pair.getKey().getKey())) {
 //                pair.getValue().getStrokeDashArray().add(1D);
 //                pair.getValue().setStroke(Color.LIGHTGREEN);
-            if (smallestComponent.contains(pair.getKey().getKey()) && smallestComponent.contains(pair.getKey().getValue())) {
-                pair.getValue().setStroke(Color.LIGHTGREEN);
+                    if (finalSmallestComponent.contains(pair.getKey().getKey()) && finalSmallestComponent.contains(pair.getKey().getValue())
+                    && !pair.getKey().getKey().isCut(pair.getKey().getValue())) {
+                        pair.getValue().setStroke(Color.LIGHTGREEN);
+                    }
+                }
+                else {
+                    t.cancel();
+                }
+                i++;
             }
-        }
+        };
+        t.scheduleAtFixedRate(tt, 50, 100);
+       // }
     }
 
     private void detectWinner() {
