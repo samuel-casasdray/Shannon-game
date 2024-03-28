@@ -64,6 +64,8 @@ public class Gui extends Application {
     @Getter
     private Optional<Long> gameCode = Optional.empty();
     private Thread gameThread;
+    @Getter
+    private static Pane pane;
 
     @Override
     public void start(Stage stage) {
@@ -191,7 +193,7 @@ public class Gui extends Application {
         borderPane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
 
         // Création du Pane pour afficher le graphique
-        Pane pane = new Pane();
+        pane = new Pane();
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         random = new Random(seed);
          //Code pour afficher les deux arbres couvrants disjoints s'ils existent
@@ -217,7 +219,7 @@ public class Gui extends Application {
 //                pane.getChildren().add(line);
 //            }
 //        }
-        showGraph(pane);
+        showGraph();
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
@@ -277,7 +279,7 @@ public class Gui extends Application {
             }
         }
     }
-    private List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
+    private static List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
     private void colorPlanarGraph(Graph graph) {
         if (graph.getNbVertices() <= 6) {
             for (int i = 0; i < graph.getVertices().size(); i++) {
@@ -309,7 +311,7 @@ public class Gui extends Application {
         }
     }
 
-    public void showGraph(Pane pane) {
+    public void showGraph() {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
         for (Pair<Vertex, Vertex> pair : this.game.getGraph().getNeighbors()) {

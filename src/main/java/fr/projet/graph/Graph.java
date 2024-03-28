@@ -20,7 +20,7 @@ public class Graph {
 
     private boolean aroundCircle = false;
 
-    private double proba = 0.2;
+    private double proba = 0.7;
 
     private Random random = new Random();
 
@@ -50,17 +50,17 @@ public class Graph {
         }
     }
 
-    public Graph(int nbVertices, int maxDeg) {
+    public Graph(int nbVertices, int maxDeg, int minDeg) {
         this.nbVertices = nbVertices;
         this.adjVertices = new HashMap<>();
-        this.generateGraphPlanaire(maxDeg);
+        this.generateGraphPlanaire(maxDeg, minDeg);
     }
 
-    public Graph(int nbVertices, int maxDeg, long seed) {
+    public Graph(int nbVertices, int maxDeg, int minDeg, long seed) {
         this.nbVertices = nbVertices;
         this.adjVertices = new HashMap<>();
         random = new Random(seed);
-        this.generateGraphPlanaire(maxDeg);
+        this.generateGraphPlanaire(maxDeg, minDeg);
     }
 
     public Graph() {
@@ -129,7 +129,7 @@ public class Graph {
             }
         } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
     }
-    private void generateGraphPlanaire(int maxDeg) {
+    private void generateGraphPlanaire(int maxDeg, int minDeg) {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 100;
         double radius = UtilsGui.CIRCLE_SIZE*2;
@@ -180,6 +180,15 @@ public class Graph {
                 }
             }
         }
+        for (Pair<Vertex, Vertex> edge : getNeighbors().stream().toList()) {
+            float p = random.nextFloat();
+            if (p > proba && degree(edge.getKey()) > minDeg && degree(edge.getValue()) > minDeg)
+                removeNeighbor(edge);
+        }
+    }
+
+    public int degree(Vertex v) {
+        return getAdjVertices().get(v).size();
     }
 
     private boolean thereAreACircleCollision(double radius, Vertex v1, Vertex v2) {
@@ -249,6 +258,27 @@ public class Graph {
             }
         }
         return marked.size() == getVertices().size();
+    }
+
+    public HashSet<Vertex> getComponent(Vertex vertex) {
+        if (getVertices().isEmpty()) {
+            return new HashSet<>();
+        }
+        HashSet<Vertex> marked = new HashSet<>();
+        Stack<Vertex> pile = new Stack<>();
+        pile.push(vertex);
+        while (!pile.empty()) {
+            Vertex v = pile.pop();
+            if (!marked.contains(v)) {
+                marked.add(v);
+                for (Vertex t: getAdjVertices().get(v).stream().filter(x -> !x.isCut(v) && !v.isCut(x)).toList()) {
+                    if (!marked.contains(t)) {
+                        pile.push(t);
+                    }
+                }
+            }
+        }
+        return marked;
     }
 
     public void removeNeighbor(Pair<Vertex, Vertex> edge) {
