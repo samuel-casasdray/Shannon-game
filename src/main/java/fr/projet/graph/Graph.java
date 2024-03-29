@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.*;
+import java.util.function.BiPredicate;
 
 @Accessors(chain = true)
 @Data
@@ -260,7 +261,7 @@ public class Graph {
         return marked.size() == getVertices().size();
     }
 
-    public HashSet<Vertex> getComponent(Vertex vertex) {
+    public HashSet<Vertex> getComponent(Vertex vertex, BiPredicate<Vertex, Vertex> predicate) {
         if (getVertices().isEmpty()) {
             return new HashSet<>();
         }
@@ -271,7 +272,7 @@ public class Graph {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                for (Vertex t: getAdjVertices().get(v).stream().filter(x -> !x.isCut(v) && !v.isCut(x)).toList()) {
+                for (Vertex t: getAdjVertices().get(v).stream().filter(x -> predicate.test(x, v)).toList()) {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }
