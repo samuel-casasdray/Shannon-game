@@ -1,7 +1,5 @@
 package fr.projet.gui;
 
-import fr.projet.ia.BasicAI;
-import fr.projet.ia.Minimax;
 import fr.projet.server.WebSocketClient;
 import fr.projet.game.Game;
 import fr.projet.game.Level;

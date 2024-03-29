@@ -3,7 +3,6 @@ package fr.projet.game;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
-import fr.projet.gui.UtilsGui;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.InterfaceIA;
 import fr.projet.ia.Minimax;
@@ -192,11 +191,12 @@ public class Game {
         }
         else if (shortWon()) {
             Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
+            deleteCuttedEdge();
         }
     }
 
     public void isolateComponent() {
-        HashSet<Vertex> component = graph.getComponent(graph.getVertices().getFirst());
+        HashSet<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !x.isCut(v) && !v.isCut(x));
         Optional<Vertex> u = Optional.empty();
         for (Vertex x : getGraph().getVertices()) {
             if (!component.contains(x)) {
@@ -205,7 +205,7 @@ public class Game {
             }
         }
         if (u.isEmpty()) return;
-        HashSet<Vertex> secondComponent = graph.getComponent(u.get());
+        HashSet<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !x.isCut(v) && !v.isCut(x));
         HashSet<Vertex> smallestComponent;
         if (component.size() > secondComponent.size()) {
             smallestComponent = secondComponent;
@@ -217,26 +217,39 @@ public class Game {
         List<Pair<Pair<Vertex, Vertex>, Line>> edgesGreen = Gui.getEdges().stream().filter(pair -> finalSmallestComponent.contains(pair.getKey().getKey())
                 && finalSmallestComponent.contains(pair.getKey().getValue())
                 && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
+        createTimer(edgesGreen, false, 250);
+    }
+
+    public void deleteCuttedEdge() {
+        List<Pair<Pair<Vertex, Vertex>, Line>> securedEdges = Gui.getEdges().stream().filter(x ->
+                cutted.contains(x.getKey()) || !secured.contains(x.getKey())).toList();
+        createTimer(securedEdges, true, 100);
+    }
+
+    public void createTimer(List<Pair<Pair<Vertex, Vertex>, Line>> edges, boolean opacity, int period) {
         Timer t = new Timer();
         TimerTask tt = new TimerTask() {
             private int i = 0;
             @Override
             public void run() {
-                if (i < edgesGreen.size())
+                if (i < edges.size())
                 {
-                    Pair<Pair<Vertex, Vertex>, Line> pair = edgesGreen.get(i);
-                    pair.getValue().setStroke(Color.LIGHTGREEN);
-                    System.out.println(i);
+                    Pair<Pair<Vertex, Vertex>, Line> pair = edges.get(i);
+                    if (opacity) {
+                        pair.getValue().setVisible(false);
+                    }
+                    else {
+                        pair.getValue().setStroke(Color.LIGHTGREEN);
+                    }
                     i++;
                 }
                 else {
                     t.cancel();
                     t.purge();
-                    System.out.println("Canceled");
                 }
             }
         };
-        t.scheduleAtFixedRate(tt, 100, 250);
+        t.scheduleAtFixedRate(tt, 100, period);
     }
 
     private void detectWinner() {
