@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.BiPredicate;
 
@@ -49,10 +51,7 @@ public class Game {
     private final int nbVertices;
     private final int minDeg = 3;
     private final int maxDeg = 8;
-    @Setter
-    private static boolean AIIsPlaying = false;
-    @Setter
-    private boolean gameIsCanceled = false;
+    private final int AIDelay = 100;
     public Game(int nbv) { this(nbv,false, Turn.CUT, Level.EASY); }
     public Game() { this(20,false, Turn.CUT, Level.EASY); }
 
@@ -62,18 +61,12 @@ public class Game {
             graph = new Graph(nbVertices, maxDeg, minDeg);
         } while (graphIsNotOkay());
         if (withIA) {
-            switch (level) {
-                case EASY -> ia = new BasicAI(this, turn);
-                case MEDIUM -> ia = new Minimax(this, turn, 2);
-                case HARD -> ia = new Minimax(this, turn, 4);
-            }
+            ia = getIAwithDifficulty(level);
             this.againstAI = true;
             this.typeIA = typeIA;
         }
-        Random rngSeed = new Random();
-        seed = rngSeed.nextLong();
+        seed = new Random().nextLong();
         Gui.setGraph(graph);
-        Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
     }
     public Game(int nbVertices, long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
@@ -92,7 +85,6 @@ public class Game {
             c++;
         } while (graphIsNotOkay());
         Gui.setGraph(graph);
-        Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
     }
 
@@ -101,26 +93,25 @@ public class Game {
         do {
             graph = new Graph(nbVertices, maxDeg, minDeg);
         } while (graphIsNotOkay());
-        switch (levelIACut) {
-            case EASY -> ia = new BasicAI(this, turn);
-            case MEDIUM -> ia = new Minimax(this, turn, 2);
-            case HARD -> ia = new Minimax(this, turn, 4);
-        }
-        switch (levelIAShort) {
-            case EASY -> ia2 = new BasicAI(this, turn);
-            case MEDIUM -> ia2 = new Minimax(this, turn, 2);
-            case HARD -> ia2 = new Minimax(this, turn, 4);
-        }
-        Random rngSeed = new Random();
-        seed = rngSeed.nextLong();
+        ia = getIAwithDifficulty(levelIACut);
+        ia2 = getIAwithDifficulty(levelIAShort);
+        seed = new Random().nextLong();
         Gui.setGraph(graph);
-        Gui.setSeed(seed);
         Gui.setHandler(this::handleEvent);
     }
 
     public void aiVsAi() {
+        LocalTime time = LocalTime.now();
         while (!cutWon && !shortWon) {
             AIPlay(ia, ia2, turn);
+            int delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
+            if (delay < AIDelay) {
+                try {
+                    Thread.sleep(AIDelay-delay);
+                }
+                catch (Exception ignored) {}
+            }
+            time = LocalTime.now();
         }
     }
     public void play(Vertex key, Vertex value) {
@@ -156,8 +147,10 @@ public class Game {
     }
 
     public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
-        if (gameIsCanceled) return;
-        AIIsPlaying = true;
+        if (ia2.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
+            ia2.setDepth(5);
+        if (ia1.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
+            ia1.setDepth(5);
         Pair<Vertex, Vertex> played;
         if (turn == Turn.CUT) {
             Pair<Vertex, Vertex> v = ia1.playCUT();
@@ -181,16 +174,17 @@ public class Game {
             }
         }
         this.turn = this.turn.flip();
-        AIIsPlaying = false;
         detectWinner();
     }
     public void showWinner() {
         if (cutWon()) {
-            Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
+            if (ia2 == null)
+                Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
             isolateComponent();
         }
         else if (shortWon()) {
-            Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
+            if (ia2 == null)
+                Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             deleteCuttedEdge();
         }
     }
@@ -218,6 +212,9 @@ public class Game {
                 && finalSmallestComponent.contains(pair.getKey().getValue())
                 && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
         createTimer(edgesGreen, false, 250);
+        List<Pair<Pair<Vertex, Vertex>, Line>> cuttedLines = Gui.getEdges().stream().filter(x ->
+                cutted.contains(x.getKey())).toList();
+        createTimer(cuttedLines, true, 100);
     }
 
     public void deleteCuttedEdge() {
@@ -267,7 +264,7 @@ public class Game {
                 line.getProperties().get("pair") instanceof Pair<?, ?> pair1 &&
                 pair1.getKey() instanceof Vertex key && pair1.getValue() instanceof Vertex value) {
             Pair<Vertex, Vertex> move = new Pair<>(key, value);
-            if (cutted.contains(move) || secured.contains(move) || AIIsPlaying) return;
+            if (cutted.contains(move) || secured.contains(move)) return;
             if (pvpOnline) {
                 try {
                     sendMove(new Pair<>(key, value));
@@ -434,4 +431,12 @@ public class Game {
         return cutWon;
     }
     public boolean getShortWon() { return shortWon; }
+
+    private InterfaceIA getIAwithDifficulty(Level level) {
+        return switch (level) {
+            case EASY -> new BasicAI(this, turn);
+            case MEDIUM -> new Minimax(this, turn, 3);
+            case HARD -> new Minimax(this, turn, 4);
+        };
+    }
 }
