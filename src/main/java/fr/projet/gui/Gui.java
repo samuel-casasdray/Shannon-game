@@ -49,10 +49,6 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
-    @Getter
-    @Setter
-    private static long seed;
-    private Random random = new Random();
     private Stage stage;
     private Level level;
     private Turn turn;
@@ -61,6 +57,9 @@ public class Gui extends Application {
     private int nbVertices = 20;
     @Getter
     private Optional<Long> gameCode = Optional.empty();
+    private Thread gameThread;
+    @Getter
+    private Pane pane;
 
     @Override
     public void start(Stage stage) {
@@ -98,8 +97,12 @@ public class Gui extends Application {
                 )
             );
             case HOME_IAVIA -> {
-                game = new Game(nbVertices, false, Turn.CUT, Level.EASY);
-                stage.setScene(run()); //TODO : Changer quand IA_VS_IA existe
+                this.nbVertices = 20;
+                this.game = new Game(nbVertices, Level.MEDIUM, Level.MEDIUM);
+                stage.setScene(run());
+                gameThread = new Thread(game::aiVsAi);
+                gameThread.setDaemon(true);
+                gameThread.start();
             }
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
@@ -126,9 +129,12 @@ public class Gui extends Application {
                 this.nbVertices=GuiScene.getNbVertices();
                 this.game = new Game(nbVertices, withIA, turn, level);
                 stage.setScene(run());
-                if (turn==Turn.CUT) game.play(null, null);
+                if (withIA && turn==Turn.CUT) {
+                    gameThread = new Thread(() -> game.play(null, null));
+                    gameThread.setDaemon(true);
+                    gameThread.start();
+                }
             }
-
         }
     }
 
@@ -150,6 +156,8 @@ public class Gui extends Application {
                         game.getClient().close();
                     } catch (Exception ignored) {}
                 }
+                if (gameThread != null)
+                    gameThread.interrupt();
             }
         });
     }
@@ -177,10 +185,9 @@ public class Gui extends Application {
         borderPane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
 
         // Création du Pane pour afficher le graphique
-        Pane pane = new Pane();
+        pane = new Pane();
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
-        random = new Random(seed);
-         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
+        //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //        if (!result.isEmpty()) {
 //            for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
@@ -203,7 +210,8 @@ public class Gui extends Application {
 //                pane.getChildren().add(line);
 //            }
 //        }
-        showGraph(pane);
+        edges.clear();
+        showGraph();
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
@@ -263,7 +271,7 @@ public class Gui extends Application {
             }
         }
     }
-    private List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
+    private static List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
     private void colorPlanarGraph(Graph graph) {
         if (graph.getNbVertices() <= 6) {
             for (int i = 0; i < graph.getVertices().size(); i++) {
@@ -278,6 +286,7 @@ public class Gui extends Application {
                     break;
                 }
         }
+        if (!graph.getAdjVertices().containsKey(v)) return;
         Graph g2 = new Graph(graph.getVertices(), graph.getAdjVertices());
         g2.removeVertex(v);
         if (g2.getNbVertices() >= 1)
@@ -294,7 +303,7 @@ public class Gui extends Application {
         }
     }
 
-    public void showGraph(Pane pane) {
+    public void showGraph() {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
         for (Pair<Vertex, Vertex> pair : this.game.getGraph().getNeighbors()) {
@@ -324,7 +333,6 @@ public class Gui extends Application {
                 text.relocate(coord.getKey() + 16.50, coord.getValue() + 15.50);
             }
             // Un cercle pour représenter le sommet
-            //Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
             colorPlanarGraph(game.getGraph());
             Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.web(colors.get(game.getGraph().getVertices().get(i).getColor())));
             vertex.relocate(coord.getKey(), coord.getValue());
@@ -360,7 +368,7 @@ public class Gui extends Application {
             WebSocketClient client = new WebSocketClient(nbVertices, code, true, turn);
             game = client.connect(() -> {});
             stage.setScene(run());
-        } catch (IOException | URISyntaxException | InterruptedException e) {
+        } catch (IOException | URISyntaxException | InterruptedException | NumberFormatException e) {
             log.error(e.getMessage());
         }
     }
