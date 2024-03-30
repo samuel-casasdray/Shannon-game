@@ -1,6 +1,7 @@
 package fr.projet.ia;
 
 import fr.projet.game.Game;
+import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
@@ -11,193 +12,150 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Collections.max;
+import static java.util.Collections.min;
+
 public class Minimax extends InterfaceIA {
 
     //Pair<Vertex, Vertex> bestMove;
-
-    int depth;
+    int compteur=0;
 
     public Minimax(Game game, Turn plays, int depth) {
-        super(game, plays);
-        this.depth = depth;
+        super(game, plays, depth);
     }
 
-    public int sum (List<Pair<Integer, Pair<Vertex, Vertex>>> liste) {
-        int sum = 0;
-        for (Pair<Integer, Pair<Vertex, Vertex>> element : liste){
-            sum+=element.getKey();
-        }
-        return sum;
-    }
 
-//    public Pair<Vertex, Vertex> playCUT() {
-//        List<Pair<Vertex, Vertex>> AllEdges = this.graph.getNeighbors();
-//        ArrayList<Pair<Vertex, Vertex>> secured = game.getSecured();
-//        ArrayList<Pair<Vertex, Vertex>> cutted = game.getCutted();
-//        List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
-//        for (Pair<Vertex, Vertex> toUse : AllEdges) {
-//            if (!secured.contains(toUse) && !cutted.contains(toUse)) {
-//                edges.add(toUse);
-//            }
-//        }
-
-//        int value = 0;
-//        Pair<Vertex, Vertex> res = edges.getFirst();
-//        for (Pair<Vertex, Vertex> toCut : edges) {
-//            ArrayList<Pair<Vertex, Vertex>> copieCutted = new ArrayList<>(cutted);
-//            copieCutted.add(toCut);
-//            int call = MinMax(secured, copieCutted, d - 1, false);
-//            if (value < call) {
-//                value = call;
-//                res = toCut;
-//            }
-//        }
-//        return res;
-//    }
-
-//    public int MinMax (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted, int depth, Boolean maximizingPlayer) {
-//        List<Pair<int, Pair<Vertex, Vertex>>> score = new ArrayList<>();
-//        List<Pair<Vertex, Vertex>> AllEdges = this.graph.getNeighbors();
-//        List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
-//        for (Pair<Vertex, Vertex> toUse : AllEdges) {
-//            if (!secured.contains(toUse) && !cutted.contains(toUse)) {
-//                edges.add(toUse);
-//            }
-//        }
-//        int value = 0;
-//        if (depth == 0 || terminalNode(secured,cutted)) {
-//            return evaluate(this.graph, secured, cutted);
-//        }
-//        if (maximizingPlayer) {
-//            value = -1000000000;
-//            for (Pair<Vertex, Vertex> toCut : edges) {
-//                ArrayList<Pair<Vertex, Vertex>> copieCutted = new ArrayList<>(cutted);
-//                copieCutted.add(toCut);
-//                value = Math.max(value,MinMax(secured,copieCutted, depth-1, false));
-//            }
-//        }
-//        else {
-//            value = 1000000000;
-//            for (Pair<Vertex, Vertex> toSecure : edges) {
-//                ArrayList<Pair<Vertex, Vertex>> copieSecure = new ArrayList<>(secured);
-//                copieSecure.add(toSecure);
-//                value = Math.min(value,MinMax(copieSecure,cutted, depth-1, true));
-//            }
-//        }
-//        return value;
-//    }
-
-//    public Boolean terminalNode (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted) {
-//        Graph testSecured = new Graph(secured);
-//        return this.graph.estCouvrant(testSecured) || this.graph.difference(cutted);
-//    }
-
-    public int evaluate (Graph graph, HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
+    public int evaluate(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
+        //if (this.graph.difference(cutted)) System.out.println("OOFEJOZEJIOEIOZ");
         Graph testSecured = new Graph(secured);
-        if (graph.estCouvrant(testSecured)) return -10;
-        if (graph.difference(cutted)) return 10;
+        if (this.graph.difference(cutted)) return 10;
+        if (this.graph.estCouvrant(testSecured)) return -10;
         return 0;
     }
 
-    @Override
-    public Pair<Vertex, Vertex> playSHORT() {
-        return playCUT();
-    }
-
-    public Pair<Vertex, Vertex> playCUT () {
-        HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>(game.getSecured());
-        HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>(game.getCutted());
-        List<Pair<Integer, Pair<Vertex, Vertex>>> score = minMaxF(secured, cutted, depth);
-        if (score.isEmpty()) return null; // Cas à gérer quand l'IA ne peut plus jouer
-        Pair<Integer, Pair<Vertex, Vertex>> max = score.getFirst();
-        for (Pair<Integer, Pair<Vertex, Vertex>> element : score){
-            if (element.getKey()>max.getKey()) max=element;
-        }
-        return max.getValue();
-    }
-
-    public List<Pair<Integer, Pair<Vertex, Vertex>>> minMaxF(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int depth) {
-        //score contient en fait des paire qui corresponde à une arrete le score qu'on lui a calculé
-        List<Pair<Integer, Pair<Vertex, Vertex>>> score = new ArrayList<>(); //Les scores associé aux arrete
-        Set<Pair<Vertex, Vertex>> allEdges = this.graph.getNeighbors();
-        List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
-        for (Pair<Vertex, Vertex> toCut : allEdges) { // Liste des arrete jouables
-            if (!secured.contains(toCut) && !cutted.contains(toCut)) {
-                edges.add(toCut);
-            }
-        }
-        if (depth==0) {
-            //si on ne regarde plus en avant, alors toute les arretes ont le meme score qui est celui que la fonction d'evaluation donne au graphe
-            int value = evaluate(this.graph,secured,cutted);
-            for (Pair<Vertex, Vertex> toCut : edges) {
-                score.add(new Pair<>(value,toCut));
-            }
-            return score;
-        }
-        //Sinon :
-        for (Pair<Vertex, Vertex> toCut : edges) { //On parcours toutes les arrêtes du graphes pour essayer de couper
-
-            List<Integer> scoreEdge = new ArrayList<>(); //Le score associé à une arrete
-            HashSet<Pair<Vertex, Vertex>> copieSecure = new HashSet<>(secured); //Comme on veut simuler des coups on recupere les deux tableau de secure et cut
-            HashSet<Pair<Vertex, Vertex>> copieCutted = new HashSet<>(cutted);
-
-            copieCutted.add(toCut);
-            for (Pair<Vertex, Vertex> toSecure : edges) { //On a joué maintenant on simule le coup adverse donc on parcours les arretes et on essaie de les sécuriser
-                if (!secured.contains(toSecure) && !cutted.contains(toSecure)) {
-                    copieSecure.add(toSecure);
-                    //Une fois qu'on a immaginé notre coup et celui de l'adversaire c'est à nous de jouer à nouveau donc on fait l'appel récursif
-                    //On ajoute donc au tableau scoreEdge les sommes des evalutations des arretes restante en fonction de chaque securisation
-                    scoreEdge.add(sum (minMaxF(copieSecure,copieCutted, depth-1) ));
+    public int evaluate2(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
+        int res = this.graph.getVertices().size();
+        HashSet<Pair<Vertex, Vertex>> toTest = new HashSet<>(this.graph.getNeighbors());
+        toTest.removeAll(cutted);
+        toTest.removeAll(secured);
+        for (Vertex v : this.graph.getVertices()) {
+            int nbNeib = 0;
+            boolean notSec = true;
+            for (Pair<Vertex, Vertex> s : secured) {
+                if (s.getValue() == v || s.getKey() == v) {
+                    notSec = false;
                 }
             }
-            //Maintenant scoreEdge contient pour chaque securisation de CUT, les valeur des evaluations de nos coup suivant, le score de l'arrete est donc la somme de ces valeurs
-            score.add(new Pair<>(scoreEdge.stream().mapToInt(Integer::intValue).sum(),toCut));
+            for (Pair<Vertex, Vertex> edge : toTest) {
+                if (edge.getValue() == v || edge.getKey() == v) {
+                    nbNeib += 1;
+                }
+            }
+            if (nbNeib < res) res = nbNeib;
         }
-        return score;
+        //System.out.println(-res);
+        return -res;
     }
 
-//    public Pair<Vertex, Vertex> playSHORT () {
-//        ArrayList<Pair<Vertex, Vertex>> secured = game.getSecured();
-//        ArrayList<Pair<Vertex, Vertex>> cutted = game.getCutted();
-//        List<Pair<int, Pair<Vertex, Vertex>>> score = MinMaxF2(secured, cutted, d);
-//        Pair<int, Pair<Vertex, Vertex>> max = score.getFirst();
-//        for (Pair<int, Pair<Vertex, Vertex>> element : score){
-//            if (element.getKey()>max.getKey()) max=element;
-//        }
-//        return max.getValue();
-//    }
-////
-//    public List<Pair<int, Pair<Vertex, Vertex>>> MinMaxF2 (ArrayList<Pair<Vertex, Vertex>> secured, ArrayList<Pair<Vertex, Vertex>> cutted, int depth) {
-//        List<Pair<int, Pair<Vertex, Vertex>>> score = new ArrayList<>();
-//        List<Pair<Vertex, Vertex>> AllEdges = this.graph.getNeighbors();
-//        List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
-//        for (Pair<Vertex, Vertex> toCut : AllEdges) {
-//            if (!secured.contains(toCut) && !cutted.contains(toCut)) {
-//                edges.add(toCut);
-//            }
-//        }
-//        if (depth==0) {
-//            int value = -evaluate(this.graph,secured,cutted);
-//            for (Pair<Vertex, Vertex> toCut : edges) {
-//                score.add(new Pair<>(value,toCut));
-//            }
-//            return score;
-//        }
-//        for (Pair<Vertex, Vertex> toSecure : edges) {
-//            List<int> scoreEdge = new ArrayList<>();
-//            ArrayList<Pair<Vertex, Vertex>> copieSecure = new ArrayList<>(secured);
-//            ArrayList<Pair<Vertex, Vertex>> copieCutted = new ArrayList<>(cutted);
-//            copieSecure.add(toSecure);
-//            for (Pair<Vertex, Vertex> toCut : edges) {
-//                if (!secured.contains(toCut) && !cutted.contains(toCut)) {
-//                    copieCutted.add(toCut);
-//                    scoreEdge.add(sum (MinMaxF2(copieSecure,copieCutted, depth-1) ));
-//                }
-//            }
-//            score.add(new Pair<>(scoreEdge.stream().mapToInt(int::intValue).sum(),toSecure));
-//        }
-//        return score;
-//    }
+
+
+    public Pair<Vertex, Vertex> playCUTtest() {
+        HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>(game.getSecured());
+        Pair<Vertex, Vertex> solution = null;
+        int res = -100000;
+        for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+            solution = edge;
+        }
+        System.out.println(this.graph.difference(secured));
+        return solution;
+    }
+
+
+
+    public Pair<Vertex, Vertex> playCUT() {
+        HashSet<Pair<Vertex, Vertex>> securedInit = new HashSet<>(game.getSecured());
+        HashSet<Pair<Vertex, Vertex>> cuttedInit = new HashSet<>(game.getCutted());
+        int d=this.depth-1;
+        Pair<Vertex, Vertex> solution = null;
+        int res = -100000;
+        //System.out.println("--------------------------------------------------------");
+        for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+            if (!securedInit.contains(edge) && !cuttedInit.contains(edge)) {
+                HashSet<Pair<Vertex, Vertex>> cuttedModif = new HashSet<>(cuttedInit);
+                cuttedModif.add(edge);
+                int call = minMaxCUT(securedInit, cuttedModif, d, 0);
+                //System.out.println(call+" - "+edge+"--------    "+res);
+                if (call>res) {
+                    res=call;
+                    solution=edge;
+                }
+            }
+        }
+        //System.out.println("--------------------------------------------------------\n"+solution);
+        return solution;
+    }
+
+
+    public Pair<Vertex, Vertex> playSHORT() {
+        HashSet<Pair<Vertex, Vertex>> securedInit = new HashSet<>(game.getSecured());
+        HashSet<Pair<Vertex, Vertex>> cuttedInit = new HashSet<>(game.getCutted());
+        int d=this.depth-1;
+        Pair<Vertex, Vertex> solution = null;
+        int res = 100000;
+        //System.out.println("--------------------------------------------------------");
+        for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+            if (!securedInit.contains(edge) && !cuttedInit.contains(edge)) {
+                HashSet<Pair<Vertex, Vertex>> securedModif = new HashSet<>(securedInit);
+                securedModif.add(edge);
+                int call = minMaxCUT(securedModif, cuttedInit, d, 1);
+                //System.out.println(call+" - "+edge+"--------    "+res);
+                if (call<res) {
+                    res=call;
+                    solution=edge;
+                }
+            }
+        }
+        //System.out.println("--------------------------------------------------------\n"+solution);
+        return solution;
+    }
+
+
+
+
+
+    public int minMaxCUT(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player) { //1 pour CUT 0 pour SHORT
+        int eval = evaluate(secured, cutted);
+        //System.out.println(eval);
+        //System.out.println(cutted.size()+"   "+secured.size());
+        //System.out.println(cutted+"    "+secured);
+        //System.out.println(eval+" lol "+eval* (d + 1) * (d + 1));
+        if (d == 0 || eval != 0) {
+            return eval * (d + 1) * (d + 1);
+        }
+        int val = 0;
+        if (player == 1) {
+            val = -10000;
+            for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+                if (!cutted.contains(edge) && !secured.contains(edge)) {
+                    HashSet<Pair<Vertex, Vertex>> cuttedSuite = new HashSet<>(cutted);
+                    cuttedSuite.add(edge);
+                    //val+=minMaxCUT(secured, cuttedSuite, d - 1, 0);
+                    val = Math.max(minMaxCUT(secured, cuttedSuite, d - 1, 0), val);
+                }
+            }
+        } else {
+            val = 10000;
+            for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+                if (!cutted.contains(edge) && !secured.contains(edge)) {
+                    HashSet<Pair<Vertex, Vertex>> securedSuite = new HashSet<>(secured);
+                    securedSuite.add(edge);
+                    val = Math.min(minMaxCUT(securedSuite, cutted, d - 1, 1), val);
+                    //val+=minMaxCUT(securedSuite, cutted, d - 1, 1);
+                }
+            }
+        }
+        return val;
+    }
 
 
 
@@ -206,89 +164,33 @@ public class Minimax extends InterfaceIA {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // public int minimax(int depth, Turn turn) {
-    //     if (depth == 0) {
-    //         if (game.cutWon()) return 1;
-    //         else return -1;
-    //     }
-    //     if (turn == Turn.CUT) {
-    //         int value = -1;
-    //         for 
-    //     }
-    // }
-    // public int play(Turn turn) {
-    //     if (game.cutWon()) {
-    //         return 1;
-    //     }
-    //     else if (game.shortWon()) {
-    //         return -1;
-    //     }
-    //     if (turn == Turn.CUT) {
-    //         int meilleur_score = -2;
-    //         Pair<Vertex, Vertex> edge = null;
-    //         for (int i = graph.getNeighbors().size() - 1; i > 0; i--) {
-    //             var element = graph.getNeighbors().get(i);
-    //             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
-    //                 if (Vertex.isSameCouple(new Pair<>(element.getKey(), element.getValue()), neighbors.getKey())) {
-    //                     if (!element.getKey().isCut(element.getValue())
-    //                             && !element.getKey().isPainted(element.getValue()))
-    //                         edge = element;
-    //                 }
-    //             }
-    //             if (edge == null) {
-    //                 edge = graph.getNeighbors().get(0);
-    //             }
-    //             graph.removeNeighbor(edge);
-    //             int score = play(turn);
-    //             if (score > meilleur_score) {
-    //                 meilleur_score = score;
-    //                 bestMove = edge;
-    //             }
-    //             if (game.cutWon()) {
-    //                 graph.addNeighbor(edge);
-    //                 return 1;
-    //             }
-    //             else {
-    //                 graph.addNeighbor(edge);
-    //                 return -1;
-    //             }
-    //         }
-    //     }
-    //     else {
-    //         int meilleur_score = 2;
-    //         for (int i = graph.getNeighbors().size() - 1; i > 0; i--) {
-    //             var edge = graph.getNeighbors().get(i);
-    //             graph.removeNeighbor(edge);
-    //             int score = play(turn);
-    //             if (score < meilleur_score) {
-    //                 meilleur_score = score;
-    //                 bestMove = edge;
-    //             }
-    //             if (game.cutWon()) {
-    //                 graph.addNeighbor(edge);
-    //                 return 1;
-    //             }
-    //             else {
-    //                 graph.addNeighbor(edge);
-    //                 return -1;
-    //             }
-    //         }
-    //     }
-    //     return 0;
-    // }
 }
+
+
+
+
+
+//public int evaluate(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
+//    int res = this.graph.getVertices().size();
+//    HashSet<Pair<Vertex, Vertex>> toTest = new HashSet<>(this.graph.getNeighbors());
+//    toTest.removeAll(cutted);
+//    toTest.removeAll(secured);
+//    for (Vertex v : this.graph.getVertices()) {
+//        int nbNeib=0;
+//        boolean notSec = true;
+//        for (Pair<Vertex,Vertex> s : secured) {
+//            if (s.getValue()==v || s.getKey()==v) {
+//                notSec=false;
+//            }
+//        }
+//        for (Pair<Vertex, Vertex> edge : toTest) {
+//            if (edge.getValue()==v || edge.getKey()==v) {
+//                nbNeib+=1;
+//            }
+//        }
+//        if (nbNeib<res) res=nbNeib;
+//    }
+//    //System.out.println(-res);
+//    return -res;
+//}
+
