@@ -79,10 +79,15 @@ public class Game {
         this.serverUri = serverUri;
         this.pvpOnline = true;
         this.nbVertices = nbVertices;
+        LocalTime duration = LocalTime.now();
         int c = 0;
         do {
             graph = new Graph(nbVertices, maxDeg, minDeg, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
             c++;
+            if (!joiner && duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                this.creatorTurn = null;
+                return;
+            }
         } while (graphIsNotOkay());
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);

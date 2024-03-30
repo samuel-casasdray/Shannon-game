@@ -92,17 +92,12 @@ public class Gui extends Application {
             case HOME_PVPO -> stage.setScene(
                 GuiScene.pvp(
                     this::handleButtonClick,
-                    (textField, turn) -> join((TextField) textField, turn),
-                    (textField, turn) -> create((Text) textField, turn)
+                    (textField, turn, nbVertices) -> join((TextField) textField),
+                    (textField, turn, nbVertices) -> create((Text) textField, turn, nbVertices)
                 )
             );
             case HOME_IAVIA -> {
-                this.nbVertices = 20;
-                this.game = new Game(nbVertices, Level.MEDIUM, Level.MEDIUM);
-                stage.setScene(run());
-                gameThread = new Thread(game::aiVsAi);
-                gameThread.setDaemon(true);
-                gameThread.start();
+                stage.setScene(GuiScene.aivsai(this::handleButtonClick));
             }
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
@@ -134,6 +129,16 @@ public class Gui extends Application {
                     gameThread.setDaemon(true);
                     gameThread.start();
                 }
+            }
+            case AIvsAI -> {
+                this.nbVertices = GuiScene.getNbVertices();
+                Level levelAI1 = GuiScene.getLevel1();
+                Level levelAI2 = GuiScene.getLevel2();
+                this.game = new Game(nbVertices, levelAI1, levelAI2);
+                stage.setScene(run());
+                gameThread = new Thread(game::aiVsAi);
+                gameThread.setDaemon(true);
+                gameThread.start();
             }
         }
     }
@@ -341,33 +346,39 @@ public class Gui extends Application {
         }
     }
 
-    public void create(Text textField, Turn turn) {
+    public void create(Text textField, Turn turn, int nbVertices) {
         try {
-            game.getClient().close();
+            if (game != null)
+                game.getClient().close();
         }
         catch (IOException | NullPointerException e) {
             log.info(e.getMessage());
         }
         try {
-            this.nbVertices = 20;
-            WebSocketClient client = new WebSocketClient(nbVertices, 0L, false, turn);
+            WebSocketClient client = new WebSocketClient(nbVertices, 0L, turn);
             gameCode = Optional.of(client.getId());
             textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
             this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+            if (game == null) {
+                textField.setText("");
+                Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                        " de réduire le nombre de sommets"));
+            }
         } catch (IOException | URISyntaxException | InterruptedException e) {
             log.error(e.getMessage());
         }
     }
 
-    public void join(TextField textField, Turn turn) {
+    public void join(TextField textField) {
         try {
             long code = Long.parseLong(textField.getText());
             // On ne rentre pas le code que l'on vient de générer
             if (getGameCode().isPresent() && getGameCode().get() == code) return;
-            this.nbVertices = 20;
-            WebSocketClient client = new WebSocketClient(nbVertices, code, true, turn);
+            WebSocketClient client = new WebSocketClient(code);
             game = client.connect(() -> {});
             stage.setScene(run());
+            if (client.getWaiting() != null)
+                game.play1vs1(client.getWaiting());
         } catch (IOException | URISyntaxException | InterruptedException | NumberFormatException e) {
             log.error(e.getMessage());
         }

@@ -4,5 +4,5 @@ import fr.projet.game.Turn;
 
 @FunctionalInterface
 public interface JoinCreateField {
-    void call(Object textField, Turn turn);
+    void call(Object textField, Turn turn, int nbVertices);
 }
