@@ -368,7 +368,7 @@ public class Gui extends Application {
             WebSocketClient client = new WebSocketClient(nbVertices, code, true, turn);
             game = client.connect(() -> {});
             stage.setScene(run());
-        } catch (IOException | URISyntaxException | InterruptedException e) {
+        } catch (IOException | URISyntaxException | InterruptedException | NumberFormatException e) {
             log.error(e.getMessage());
         }
     }

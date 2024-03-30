@@ -180,12 +180,14 @@ public class Game {
         if (cutWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
-            isolateComponent();
+            if (!pvpOnline || !client.isClosed())
+                isolateComponent();
         }
         else if (shortWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
-            deleteCuttedEdge();
+            if (!pvpOnline || !client.isClosed())
+                deleteCuttedEdge();
         }
     }
 
@@ -353,7 +355,10 @@ public class Game {
                 shortWon = true;
             }
             if (!getClient().isClosed())
+            {
+                getClient().close();
                 showWinner();
+            }
             return;
         }
         if (message.chars().toArray()[0] == '[') {
