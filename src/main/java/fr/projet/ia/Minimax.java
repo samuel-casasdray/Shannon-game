@@ -1,6 +1,7 @@
 package fr.projet.ia;
 
 import fr.projet.game.Game;
+import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
@@ -17,16 +18,10 @@ import static java.util.Collections.min;
 public class Minimax extends InterfaceIA {
 
     //Pair<Vertex, Vertex> bestMove;
-
-    int depth;
     int compteur=0;
 
-    Graph graph;
-
     public Minimax(Game game, Turn plays, int depth) {
-        super(game, plays);
-        this.depth = depth;
-        this.graph=game.getGraph();
+        super(game, plays, depth);
     }
 
 

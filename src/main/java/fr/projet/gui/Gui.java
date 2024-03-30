@@ -49,10 +49,6 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
-    @Getter
-    @Setter
-    private static long seed;
-    private Random random = new Random();
     private Stage stage;
     private Level level;
     private Turn turn;
@@ -160,11 +156,9 @@ public class Gui extends Application {
                         game.getClient().close();
                     } catch (Exception ignored) {}
                 }
+                if (gameThread != null)
+                    gameThread.interrupt();
             }
-            Game.setAIIsPlaying(false);
-            game.setGameIsCanceled(true);
-            if (gameThread != null)
-                gameThread.interrupt();
         });
     }
 
@@ -193,8 +187,7 @@ public class Gui extends Application {
         // Création du Pane pour afficher le graphique
         pane = new Pane();
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
-        random = new Random(seed);
-         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
+        //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //        if (!result.isEmpty()) {
 //            for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
@@ -340,7 +333,6 @@ public class Gui extends Application {
                 text.relocate(coord.getKey() + 16.50, coord.getValue() + 15.50);
             }
             // Un cercle pour représenter le sommet
-            //Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1));
             colorPlanarGraph(game.getGraph());
             Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.web(colors.get(game.getGraph().getVertices().get(i).getColor())));
             vertex.relocate(coord.getKey(), coord.getValue());

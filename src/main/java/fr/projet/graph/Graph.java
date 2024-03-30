@@ -21,7 +21,7 @@ public class Graph {
 
     private boolean aroundCircle = false;
 
-    private double proba = 0.7;
+    private double proba = 0.8;
 
     private Random random = new Random();
 
