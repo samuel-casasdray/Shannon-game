@@ -136,6 +136,7 @@ public class Graph {
         double radius = UtilsGui.CIRCLE_SIZE*2;
         int maxIter = nbVertices*1000;
         int iterCount = 0;
+        List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
         while (getNbVertices() < nbVertices) {
             iterCount++;
             // Coord aléatoire
@@ -177,11 +178,16 @@ public class Graph {
                 }
                 if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
                     if (getAdjVertices().get(v).size() < maxDeg && getAdjVertices().get(v2).size() < maxDeg)
-                        addNeighbor(new Pair<>(v, v2));
+                    {
+                        Pair<Vertex, Vertex> neighbor = new Pair<>(v, v2);
+                        addNeighbor(neighbor);
+                        edges.add(neighbor); // Permet de synchroniser dans le cas des games en ligne
+                    }
+
                 }
             }
         }
-        for (Pair<Vertex, Vertex> edge : getNeighbors().stream().toList()) {
+        for (Pair<Vertex, Vertex> edge : edges) {
             float p = random.nextFloat();
             if (p > proba && degree(edge.getKey()) > minDeg && degree(edge.getValue()) > minDeg)
                 removeNeighbor(edge);
