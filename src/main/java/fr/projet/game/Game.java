@@ -307,7 +307,7 @@ public class Game {
 
     public boolean cutWon() {
         if (cutWon) return true;
-        cutWon = !graphWithoutSomeNeighborsIsConnected(graph, (x,v) -> !x.isCut(v) && !v.isCut(x));
+        cutWon = !graphWithoutSomeNeighborsIsConnected(graph, (x,v) -> !x.isCut(v));
         return cutWon;
     }
 
