@@ -234,12 +234,12 @@ async fn handle_socket(
 
 fn get_current_indice(games: MutexGuard<'_, Games>, game_id: i64) -> (MutexGuard<'_, Games>, i32) {
     let mut current_game_indice = -1;
-            for i in 0..games.games.len() {
-                if games.games[i].id == game_id { // On récupère l'indice de la game
-                    current_game_indice = i as i32;
-                    break;
-            }
+    for i in 0..games.games.len() {
+        if games.games[i].id == game_id { // On récupère l'indice de la game
+            current_game_indice = i as i32;
+            break;
         }
+    }
     (games, current_game_indice)
 }
 
