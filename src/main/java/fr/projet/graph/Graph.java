@@ -202,7 +202,7 @@ public class Graph {
     private void graphForCUT () {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         int compteur=0;
-        generateGraphPlanaire();
+        generateGraphPlanaire(7, 3);
         int tailleMax = 2*(this.vertices.size()-1)-1;
         while (this.neighbors.size()>tailleMax) {
             compteur+=1;
@@ -228,7 +228,7 @@ public class Graph {
     private void graphForSHORT () {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         int compteur=0;
-        generateGraphPlanaire();
+        generateGraphPlanaire(7, 3);
         Graph tree = Kruskal();
         if (difference((HashSet<Pair<Vertex, Vertex>>) tree.getNeighbors())) {
             graphForSHORT();
