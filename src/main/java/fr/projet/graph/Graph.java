@@ -331,9 +331,9 @@ public class Graph {
             }
         }
         Graph toTest = new Graph(VerticeNew);
-
+        HashSet<Vertex> hVertices = new HashSet<>(toTest.getVertices());
         for (Vertex v : this.getVertices()) {
-            if (!toTest.getVertices().contains(v)) return true;
+            if (!hVertices.contains(v)) return true;
         }
 
         return !toTest.estConnexe();

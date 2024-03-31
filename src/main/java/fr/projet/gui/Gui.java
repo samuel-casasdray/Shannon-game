@@ -143,26 +143,32 @@ public class Gui extends Application {
         }
     }
 
-
+    private void leaveGame() {
+        stage.setScene(GuiScene.home(this::handleButtonClick));
+        if (game.isPvpOnline()) {
+            try {
+                game.getClient().close();
+            } catch (Exception ignored) {}
+        }
+        if (gameThread != null)
+            gameThread.interrupt();
+    }
     public void popupMessage(){
+        if (game.getCutWon() || game.getShortWon()) {
+            leaveGame();
+            return;
+        }
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Confirmation");
-        alert.setHeaderText("Vous allez quiter le jeu !");
-        alert.setContentText("Etes vous sûr de vouloir quitter ?");
+        alert.setHeaderText("Vous allez quitter le jeu !");
+        alert.setContentText("Êtes vous sûr de vouloir quitter ?");
         ButtonType buttonAccept = new ButtonType("Accepter");
         ButtonType buttonCancel = new ButtonType("Annuler");
         alert.getButtonTypes().setAll(buttonAccept,buttonCancel);
 
         alert.showAndWait().ifPresent(response ->{
             if (response==buttonAccept){
-                stage.setScene(GuiScene.home(this::handleButtonClick));
-                if (game.isPvpOnline()) {
-                    try {
-                        game.getClient().close();
-                    } catch (Exception ignored) {}
-                }
-                if (gameThread != null)
-                    gameThread.interrupt();
+                leaveGame();
             }
         });
     }
@@ -292,6 +298,7 @@ public class Gui extends Application {
                 }
         }
         if (!graph.getAdjVertices().containsKey(v)) return;
+
         Graph g2 = new Graph(graph.getVertices(), graph.getAdjVertices());
         g2.removeVertex(v);
         if (g2.getNbVertices() >= 1)
