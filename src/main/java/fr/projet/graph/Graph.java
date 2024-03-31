@@ -185,6 +185,45 @@ public class Graph {
         }
     }
 
+    private void graphForCUT () {
+        // Instantiation des N (nbVextex) sommets et de leur coordonnées.
+        int compteur=0;
+        generateGraphPlanaire();
+        int tailleMax = 2*(this.vertices.size()-1)-1;
+        while (this.neighbors.size()>tailleMax) {
+            compteur+=1;
+            //System.out.println(this.neighbors.size());
+            int x=random.nextInt(this.neighbors.size());
+            HashSet<Pair<Vertex, Vertex>> save = new HashSet<>(this.getNeighbors());
+            List<Pair<Vertex, Vertex>> newVertice = new ArrayList<>(this.neighbors);
+            newVertice.remove(x);
+            this.neighbors= new HashSet<>(newVertice);
+            System.out.println("A : "+this.minDeg());
+            if (this.minDeg()<2) {
+                this.neighbors=new HashSet<>(save);
+            }
+            System.out.println("B : "+this.minDeg());
+            if (compteur>=this.neighbors.size()*10) {
+                System.out.println("OOOOH");
+                graphForCUT();
+            }
+        }
+    }
+
+
+    private void graphForSHORT () {
+        // Instantiation des N (nbVextex) sommets et de leur coordonnées.
+        int compteur=0;
+        generateGraphPlanaire();
+        Graph tree = Kruskal();
+        if (difference((HashSet<Pair<Vertex, Vertex>>) tree.getNeighbors())) {
+            graphForSHORT();
+        }
+    }
+
+
+
+
     private boolean thereAreACircleCollision(double radius, Vertex v1, Vertex v2) {
         for (Vertex vertex: getVertices()) {
             if (!vertex.equals(v1) && !vertex.equals(v2)) {
