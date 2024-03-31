@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.*;
+import java.util.function.BiPredicate;
 
 import static java.lang.Math.random;
 
@@ -22,7 +23,7 @@ public class Graph {
 
     private boolean aroundCircle = false;
 
-    private double proba = 0.2;
+    private double proba = 0.8;
 
     private Random random = new Random();
 
@@ -31,7 +32,6 @@ public class Graph {
 
     @Getter
     private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
-
     public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
         this.neighbors = new HashSet<>(neighbors);
         Set<Vertex> vertexSet = new HashSet<>();
@@ -53,17 +53,17 @@ public class Graph {
         }
     }
 
-    public Graph(int nbVertices) {
+    public Graph(int nbVertices, int maxDeg, int minDeg) {
         this.nbVertices = nbVertices;
         this.adjVertices = new HashMap<>();
-        this.generateGraphPlanaire();
+        this.generateGraphPlanaire(maxDeg, minDeg);
     }
 
-    public Graph(int nbVertices, long seed) {
+    public Graph(int nbVertices, int maxDeg, int minDeg, long seed) {
         this.nbVertices = nbVertices;
         this.adjVertices = new HashMap<>();
         random = new Random(seed);
-        this.generateGraphPlanaire();
+        this.generateGraphPlanaire(maxDeg, minDeg);
     }
 
     public Graph() {
@@ -132,12 +132,13 @@ public class Graph {
             }
         } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
     }
-    private void generateGraphPlanaire() {
+    private void generateGraphPlanaire(int maxDeg, int minDeg) {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 100;
         double radius = UtilsGui.CIRCLE_SIZE*2;
-        int maxIter = nbVertices*10000;
+        int maxIter = nbVertices*1000;
         int iterCount = 0;
+        List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
         while (getNbVertices() < nbVertices) {
             iterCount++;
             // Coord aléatoire
@@ -178,11 +179,24 @@ public class Graph {
                     }
                 }
                 if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
-                    double x=random();
-                    if (x<1.1) addNeighbor(new Pair<>(v, v2)); //à modifier pour moins d'arrêtes
+                    if (getAdjVertices().get(v).size() < maxDeg && getAdjVertices().get(v2).size() < maxDeg)
+                    {
+                        Pair<Vertex, Vertex> neighbor = new Pair<>(v, v2);
+                        addNeighbor(neighbor);
+                        edges.add(neighbor); // Permet de synchroniser dans le cas des games en ligne
+                    }
                 }
             }
         }
+        for (Pair<Vertex, Vertex> edge : edges) {
+            float p = random.nextFloat();
+            if (p > proba && degree(edge.getKey()) > minDeg && degree(edge.getValue()) > minDeg)
+                removeNeighbor(edge);
+        }
+    }
+
+    public int degree(Vertex v) {
+        return getAdjVertices().get(v).size();
     }
 
     private void graphForCUT () {
@@ -272,11 +286,6 @@ public class Graph {
         return maxDeg;
     }
 
-    public void setNbVertices(int nbVertices) {
-        this.nbVertices = nbVertices;
-        this.generateGraphPlanaire();
-    }
-
     public boolean estConnexe() {
         if (getVertices().isEmpty()) {
             return true;
@@ -298,10 +307,33 @@ public class Graph {
         return marked.size() == getVertices().size();
     }
 
+    public HashSet<Vertex> getComponent(Vertex vertex, BiPredicate<Vertex, Vertex> predicate) {
+        if (getVertices().isEmpty()) {
+            return new HashSet<>();
+        }
+        HashSet<Vertex> marked = new HashSet<>();
+        Stack<Vertex> pile = new Stack<>();
+        pile.push(vertex);
+        while (!pile.empty()) {
+            Vertex v = pile.pop();
+            if (!marked.contains(v)) {
+                marked.add(v);
+                for (Vertex t: getAdjVertices().get(v).stream().filter(x -> predicate.test(x, v)).toList()) {
+                    if (!marked.contains(t)) {
+                        pile.push(t);
+                    }
+                }
+            }
+        }
+        return marked;
+    }
+
     public void removeNeighbor(Pair<Vertex, Vertex> edge) {
         neighbors.remove(edge);
-        adjVertices.get(edge.getKey()).remove(edge.getValue());
-        adjVertices.get(edge.getValue()).remove(edge.getKey());
+        if (adjVertices.containsKey(edge.getKey()))
+            adjVertices.get(edge.getKey()).remove(edge.getValue());
+        if (adjVertices.containsKey(edge.getValue()))
+            adjVertices.get(edge.getValue()).remove(edge.getKey());
     }
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
