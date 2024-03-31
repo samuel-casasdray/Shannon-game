@@ -13,5 +13,6 @@ public enum ButtonClickType {
     PVIA_MEDIUM,
     PVIA_HARD,
     JEU,
-    VERTICES
+    VERTICES,
+    AIvsAI
 }

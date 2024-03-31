@@ -24,7 +24,7 @@ import java.net.URL;
 public class UtilsGui {
     public static final String FONT = "Consolas";
     public static final double CIRCLE_SIZE = 20D;
-    public static final int WINDOW_SIZE = 600;
+    public static final int WINDOW_SIZE = 700;
     public static final int WINDOW_MARGE = 50;
 
     private void addHoverEffect(Button button) {
