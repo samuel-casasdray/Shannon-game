@@ -88,7 +88,8 @@ public class Minimax extends InterfaceIA {
             if (!securedInit.contains(edge) && !cuttedInit.contains(edge)) {
                 HashSet<Pair<Vertex, Vertex>> cuttedModif = new HashSet<>(cuttedInit);
                 cuttedModif.add(edge);
-                int call = minMaxCUT(securedInit, cuttedModif, d, 0);
+                //int call = minMax(securedInit, cuttedModif, d, 0);
+                int call = alpha_beta(securedInit, cuttedModif, d, 0,-10000,10000);
                 //System.out.println(call+" - "+edge+"--------    "+res);
                 if (call>res) {
                     res=call;
@@ -112,7 +113,8 @@ public class Minimax extends InterfaceIA {
             if (!securedInit.contains(edge) && !cuttedInit.contains(edge)) {
                 HashSet<Pair<Vertex, Vertex>> securedModif = new HashSet<>(securedInit);
                 securedModif.add(edge);
-                int call = minMaxCUT(securedModif, cuttedInit, d, 1);
+                //int call = minMax(securedModif, cuttedInit, d, 1);
+                int call = alpha_beta(securedModif, cuttedInit, d, 1,-10000,10000);
                 //System.out.println(call+" - "+edge+"--------    "+res);
                 if (call<res) {
                     res=call;
@@ -128,7 +130,7 @@ public class Minimax extends InterfaceIA {
 
 
 
-    public int minMaxCUT(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player) { //1 pour CUT 0 pour SHORT
+    public int minMax(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player) { //1 pour CUT 0 pour SHORT
         int eval = evaluate(secured, cutted);
         //System.out.println(eval);
         //System.out.println(cutted.size()+"   "+secured.size());
@@ -145,7 +147,7 @@ public class Minimax extends InterfaceIA {
                     HashSet<Pair<Vertex, Vertex>> cuttedSuite = new HashSet<>(cutted);
                     cuttedSuite.add(edge);
                     //val+=minMaxCUT(secured, cuttedSuite, d - 1, 0);
-                    val = Math.max(minMaxCUT(secured, cuttedSuite, d - 1, 0), val);
+                    val = Math.max(minMax(secured, cuttedSuite, d - 1, 0), val);
                 }
             }
         } else {
@@ -154,13 +156,57 @@ public class Minimax extends InterfaceIA {
                 if (!cutted.contains(edge) && !secured.contains(edge)) {
                     HashSet<Pair<Vertex, Vertex>> securedSuite = new HashSet<>(secured);
                     securedSuite.add(edge);
-                    val = Math.min(minMaxCUT(securedSuite, cutted, d - 1, 1), val);
+                    val = Math.min(minMax(securedSuite, cutted, d - 1, 1), val);
                     //val+=minMaxCUT(securedSuite, cutted, d - 1, 1);
                 }
             }
         }
         return val;
     }
+
+
+
+
+    public int alpha_beta (HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player, int alpha, int beta) { //1 pour CUT 0 pour SHORT
+        int eval = evaluate(secured, cutted);
+        if (d == 0 || eval != 0) {
+            return eval;
+        }
+        int val = 0;
+        if (player == 1) {
+            val = -10000;
+            for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+                if (!cutted.contains(edge) && !secured.contains(edge)) {
+                    HashSet<Pair<Vertex, Vertex>> cuttedSuite = new HashSet<>(cutted);
+                    cuttedSuite.add(edge);
+                    val = Math.max(alpha_beta(secured, cuttedSuite, d - 1, 0,alpha,beta), val);
+                    if (val>=beta) {
+                        return val;
+                    }
+                    alpha=Math.max(alpha,val);
+                }
+            }
+        } else {
+            val = 10000;
+            for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+                if (!cutted.contains(edge) && !secured.contains(edge)) {
+                    HashSet<Pair<Vertex, Vertex>> securedSuite = new HashSet<>(secured);
+                    securedSuite.add(edge);
+                    val = Math.min(alpha_beta(securedSuite, cutted, d - 1, 1,alpha,beta), val);
+                    if (alpha>=val) {
+                        return val;
+                    }
+                    beta=Math.min(beta,val);
+                }
+            }
+        }
+        return val;
+    }
+
+
+
+
+
 
 
 
