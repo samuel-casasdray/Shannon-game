@@ -15,6 +15,8 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -40,19 +42,28 @@ public class WebSocketClient {
     private long id;
     @Getter
     private int nbVertices;
-    public WebSocketClient(int nbVertices, long id, boolean joiner, Turn turn) throws IOException, URISyntaxException, InterruptedException {
+    private Game game;
+    @Getter
+    @Setter
+    private String waiting;
+    public WebSocketClient(int nbVertices, long id, Turn turn) throws IOException, URISyntaxException, InterruptedException {
+        this.joiner = false;
         int creatorTurn = turn == Turn.CUT ? 0 : 1;
-        if (joiner) {
-            if (!this.isClosed())
-                this.close();
-            this.connectServer(JOIN_GAME_URI + id);
-        }
-        else {
-            if (!this.isClosed())
-                this.close();
-            this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices);
-        }
-        this.joiner = joiner;
+        if (!this.isClosed())
+            this.close();
+        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices);
+        createConnection();
+    }
+
+    public WebSocketClient(long id) throws IOException, URISyntaxException, InterruptedException {
+        this.joiner = true;
+        if (!this.isClosed())
+            this.close();
+        this.connectServer(JOIN_GAME_URI + id);
+        createConnection();
+    }
+
+    private void createConnection() throws InterruptedException, IOException {
         int count = 0;
         while(response == null) {
             if (count > 50) {
@@ -87,8 +98,6 @@ public class WebSocketClient {
     }
 
     public WebSocketClient() {}
-    private Game game = null;
-
     public void reConnect(String serverUri) throws URISyntaxException, IOException {
         if (isClosed()) {
             connectServer(serverUri);
@@ -102,6 +111,7 @@ public class WebSocketClient {
             this.connectServer(SERVER_URI + this.id);
             Turn turn = jsonElement.getAsJsonObject().get("creator_turn").getAsString().equals("Short") ? Turn.SHORT : Turn.CUT;
             this.game = new Game(this.nbVertices, this.id, joiner, this, SERVER_URI + this.id, seed, turn);
+            if (game.getCreatorTurn() == null) return null;
             this.setCallback(function);
             return game;
         } catch (Exception e) {
@@ -176,7 +186,12 @@ public class WebSocketClient {
             return;
         }
         if (!message.equals("Pong"))
-            game.play1vs1(message);
+        {
+            if (game != null)
+                game.play1vs1(message);
+            else
+                waiting = message;
+        }
     }
     @OnClose
     public void onClose() {

@@ -1,6 +1,9 @@
 package fr.projet.gui;
 
+import fr.projet.game.Level;
 import fr.projet.game.Turn;
+import fr.projet.ia.BasicAI;
+import fr.projet.ia.Minimax;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -12,6 +15,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +25,13 @@ import java.util.Random;
 @UtilityClass
 public class GuiScene {
     @Getter
-    int nbVertices;
+    private int nbVertices;
+    @Getter
+    @Setter
+    private Level level1;
+    @Getter
+    @Setter
+    private Level level2;
     private static final Random random = new Random();
 
     public VBox getBasicScene() {
@@ -69,17 +79,18 @@ public class GuiScene {
 
         TextField textJoin = new TextField();
         textJoin.setPromptText("code de partie");
-        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin, creatorTurn));
+        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin, creatorTurn, 0));
 
-        UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin, creatorTurn));
-
-        Text textCreate = UtilsGui.createText("                       ");
+        UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin, creatorTurn, 0));
+        TextField nbVertices = new TextField();
+        Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
+        nbVertices.setText("20");
+        Text textCreate = UtilsGui.createText(" ");
 
         Text textTurn = UtilsGui.createText("Choisir son joueur");
         ComboBox<String> choixTurn = new ComboBox<>();
         choixTurn.getItems().addAll("aléatoire", "CUT", "SHORT");
         choixTurn.getSelectionModel().selectFirst();
-
         Button buttonCreate = UtilsGui.createButton(
                 "Créer",
                 event -> {
@@ -92,7 +103,15 @@ public class GuiScene {
                     } else {
                         turn = random.nextInt(2) == 0 ? Turn.CUT : Turn.SHORT;
                     }
-                    createField.call(textCreate, turn);
+                    int nbSommets;
+                    try {
+                        nbSommets = Integer.parseInt(nbVertices.getText());
+                    }
+                    catch (NumberFormatException e) {
+                        nbVertices.setText("20");
+                        nbSommets = 20;
+                    }
+                    createField.call(textCreate, turn, nbSommets);
                 });
 
         root.add(textJoin, 0, 1);
@@ -101,6 +120,73 @@ public class GuiScene {
         root.add(buttonCreate, 1, 0);
         root.add(textTurn, 1, 1);
         root.add(choixTurn, 1, 2);
+        root.add(TextNbVertices, 0, 2);
+        root.add(nbVertices, 0, 3);
+
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
+
+
+        return new Scene(scene, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+    }
+
+    public Scene aivsai(HandleClick handleButtonClick) {
+        VBox scene = getBasicScene();
+
+        GridPane root = new GridPane();
+        root.setAlignment(Pos.CENTER);
+        root.setHgap(90);
+        root.setVgap(25);
+        root.setPadding(new Insets(30, 5, 5, 5));
+
+        Text text1 = UtilsGui.createText("IA vs IA", true);
+        Text textIA1 = UtilsGui.createText("IA CUT");
+        ComboBox<String> choixIA1 = new ComboBox<>();
+        choixIA1.getItems().addAll("EASY", "MEDIUM", "HARD");
+        Text textIA2 = UtilsGui.createText("IA SHORT");
+        ComboBox<String> choixIA2 = new ComboBox<>();
+        choixIA2.getItems().addAll("EASY", "MEDIUM", "HARD");
+        choixIA2.getSelectionModel().select(1);
+        choixIA1.getSelectionModel().select(1);
+        TextField nbVerticesField = new TextField();
+        Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
+        nbVerticesField.setText("20");
+        Button buttonCreate = UtilsGui.createButton(
+                "Lancer",
+                event -> {
+                    String selectedOptionAI1 = choixIA1.getSelectionModel().getSelectedItem();
+                    String selectedOptionAI2 = choixIA2.getSelectionModel().getSelectedItem();
+                    level1 = switch (selectedOptionAI1) {
+                        case "EASY" -> Level.EASY;
+                        case "MEDIUM" -> Level.MEDIUM;
+                        case "HARD" -> Level.HARD;
+                        default -> throw new IllegalStateException("Unexpected value: " + selectedOptionAI1);
+                    };
+                    level2 = switch (selectedOptionAI2) {
+                        case "EASY" -> Level.EASY;
+                        case "MEDIUM" -> Level.MEDIUM;
+                        case "HARD" -> Level.HARD;
+                        default -> throw new IllegalStateException("Unexpected value: " + selectedOptionAI2);
+                    };
+                    int nbSommets;
+                    try {
+                        nbSommets = Integer.parseInt(nbVerticesField.getText());
+                    }
+                    catch (NumberFormatException e) {
+                        nbVerticesField.setText("20");
+                        nbSommets = 20;
+                    }
+                    nbVertices = nbSommets;
+                    handleButtonClick.call(ButtonClickType.AIvsAI);
+                });
+
+        root.add(text1, 0, 1);
+        root.add(textIA1, 1, 0);
+        root.add(textIA2, 2, 0);
+        root.add(choixIA1, 1, 1);
+        root.add(choixIA2, 2, 1);
+        root.add(buttonCreate, 1, 3);
+        root.add(TextNbVertices, 2, 2);
+        root.add(nbVerticesField, 2, 3);
 
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
 
