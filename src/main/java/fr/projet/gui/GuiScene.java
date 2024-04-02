@@ -11,6 +11,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -178,7 +179,11 @@ public class GuiScene {
                     nbVertices = nbSommets;
                     handleButtonClick.call(ButtonClickType.AIvsAI);
                 });
-
+        scene.setOnKeyPressed(event ->
+        {
+            if (event.getCode() == KeyCode.ENTER)
+                buttonCreate.fire();
+        });
         root.add(text1, 0, 1);
         root.add(textIA1, 1, 0);
         root.add(textIA2, 2, 0);
@@ -220,13 +225,18 @@ public class GuiScene {
     public Scene nbVertices(HandleClick handleButtonClick, boolean IA) {
         VBox root = getBasicScene();
         Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe",true);
-        Spinner<Integer> spinner = new Spinner<>(5, 20, 20);
+        Spinner<Integer> spinner = new Spinner<>(5, 30, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
         Button enter = UtilsGui.createButton("Confirmer",e -> {
             nbVertices = spinner.getValue();
             handleButtonClick.call(ButtonClickType.VERTICES);
 
+        });
+        root.setOnKeyPressed(event ->
+        {
+            if (event.getCode() == KeyCode.ENTER)
+                enter.fire();
         });
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
