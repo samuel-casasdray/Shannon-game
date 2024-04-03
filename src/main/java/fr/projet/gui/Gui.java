@@ -1,5 +1,6 @@
 package fr.projet.gui;
 
+import fr.projet.Main;
 import fr.projet.server.WebSocketClient;
 import fr.projet.game.Game;
 import fr.projet.game.Level;
@@ -13,6 +14,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -282,7 +284,7 @@ public class Gui extends Application {
             }
         }
     }
-    private static List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
+    private static List<String> colors = List.of("1", "2", "3", "4", "5", "6");
     private void colorPlanarGraph(Graph graph) {
         if (graph.getNbVertices() <= 6) {
             for (int i = 0; i < graph.getVertices().size(); i++) {
@@ -319,10 +321,10 @@ public class Gui extends Application {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
         for (Pair<Vertex, Vertex> pair : this.game.getGraph().getNeighbors()) {
-            Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+            Line line = new Line(pair.getKey().getCoords().getKey(),
+                    pair.getKey().getCoords().getValue(),
+                    pair.getValue().getCoords().getKey(),
+                    pair.getValue().getCoords().getValue());
             line.setStrokeWidth(5);
             line.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
@@ -333,23 +335,26 @@ public class Gui extends Application {
         // Ajout des sommets sur l'affichage
         for (int i = 0; i < this.game.getGraph().getNbVertices(); i++) {
             Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i).getCoords();
-            // On crée un texte pour le numéro du sommet
-            Text text = new Text(String.valueOf(i + 1));
-            text.setBoundsType(TextBoundsType.VISUAL);
-            text.setFont(Font.font(UtilsGui.FONT, FontWeight.BOLD,15));
-            // Centrage du texte
-            if (i >= 9) {
-                text.relocate(coord.getKey() + 13.50, coord.getValue() + 15.50);
-            }
-            else {
-                text.relocate(coord.getKey() + 16.50, coord.getValue() + 15.50);
-            }
             // Un cercle pour représenter le sommet
             colorPlanarGraph(game.getGraph());
-            Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.web(colors.get(game.getGraph().getVertices().get(i).getColor())));
-            vertex.relocate(coord.getKey(), coord.getValue());
+            Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.rgb(0, 0, 0, 0));
+
+            String name = "planet" + i % 14 + ".gif";
+            URL ressource = this.getClass().getClassLoader().getResource(name);
+            if(Objects.isNull(ressource)) {
+                log.error("Impossible de recupérer la ressource : " + name);
+                vertex.relocate(coord.getKey(), coord.getValue());
+                pane.getChildren().addAll(vertex);
+                continue;
+            }
+            Image image = new Image(ressource.toExternalForm());
+            ImageView imageView = new ImageView(image);
+            double width = image.getWidth();
+            double height = image.getHeight();
+            vertex.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
+            imageView.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
             // On ajoute les 2 élements sur l'affichage
-            pane.getChildren().addAll(vertex, text);
+            pane.getChildren().addAll(vertex, imageView);
         }
     }
 
