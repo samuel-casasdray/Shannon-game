@@ -69,22 +69,42 @@ public class Gui extends Application {
     private Thread gameThread;
     @Getter
     private Pane pane;
+    private Random random = new Random();
 
     private List<Line> posTransport = new ArrayList<>();
 
     Timeline timer = new Timeline(new KeyFrame(Duration.millis(20), event -> {
             for(Line line: posTransport) {
                 ObservableMap<Object, Object> properties = line.getProperties();
-                double i = (double) properties.get("i");
-                i += 0.1 * Math.PI;
+                int i = (int) properties.get("i");
+                double Ux = (double) properties.get("Ux");
+                double Uy = (double) properties.get("Uy");
+                int Ax = (int) properties.get("Ax");
+                int Ay = (int) properties.get("Ay");
+                int Bx = (int) properties.get("Bx");
+                int By = (int) properties.get("By");
+                i++;
                 properties.put("i", i);
-                if(i > 0) {
-                    double ib = Math.abs(Math.sin(Math.toRadians(i)));
-                    int Ux = (int) properties.get("Ux");
-                    int Uy = (int) properties.get("Uy");
-                    line.setTranslateX(ib * Ux);
-                    line.setTranslateY(ib * Uy);
+                double pos = i * Ux;
+                if (Ax != Bx) {
+                    if((Ax < Bx && (pos < Ax || pos > Bx)) || (Bx < Ax && (pos < Ax || pos > Bx))) {
+                        Ux = -Ux;
+                        Uy = -Uy;
+                        properties.put("Ux", Ux);
+                        properties.put("Uy", Uy);
+                    }
+                } else {
+                    pos = i * Uy;
+                    if((Ay < By && (pos < Ay || pos > By)) || (By < Ay && (pos < By || pos > Ay))) {
+                        Ux = -Ux;
+                        Uy = -Uy;
+                        properties.put("Ux", Ux);
+                        properties.put("Uy", Uy);
+                    }
                 }
+                line.setTranslateX(Math.max(i*Ux, Ax-(double)Bx));
+                line.setTranslateY(Math.max(i*Uy, Ay-(double)By));
+                System.out.println(Ax + " " + line.getStartX() + " " + line.getEndX() + " " + Ux);
             }
     }));
 
@@ -350,8 +370,9 @@ public class Gui extends Application {
             int Ay = pair.getKey().getCoords().getValue();
             int Bx = pair.getValue().getCoords().getKey();
             int By = pair.getValue().getCoords().getValue();
-            int Ux = Bx-Ax;
-            int Uy = By-Ay;
+            double pas = random.nextDouble() / 100;
+            double Ux = (Bx-Ax) * pas;
+            double Uy = (By-Ay) * pas;
             Line line = new Line(Ax, Ay, Bx, By);
             Line line2 = new Line(Ax, Ay, Ax, Ay);
             line.setStrokeWidth(5);
@@ -362,8 +383,12 @@ public class Gui extends Application {
             line2.getProperties().put("pair", pair);
             line2.getProperties().put("Ux", Ux);
             line2.getProperties().put("Uy", Uy);
-            line2.getProperties().put("i", 0.);
-            line2.setStroke(Paint.valueOf("#fff"));
+            line2.getProperties().put("Ax", Ax);
+            line2.getProperties().put("Ay", Ay);
+            line2.getProperties().put("Bx", Bx);
+            line2.getProperties().put("By", By);
+            line2.getProperties().put("i", 0);
+            line2.setStroke(Paint.valueOf("#a00"));
             // Ajout de la ligne sur sur l'affichage
             pane.getChildren().addAll(line, line2);
             edges.add(new Pair<>(pair, line));
