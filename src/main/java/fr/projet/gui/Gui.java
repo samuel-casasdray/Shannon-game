@@ -7,8 +7,13 @@ import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
+import javafx.animation.Animation;
+import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -18,6 +23,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
@@ -25,6 +31,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextBoundsType;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
@@ -62,6 +69,24 @@ public class Gui extends Application {
     private Thread gameThread;
     @Getter
     private Pane pane;
+
+    private List<Line> posTransport = new ArrayList<>();
+
+    Timeline timer = new Timeline(new KeyFrame(Duration.millis(20), event -> {
+            for(Line line: posTransport) {
+                ObservableMap<Object, Object> properties = line.getProperties();
+                double i = (double) properties.get("i");
+                i += 0.1 * Math.PI;
+                properties.put("i", i);
+                if(i > 0) {
+                    double ib = Math.abs(Math.sin(Math.toRadians(i)));
+                    int Ux = (int) properties.get("Ux");
+                    int Uy = (int) properties.get("Uy");
+                    line.setTranslateX(ib * Ux);
+                    line.setTranslateY(ib * Uy);
+                }
+            }
+    }));
 
     @Override
     public void start(Stage stage) {
@@ -321,16 +346,29 @@ public class Gui extends Application {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
         for (Pair<Vertex, Vertex> pair : this.game.getGraph().getNeighbors()) {
-            Line line = new Line(pair.getKey().getCoords().getKey(),
-                    pair.getKey().getCoords().getValue(),
-                    pair.getValue().getCoords().getKey(),
-                    pair.getValue().getCoords().getValue());
+            int Ax = pair.getKey().getCoords().getKey();
+            int Ay = pair.getKey().getCoords().getValue();
+            int Bx = pair.getValue().getCoords().getKey();
+            int By = pair.getValue().getCoords().getValue();
+            int Ux = Bx-Ax;
+            int Uy = By-Ay;
+            Line line = new Line(Ax, Ay, Bx, By);
+            Line line2 = new Line(Ax, Ay, Ax, Ay);
             line.setStrokeWidth(5);
+            line2.setStrokeWidth(5);
             line.setOnMouseClicked(handler);
+            line2.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
+            line2.getProperties().put("pair", pair);
+            line2.getProperties().put("Ux", Ux);
+            line2.getProperties().put("Uy", Uy);
+            line2.getProperties().put("i", 0.);
+            line2.setStroke(Paint.valueOf("#fff"));
             // Ajout de la ligne sur sur l'affichage
-            pane.getChildren().add(line);
+            pane.getChildren().addAll(line, line2);
             edges.add(new Pair<>(pair, line));
+            posTransport.add(line2);
+
         }
         // Ajout des sommets sur l'affichage
         for (int i = 0; i < this.game.getGraph().getNbVertices(); i++) {
@@ -356,6 +394,8 @@ public class Gui extends Application {
             // On ajoute les 2 élements sur l'affichage
             pane.getChildren().addAll(vertex, imageView);
         }
+        timer.setCycleCount(Animation.INDEFINITE);
+        timer.play();
     }
 
     public void create(Text textField, Turn turn, int nbVertices) {
