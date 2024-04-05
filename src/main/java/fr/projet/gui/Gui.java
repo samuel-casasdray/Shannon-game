@@ -85,26 +85,14 @@ public class Gui extends Application {
                 int By = (int) properties.get("By");
                 i++;
                 properties.put("i", i);
-                double pos = i * Ux;
-                if (Ax != Bx) {
-                    if((Ax < Bx && (pos < Ax || pos > Bx)) || (Bx < Ax && (pos < Ax || pos > Bx))) {
-                        Ux = -Ux;
-                        Uy = -Uy;
-                        properties.put("Ux", Ux);
-                        properties.put("Uy", Uy);
-                    }
-                } else {
-                    pos = i * Uy;
-                    if((Ay < By && (pos < Ay || pos > By)) || (By < Ay && (pos < By || pos > Ay))) {
-                        Ux = -Ux;
-                        Uy = -Uy;
-                        properties.put("Ux", Ux);
-                        properties.put("Uy", Uy);
-                    }
+                double posX = i * Ux + Ax;
+                double posY = i * Uy + Ay;
+                if ((Ax < Bx && posX > Bx) || (Ax > Bx && posX < Bx) || (Ay < By && posY > By) || (Ay > By && posY < By)) {
+                    i = 0;
+                    properties.put("i", i);
                 }
-                line.setTranslateX(Math.max(i*Ux, Ax-(double)Bx));
-                line.setTranslateY(Math.max(i*Uy, Ay-(double)By));
-                System.out.println(Ax + " " + line.getStartX() + " " + line.getEndX() + " " + Ux);
+                line.setTranslateX(i*Ux);
+                line.setTranslateY(i*Uy);
             }
     }));
 
@@ -370,17 +358,18 @@ public class Gui extends Application {
             int Ay = pair.getKey().getCoords().getValue();
             int Bx = pair.getValue().getCoords().getKey();
             int By = pair.getValue().getCoords().getValue();
-            double pas = random.nextDouble() / 100;
+            double pas = random.nextDouble() / 200;
             double Ux = (Bx-Ax) * pas;
             double Uy = (By-Ay) * pas;
             Line line = new Line(Ax, Ay, Bx, By);
-            Line line2 = new Line(Ax, Ay, Ax, Ay);
+            line.setStroke(Paint.valueOf("#a2d2ff"));
+            Line line2 = new Line(Ax, Ay, Ax+Ux, Ay+Uy);
             line.setStrokeWidth(5);
-            line2.setStrokeWidth(5);
+            line2.setStrokeWidth(8);
+            line2.setStroke(Paint.valueOf("#a2d2ff"));
             line.setOnMouseClicked(handler);
             line2.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
-            line2.getProperties().put("pair", pair);
             line2.getProperties().put("Ux", Ux);
             line2.getProperties().put("Uy", Uy);
             line2.getProperties().put("Ax", Ax);
@@ -388,7 +377,6 @@ public class Gui extends Application {
             line2.getProperties().put("Bx", Bx);
             line2.getProperties().put("By", By);
             line2.getProperties().put("i", 0);
-            line2.setStroke(Paint.valueOf("#a00"));
             // Ajout de la ligne sur sur l'affichage
             pane.getChildren().addAll(line, line2);
             edges.add(new Pair<>(pair, line));
