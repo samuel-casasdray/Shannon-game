@@ -11,6 +11,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -19,6 +20,8 @@ import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.URL;
+import java.util.Objects;
 import java.util.Random;
 
 @Slf4j
@@ -38,12 +41,21 @@ public class GuiScene {
         VBox root = new VBox(50); // Espacement vertical entre les éléments
         root.setPadding(new Insets(-40, 0, 10, 0));
 
-        BackgroundFill backgroundFill = new BackgroundFill(Color.LIGHTGREY, null, null);
-        Background background = new Background(backgroundFill);
-        root.setBackground(background);
+        root.setBackground(getBackground());
         root.setAlignment(Pos.CENTER);
 
         return root;
+    }
+
+    public Background getBackground() {
+        String name = "bg.jpg";
+        URL ressource = GuiScene.class.getClassLoader().getResource(name);
+        if(Objects.isNull(ressource)) {
+            log.error("Impossible de recupérer la ressource : " + name);
+            return null;
+        }
+        Image image = new Image(ressource.toExternalForm());
+        return new Background(new BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false)));
     }
 
     public Scene home(HandleClick handleButtonClick) {
