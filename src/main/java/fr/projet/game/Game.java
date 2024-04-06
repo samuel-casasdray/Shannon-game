@@ -86,6 +86,7 @@ public class Game {
         this.serverUri = serverUri;
         this.pvpOnline = true;
         this.nbVertices = nbVertices;
+        this.seed = seed;
         LocalTime duration = LocalTime.now();
         int c = 0;
         do {
@@ -195,26 +196,36 @@ public class Game {
     }
     public void showWinner() {
         int typeGame;
-        if (!againstAI && ia2 == null)
-            typeGame = 0; // Deux joueurs local
+         boolean thereAreAWinner = false;
+        if (pvpOnline)
+            typeGame = 2; // Deux joueurs en ligne
         else if (againstAI)
             typeGame = 1; // Contre l'IA
-        else if (pvpOnline)
-            typeGame = 2; // Deux joueurs en ligne
-        else typeGame = 3; // IA vs IA
+        else if (ia2 == null)
+            typeGame = 0; // Deux joueurs local
+        else
+            typeGame = 3; // IA vs IA
         if (cutWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
-            WebSocketClient.sendStatistics(typeGame, 0, seed);
+            thereAreAWinner = true;
         }
         else if (shortWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();
-            WebSocketClient.sendStatistics(typeGame, 1, seed);
+            thereAreAWinner = true;
+        }
+        if (thereAreAWinner) {
+            if (pvpOnline) {
+                if (!joiner)
+                    WebSocketClient.sendStatistics(typeGame, cutWon ? 0 : 1, seed); // Permet d'envoyer qu'une fois la game
+            }
+            else
+                WebSocketClient.sendStatistics(typeGame, cutWon ? 0 : 1, seed);
         }
     }
 
