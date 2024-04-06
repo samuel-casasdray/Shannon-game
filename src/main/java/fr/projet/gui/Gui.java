@@ -358,14 +358,14 @@ public class Gui extends Application {
             int Ay = pair.getKey().getCoords().getValue();
             int Bx = pair.getValue().getCoords().getKey();
             int By = pair.getValue().getCoords().getValue();
-            double pas = random.nextDouble() / 200;
+            double pas = random.nextDouble() / 200 + 0.0025;
             double Ux = (Bx-Ax) * pas;
             double Uy = (By-Ay) * pas;
             Line line = new Line(Ax, Ay, Bx, By);
             line.setStroke(Paint.valueOf("#a2d2ff"));
             Line line2 = new Line(Ax, Ay, Ax+Ux, Ay+Uy);
             line.setStrokeWidth(5);
-            line2.setStrokeWidth(8);
+            line2.setStrokeWidth(7);
             line2.setStroke(Paint.valueOf("#a2d2ff"));
             line.setOnMouseClicked(handler);
             line2.setOnMouseClicked(handler);
