@@ -1,9 +1,11 @@
 package fr.projet.gui;
 
+import com.google.gson.JsonElement;
 import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.Minimax;
+import fr.projet.server.WebSocketClient;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -19,6 +21,7 @@ import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.Random;
 
 @Slf4j
@@ -58,11 +61,14 @@ public class GuiScene {
         Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL));
         Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA));
 
-        root.getChildren().addAll(text1, text2, button1, button2, button3, button4);
+        Button statsButton = new Button("?");
+        statsButton.setOnAction(event -> handleButtonClick.call(ButtonClickType.STATS));
+        statsButton.setStyle("-fx-background-color: LIGHTGREY;");
+        statsButton.setAlignment(Pos.TOP_RIGHT);
+        root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4);
 
         return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
     }
-
     public Scene pvp(HandleClick handleButtonClick, JoinCreateField joinField, JoinCreateField createField) {
 
         VBox scene = getBasicScene();
@@ -220,7 +226,7 @@ public class GuiScene {
     public Scene nbVertices(HandleClick handleButtonClick, boolean IA) {
         VBox root = getBasicScene();
         Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe",true);
-        Spinner<Integer> spinner = new Spinner<>(5, 20, 20);
+        Spinner<Integer> spinner = new Spinner<>(5, 50, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
         Button enter = UtilsGui.createButton("Confirmer",e -> {
@@ -230,6 +236,23 @@ public class GuiScene {
         });
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
+        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+    }
+
+    public Scene stats(HandleClick handleButtonClick) {
+        VBox root = getBasicScene();
+        Text title = UtilsGui.createText("Nombre de parties faites :",false);
+        Text cutText = UtilsGui.createText("Nombre de parties gagnées par cut :",false);
+        Text shortText = UtilsGui.createText("Nombre de parties gagnées par short :",false);
+        WebSocketClient ws = new WebSocketClient();
+        Text response = new Text();
+        Text cut = new Text();
+        Text shorts = new Text();
+        List<JsonElement> statsList = ws.getStats().asList();
+        response.setText(statsList.getFirst().getAsString());
+        cut.setText(statsList.get(1).getAsString());
+        shorts.setText(statsList.get(2).getAsString());
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, response, cutText, cut, shortText, shorts);
         return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
     }
 

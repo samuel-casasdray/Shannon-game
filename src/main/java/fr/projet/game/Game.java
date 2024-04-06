@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
 
 @Getter
@@ -52,24 +53,30 @@ public class Game {
     private final int minDeg = 3;
     private final int maxDeg = 8;
     private final int AIDelay = 100;
-    public Game(int nbv) { this(nbv,false, Turn.CUT, Level.EASY); }
-    public Game() { this(20,false, Turn.CUT, Level.EASY); }
+    public Game(int nbv) throws TimeoutException { this(nbv,false, Turn.CUT, Level.EASY); }
+    public Game() throws TimeoutException { this(20,false, Turn.CUT, Level.EASY); }
 
-    public Game(int nbv, boolean withIA, Turn typeIA, Level level) {
+    public Game(int nbv, boolean withIA, Turn typeIA, Level level) throws TimeoutException {
         nbVertices = nbv;
+        seed = new Random().nextLong();
+        LocalTime duration = LocalTime.now();
+        int c = 0;
         do {
-            graph = new Graph(nbVertices, maxDeg, minDeg);
+            graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
+            c++;
+            if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                throw new TimeoutException();
+            }
         } while (graphIsNotOkay());
         if (withIA) {
             ia = getIAwithDifficulty(level);
             this.againstAI = true;
             this.typeIA = typeIA;
         }
-        seed = new Random().nextLong();
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
-    public Game(int nbVertices, long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
+    public Game(int nbVertices, long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) throws TimeoutException {
         this.creatorTurn = creatorTurn;
         if (joiner) turn = creatorTurn.flip();
         else turn = creatorTurn;
@@ -85,22 +92,27 @@ public class Game {
             graph = new Graph(nbVertices, maxDeg, minDeg, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
             c++;
             if (!joiner && duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
-                this.creatorTurn = null;
-                return;
+                throw new TimeoutException();
             }
         } while (graphIsNotOkay());
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
 
-    public Game(int nbVertices, Level levelIACut, Level levelIAShort) {
+    public Game(int nbVertices, Level levelIACut, Level levelIAShort) throws TimeoutException {
         this.nbVertices = nbVertices;
+        seed = new Random().nextLong();
+        LocalTime duration = LocalTime.now();
+        int c = 0;
         do {
-            graph = new Graph(nbVertices, maxDeg, minDeg);
+            graph = new Graph(nbVertices, maxDeg, minDeg, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
+            c++;
+            if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                throw new TimeoutException();
+            }
         } while (graphIsNotOkay());
         ia = getIAwithDifficulty(levelIACut);
         ia2 = getIAwithDifficulty(levelIAShort);
-        seed = new Random().nextLong();
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
@@ -182,17 +194,27 @@ public class Game {
         detectWinner();
     }
     public void showWinner() {
+        int typeGame;
+        if (!againstAI && ia2 == null)
+            typeGame = 0; // Deux joueurs local
+        else if (againstAI)
+            typeGame = 1; // Contre l'IA
+        else if (pvpOnline)
+            typeGame = 2; // Deux joueurs en ligne
+        else typeGame = 3; // IA vs IA
         if (cutWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
+            WebSocketClient.sendStatistics(typeGame, 0, seed);
         }
         else if (shortWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();
+            WebSocketClient.sendStatistics(typeGame, 1, seed);
         }
     }
 

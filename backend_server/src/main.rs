@@ -12,6 +12,8 @@ use std::sync::Arc;
 use serde_json::json;
 use tokio::sync::broadcast;
 
+use mongodb::{bson::{doc, Document}, options::ClientOptions, Client, Collection};
+
 #[tokio::main]
 async fn main() {
     let games = Arc::new(futures::lock::Mutex::new(Games { games: vec![] }));
@@ -19,6 +21,8 @@ async fn main() {
         .route("/create_game/:creator_turn/:nb_vertices", get(create_game_handler)) // Ici, c'est pour créer une game
         .route("/join_game/:id", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
+        .route("/game_stat/:type_game/:winner/:seed", get(game_stat_handler))
+        .route("/games", get(get_games_handler))
         .with_state(games);
     // 51.75.126.59:2999 (ip de mon serveur)
     let listener = tokio::net::TcpListener::bind("0.0.0.0:2999") // Port random mais probablement pas déjà pris
@@ -241,6 +245,76 @@ fn get_current_indice(games: MutexGuard<'_, Games>, game_id: i64) -> (MutexGuard
         }
     }
     (games, current_game_indice)
+}
+
+async fn game_stat_handler(
+    Path(game): Path<(u32, u8, i64)>,
+) -> impl IntoResponse {
+	game_stat(game).await;
+}
+
+async fn game_stat(
+    (type_game, winner, seed): (u32, u8, i64)
+) {
+	match dotenv::from_path("/home/julien/backend_server/.env").ok() {
+		None => {
+			println!("Returned");
+			return;
+		}
+		Some(_) => {}
+	}
+	let client_options =
+    ClientOptions::parse("mongodb+srv://shannon:".to_owned()+&std::env::var("PASSWORD_SHANNON").unwrap()+"@cluster0.lbnu03x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+    .await.unwrap();
+	let client = Client::with_options(client_options).unwrap();
+	let my_coll = client.database("shannon_switching_game").collection("games");
+	let doc = json!({"type_game": type_game, "winner": winner, "seed": seed});
+  	my_coll.insert_one(doc, None).await.unwrap();
+}
+
+async fn get_games_handler(
+    ws: WebSocketUpgrade,
+) -> impl IntoResponse {
+    ws.on_upgrade(get_games)
+}
+
+async fn get_games(socket: WebSocket) {
+	let (mut sender, _receiver) = socket.split();
+	match dotenv::from_path("/home/julien/backend_server/.env").ok() {
+		None => {
+			println!("Returned");
+			return;
+		}
+		Some(_) => {}
+	}
+	let client_options =
+    ClientOptions::parse("mongodb+srv://shannon:".to_owned()+&std::env::var("PASSWORD_SHANNON").unwrap()+"@cluster0.lbnu03x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+    .await.unwrap();
+	let client = Client::with_options(client_options).unwrap();
+	let my_coll: Collection<Document> = client.database("shannon_switching_game").collection("games");
+	let number_total_games = my_coll.count_documents(None, None).await.unwrap();
+	let number_cut_games = my_coll.count_documents(doc! { "winner": 0}, None).await.unwrap();
+	let number_short_games = my_coll.count_documents(doc! { "winner": 1}, None).await.unwrap();
+	let tx: broadcast::Sender<serde_json::Value> = broadcast::channel(1).0;
+	let mut rx = tx.subscribe();
+	if let Err(e) = tx.send(json!({
+		"stats": vec![number_total_games, number_cut_games, number_short_games]
+	})) {
+    		println!("{:?}", e);
+	}
+	let _send_task = tokio::spawn(async move {
+        let response = rx.recv().await;
+        match response {
+            Ok(msg) => {
+                if let Err(e) = sender.send(Message::Text(msg.to_string())).await {
+                    println!("Erreur : {}", e);
+                }
+            }
+            Err(e) => {
+                println!("Erreur get_games {:?}", e);
+            }
+        }
+    });
 }
 
 #[derive(Debug)]
