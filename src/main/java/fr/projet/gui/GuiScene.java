@@ -16,6 +16,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import jdk.jshell.execution.Util;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.UtilityClass;
@@ -244,15 +245,19 @@ public class GuiScene {
         Text title = UtilsGui.createText("Nombre de parties faites :",false);
         Text cutText = UtilsGui.createText("Nombre de parties gagnées par cut :",false);
         Text shortText = UtilsGui.createText("Nombre de parties gagnées par short :",false);
+        Text onlineText = UtilsGui.createText("Nombre de parties en ligne :", false);
         WebSocketClient ws = new WebSocketClient();
         Text response = new Text();
         Text cut = new Text();
         Text shorts = new Text();
+        Text online = new Text();
         List<JsonElement> statsList = ws.getStats().asList();
         response.setText(statsList.getFirst().getAsString());
         cut.setText(statsList.get(1).getAsString());
         shorts.setText(statsList.get(2).getAsString());
-        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, response, cutText, cut, shortText, shorts);
+        online.setText(statsList.get(3).getAsString());
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
+                response, cutText, cut, shortText, shorts, onlineText, online);
         return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
     }
 

@@ -295,10 +295,11 @@ async fn get_games(socket: WebSocket) {
 	let number_total_games = my_coll.count_documents(None, None).await.unwrap();
 	let number_cut_games = my_coll.count_documents(doc! { "winner": 0}, None).await.unwrap();
 	let number_short_games = my_coll.count_documents(doc! { "winner": 1}, None).await.unwrap();
+	let number_online_games = my_coll.count_documents(doc! {"type_game": 2}, None).await.unwrap();
 	let tx: broadcast::Sender<serde_json::Value> = broadcast::channel(1).0;
 	let mut rx = tx.subscribe();
 	if let Err(e) = tx.send(json!({
-		"stats": vec![number_total_games, number_cut_games, number_short_games]
+		"stats": vec![number_total_games, number_cut_games, number_short_games, number_online_games]
 	})) {
     		println!("{:?}", e);
 	}
