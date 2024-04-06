@@ -3,12 +3,14 @@ package fr.projet.game;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
+import fr.projet.gui.UtilsGui;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.InterfaceIA;
 import fr.projet.ia.Minimax;
 import fr.projet.server.WebSocketClient;
 import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.util.Pair;
@@ -26,6 +28,13 @@ import java.util.function.BiPredicate;
 @Getter
 @Slf4j
 public class Game {
+    private final HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>();
+    private final HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>();
+    private final ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
+    private final int nbVertices;
+    private final int minDeg = 3;
+    private final int maxDeg = 8;
+    private final int AIDelay = 100;
     private Graph graph;
     @Setter
     private Turn turn = Turn.CUT;
@@ -37,8 +46,6 @@ public class Game {
     private Turn typeIA;
     private InterfaceIA ia;
     private InterfaceIA ia2;
-    private final HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>();
-    private final HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>();
     private boolean pvpOnline = false;
     private long seed;
     @Getter
@@ -46,14 +53,15 @@ public class Game {
     private WebSocketClient client;
     private String serverUri;
     private long id;
-    private final ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
     private Turn creatorTurn;
-    private final int nbVertices;
-    private final int minDeg = 3;
-    private final int maxDeg = 8;
-    private final int AIDelay = 100;
-    public Game(int nbv) { this(nbv,false, Turn.CUT, Level.EASY); }
-    public Game() { this(20,false, Turn.CUT, Level.EASY); }
+
+    public Game(int nbv) {
+        this(nbv, false, Turn.CUT, Level.EASY);
+    }
+
+    public Game() {
+        this(20, false, Turn.CUT, Level.EASY);
+    }
 
     public Game(int nbv, boolean withIA, Turn typeIA, Level level) {
         nbVertices = nbv;
@@ -69,6 +77,7 @@ public class Game {
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
+
     public Game(int nbVertices, long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
         this.creatorTurn = creatorTurn;
         if (joiner) turn = creatorTurn.flip();
@@ -82,7 +91,7 @@ public class Game {
         LocalTime duration = LocalTime.now();
         int c = 0;
         do {
-            graph = new Graph(nbVertices, maxDeg, minDeg, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
+            graph = new Graph(nbVertices, maxDeg, minDeg, seed + c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
             c++;
             if (!joiner && duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
                 this.creatorTurn = null;
@@ -112,13 +121,14 @@ public class Game {
             int delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
             if (delay < AIDelay) {
                 try {
-                    Thread.sleep(AIDelay-delay);
+                    Thread.sleep(AIDelay - delay);
+                } catch (Exception ignored) {
                 }
-                catch (Exception ignored) {}
             }
             time = LocalTime.now();
         }
     }
+
     public void play(Vertex key, Vertex value) {
         if (againstAI && turn == typeIA) {
             AIPlay(ia, ia, typeIA);
@@ -181,14 +191,14 @@ public class Game {
         this.turn = this.turn.flip();
         detectWinner();
     }
+
     public void showWinner() {
         if (cutWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
-        }
-        else if (shortWon()) {
+        } else if (shortWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
@@ -197,7 +207,7 @@ public class Game {
     }
 
     public void isolateComponent() {
-        HashSet<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        HashSet<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x, v) -> !x.isCut(v) && !v.isCut(x));
         Optional<Vertex> u = Optional.empty();
         for (Vertex x : getGraph().getVertices()) {
             if (!component.contains(x)) {
@@ -206,27 +216,26 @@ public class Game {
             }
         }
         if (u.isEmpty()) return;
-        HashSet<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        HashSet<Vertex> secondComponent = graph.getComponent(u.get(), (x, v) -> !x.isCut(v) && !v.isCut(x));
         HashSet<Vertex> smallestComponent;
         if (component.size() > secondComponent.size()) {
             smallestComponent = secondComponent;
-        }
-        else {
+        } else {
             smallestComponent = component;
         }
         HashSet<Vertex> finalSmallestComponent = smallestComponent;
         List<Pair<Pair<Vertex, Vertex>, Line>> edgesGreen = Gui.getEdges().stream().filter(pair -> finalSmallestComponent.contains(pair.getKey().getKey())
-                && finalSmallestComponent.contains(pair.getKey().getValue())
-                && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
+            && finalSmallestComponent.contains(pair.getKey().getValue())
+            && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
         createTimer(edgesGreen, false, 250);
         List<Pair<Pair<Vertex, Vertex>, Line>> cuttedLines = Gui.getEdges().stream().filter(x ->
-                cutted.contains(x.getKey())).toList();
+            cutted.contains(x.getKey())).toList();
         createTimer(cuttedLines, true, 100);
     }
 
     public void deleteCuttedEdge() {
         List<Pair<Pair<Vertex, Vertex>, Line>> securedEdges = Gui.getEdges().stream().filter(x ->
-                cutted.contains(x.getKey()) || !secured.contains(x.getKey())).toList();
+            cutted.contains(x.getKey()) || !secured.contains(x.getKey())).toList();
         createTimer(securedEdges, true, 100);
     }
 
@@ -234,20 +243,18 @@ public class Game {
         Timer t = new Timer();
         TimerTask tt = new TimerTask() {
             private int i = 0;
+
             @Override
             public void run() {
-                if (i < edges.size())
-                {
+                if (i < edges.size()) {
                     Pair<Pair<Vertex, Vertex>, Line> pair = edges.get(i);
                     if (opacity) {
                         pair.getValue().setVisible(false);
-                    }
-                    else {
+                    } else {
                         pair.getValue().setStroke(Color.LIGHTGREEN);
                     }
                     i++;
-                }
-                else {
+                } else {
                     t.cancel();
                     t.purge();
                 }
@@ -259,32 +266,49 @@ public class Game {
     private void detectWinner() {
         if (client == null) {
             showWinner();
-        }
-        else {
+        } else {
             Platform.runLater(this::showWinner); // Cas d'une game online
         }
     }
+
     private void handleEvent(MouseEvent mouseEvent) {
         if (cutWon || shortWon || ia2 != null)
             return;
-        if (mouseEvent.getSource() instanceof Line line &&
-                line.getProperties().get("pair") instanceof Pair<?, ?> pair1 &&
-                pair1.getKey() instanceof Vertex key && pair1.getValue() instanceof Vertex value) {
-            Pair<Vertex, Vertex> move = new Pair<>(key, value);
-            if (cutted.contains(move) || secured.contains(move)) return;
-            if (pvpOnline) {
-                try {
-                    sendMove(new Pair<>(key, value));
-                }
-                catch (Exception e) {
-                    log.error(e.getMessage());
+        Line line = null;
+        if (mouseEvent.getTarget() instanceof Line line2) {
+            line = line2;
+        } else if (mouseEvent.getTarget() instanceof Pane) {
+            List<Pair<Double, Line>> good = new ArrayList<>();
+            for (Pair<Pair<Vertex, Vertex>, Line> pair : Gui.getEdges()) {
+                double d;
+                if (
+                    (d = Graph.distancePointSegment(
+                        mouseEvent.getX(),
+                        mouseEvent.getY(),
+                        pair.getKey().getKey().getX() + UtilsGui.CIRCLE_SIZE,
+                        pair.getKey().getKey().getY() + UtilsGui.CIRCLE_SIZE,
+                        pair.getKey().getValue().getX() + UtilsGui.CIRCLE_SIZE,
+                        pair.getKey().getValue().getY() + UtilsGui.CIRCLE_SIZE)
+                    ) < 10
+                ) {
+                    good.add(new Pair<>(d, pair.getValue()));
                 }
             }
-            else {
-                play(key, value);
-            }
+            if (!good.isEmpty())
+                line = good.stream().min(Comparator.comparing(Pair::getKey)).get().getValue();
         }
-
+        if (line == null) return;
+        Pair<Vertex, Vertex> move = (Pair<Vertex, Vertex>) line.getProperties().get("pair");
+        if (cutted.contains(move) || secured.contains(move)) return;
+        if (pvpOnline) {
+            try {
+                sendMove(move);
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+        } else {
+            play(move.getKey(), move.getValue());
+        }
     }
 
     public void cutEdge(Pair<Vertex, Vertex> edge) {
@@ -297,17 +321,18 @@ public class Game {
         edge.getKey().paint(edge.getValue());
         getSecured().add(edge);
     }
+
     public boolean shortWon() {
         if (shortWon) return true;
         Graph redGraph = new Graph(getSecured());
         shortWon = redGraph.getNbVertices() == graph.getNbVertices() &&
-                graphWithoutSomeNeighborsIsConnected(redGraph, (x,v) -> x.isPainted(v) || v.isPainted(x));
+            graphWithoutSomeNeighborsIsConnected(redGraph, (x, v) -> x.isPainted(v) || v.isPainted(x));
         return shortWon;
     }
 
     public boolean cutWon() {
         if (cutWon) return true;
-        cutWon = !graphWithoutSomeNeighborsIsConnected(graph, (x,v) -> !x.isCut(v));
+        cutWon = !graphWithoutSomeNeighborsIsConnected(graph, (x, v) -> !x.isCut(v));
         return cutWon;
     }
 
@@ -322,7 +347,7 @@ public class Game {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
-                graph.getAdjVertices().get(v).stream().filter(x -> predicate.test(x,v)).forEach(t -> {
+                graph.getAdjVertices().get(v).stream().filter(x -> predicate.test(x, v)).forEach(t -> {
                     if (!marked.contains(t)) {
                         pile.push(t);
                     }
@@ -334,8 +359,8 @@ public class Game {
 
     public void sendMove(Pair<Vertex, Vertex> move) throws IOException {
         int turnValue;
-        if (joiner) turnValue = creatorTurn == Turn.CUT ? 1: 0;
-        else turnValue = creatorTurn == Turn.CUT ? 0: 1;
+        if (joiner) turnValue = creatorTurn == Turn.CUT ? 1 : 0;
+        else turnValue = creatorTurn == Turn.CUT ? 0 : 1;
         String data = graph.getVertices().indexOf(move.getKey()) + " " + graph.getVertices().indexOf(move.getValue()) + " " + turnValue;
         try {
             client.reConnect(serverUri);
@@ -355,12 +380,10 @@ public class Game {
                 client.sendMessage(turn.toString());
             if (turn == Turn.CUT) {
                 cutWon = true;
-            }
-            else {
+            } else {
                 shortWon = true;
             }
-            if (!getClient().isClosed())
-            {
+            if (!getClient().isClosed()) {
                 getClient().close();
                 showWinner();
             }
@@ -398,8 +421,7 @@ public class Game {
                 if (cutWon) {
                     client.sendMessage("CUT!");
                     client.close();
-                }
-                else if (shortWon) {
+                } else if (shortWon) {
                     client.sendMessage("SHORT!");
                     client.close();
                 }
@@ -425,22 +447,25 @@ public class Game {
 
     public void setColor() {
         if (lastsLines.size() < 2) return;
-        if (lastsLines.get(lastsLines.size()-2).getValue() == Turn.CUT) {
-            lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.BLACK);
-            lastsLines.get(lastsLines.size()-2).getKey().getStrokeDashArray().addAll(25D, 15D);
-        }
-        else {
-            lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.RED);
+        if (lastsLines.get(lastsLines.size() - 2).getValue() == Turn.CUT) {
+            lastsLines.get(lastsLines.size() - 2).getKey().setStroke(Color.BLACK);
+            lastsLines.get(lastsLines.size() - 2).getKey().getStrokeDashArray().addAll(25D, 15D);
+        } else {
+            lastsLines.get(lastsLines.size() - 2).getKey().setStroke(Color.RED);
         }
     }
 
     public boolean graphIsNotOkay() {
         return graph.getVertices().size() != nbVertices || graph.minDeg() < minDeg || graph.maxDeg() >= maxDeg || !graph.estConnexe();
     }
+
     public boolean getCutWon() {
         return cutWon;
     }
-    public boolean getShortWon() { return shortWon; }
+
+    public boolean getShortWon() {
+        return shortWon;
+    }
 
     private InterfaceIA getIAwithDifficulty(Level level) {
         return switch (level) {

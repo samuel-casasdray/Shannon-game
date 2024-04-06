@@ -324,7 +324,6 @@ public class Gui extends Application {
                     pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
                     pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
             line.setStrokeWidth(5);
-            line.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
             // Ajout de la ligne sur sur l'affichage
             pane.getChildren().add(line);
@@ -351,6 +350,7 @@ public class Gui extends Application {
             // On ajoute les 2 élements sur l'affichage
             pane.getChildren().addAll(vertex, text);
         }
+        pane.setOnMouseClicked(handler);
     }
 
     public void create(Text textField, Turn turn, int nbVertices) {
