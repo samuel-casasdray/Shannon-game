@@ -50,6 +50,7 @@ public class UtilsGui {
     public Text createText(String content) { return createText(content, false); }
     public Text createText(String content, boolean withShadow) {
         Text text = new Text(content);
+        text.setFill(Color.WHITE);
         if (withShadow) {
             text.setFont(Font.font(FONT, FontWeight.BOLD, 40));
             DropShadow dropShadow = new DropShadow();
@@ -89,7 +90,7 @@ public class UtilsGui {
     }
 
     public Button getReturnButton(ButtonClickType nomscene, HandleClick handleButtonClick){
-        URL url = UtilsGui.class.getResource("/fleche-retour.png");
+        URL url = UtilsGui.class.getResource("/fleche-retour-blanc.png");
         ImageView imageView = null;
         if(url == null) {
             log.error("Pas d'icon fleche retour");
@@ -107,6 +108,12 @@ public class UtilsGui {
         returnButton.setMinSize(40, 20);
         if(imageView != null)
             returnButton.setGraphic(imageView);
+
+        DropShadow shadow = new DropShadow();
+        shadow.setOffsetX(5.0); // Décalage horizontal pour l'effet 3D
+        shadow.setOffsetY(5.0);
+        shadow.setColor(Color.GRAY);
+        returnButton.setEffect(shadow);
 
         return returnButton;
     }

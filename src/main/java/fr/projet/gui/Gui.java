@@ -232,6 +232,7 @@ public class Gui extends Application {
 
         // Création du Pane pour afficher le graphique
         pane = new Pane();
+        pane.setBackground(GuiScene.getBackground());
         pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
@@ -287,7 +288,6 @@ public class Gui extends Application {
 
         // Mise à jour des positions des arêtes
         for (Pair<Pair<Vertex, Vertex>, Line> edge : edges) {
-            //System.out.println("aretes");
             Line line = edge.getValue();
             Pair<Vertex, Vertex> pair = edge.getKey();
             line.setStartX(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE + xOffset);
@@ -296,16 +296,17 @@ public class Gui extends Application {
             line.setEndY(pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE + yOffset);
         }
 
-        int nodeIndex=0;
+//        int nodeIndex=0;
         // Mise à jour des positions des sommets et des textes
+//        List<Node> nodes = pane.getChildren();
+//        for (int i = 0; i < nodes.size(); i++) {
+//            Node node = nodes.get(i);
+//        }
         for (Node node : pane.getChildren()) {
-            if (node instanceof Circle vertex) {
-                //System.out.println("cercle");
-                Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(nodeIndex).getCoords();
-                vertex.relocate(coord.getKey()+ xOffset,coord.getValue() + yOffset);
-                nodeIndex++;
+            if (node instanceof Circle || node instanceof ImageView) {
+                node.setTranslateX(xOffset + UtilsGui.CIRCLE_SIZE);
+                node.setTranslateY(yOffset + UtilsGui.CIRCLE_SIZE);
             } else if (node instanceof Text text) {
-                //System.out.println("texte");
                 int i = Integer.parseInt(text.getText());
                 Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i-1).getCoords();
                 // Centrage du texte
