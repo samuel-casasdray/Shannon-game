@@ -1,5 +1,6 @@
 package fr.projet.server;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import fr.projet.Callback;
@@ -15,10 +16,9 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeoutException;
 
 @ClientEndpoint
 @Slf4j
@@ -63,6 +63,14 @@ public class WebSocketClient {
         createConnection();
     }
 
+    public static void sendStatistics(int typeGame, int winner, long seed) {
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        try {
+            container.connectToServer(new WebSocketClient(), new URI(SERVER_HOSTNAME+"game_stat/"+typeGame+"/"+winner+"/"+seed));
+        }
+        catch (DeploymentException | URISyntaxException | IOException handshakeError) {}
+    }
+
     private void createConnection() throws InterruptedException, IOException {
         int count = 0;
         while(response == null) {
@@ -104,19 +112,51 @@ public class WebSocketClient {
         }
     }
 
-    public Game connect(Callback function) throws IOException {
+    public Game connect(Callback function) throws IOException, TimeoutException {
         try {
             JsonElement jsonElement = JsonParser.parseString(response);
             long seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
             this.connectServer(SERVER_URI + this.id);
             Turn turn = jsonElement.getAsJsonObject().get("creator_turn").getAsString().equals("Short") ? Turn.SHORT : Turn.CUT;
             this.game = new Game(this.nbVertices, this.id, joiner, this, SERVER_URI + this.id, seed, turn);
-            if (game.getCreatorTurn() == null) return null;
             this.setCallback(function);
             return game;
-        } catch (Exception e) {
+        } catch (URISyntaxException e) {
             this.close();
             return null;
+        }
+    }
+
+    public JsonArray getStats() {
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        try {
+            container.connectToServer(this, new URI(SERVER_HOSTNAME+"games"));
+        }
+        catch (DeploymentException | URISyntaxException | IOException handshakeError) {
+            return new JsonArray();
+        }
+        int count = 0;
+        while(response == null) {
+            if (count > 500) {
+                return new JsonArray(); // Le serveur ne répond pas
+            }
+            response = this.getResponse();
+            if (response == null)
+            {
+                try {
+                    Thread.sleep(1); // On attend que le serveur réponde
+                }
+                catch (Exception ignored) {}
+            }
+            count++;
+        }
+        try {
+            JsonElement jsonElement = JsonParser.parseString(response);
+            JsonElement stats = jsonElement.getAsJsonObject().get("stats");
+            return stats.getAsJsonArray();
+        }
+        catch (NumberFormatException e) {
+            return new JsonArray();
         }
     }
 
@@ -177,6 +217,12 @@ public class WebSocketClient {
     public void onMessage(String message) throws IOException {
         response = message;
         log.info("Received message: " + message);
+        try {
+            JsonElement jsonElement = JsonParser.parseString(message);
+            JsonElement stats = jsonElement.getAsJsonObject().get("stats");
+            if (!stats.isJsonNull()) return;
+        }
+        catch (Exception ignored) {}
         if (message.startsWith("{")) {
             if (callback != null)
                 callback.call();

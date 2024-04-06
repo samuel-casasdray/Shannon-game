@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 public class Gui extends Application {
@@ -122,7 +123,14 @@ public class Gui extends Application {
             case JEU -> popupMessage();
             case VERTICES -> {
                 this.nbVertices=GuiScene.getNbVertices();
-                this.game = new Game(nbVertices, withIA, turn, level);
+                try {
+                    this.game = new Game(nbVertices, withIA, turn, level);
+                }
+                catch (TimeoutException e) {
+                    Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                            " de réduire le nombre de sommets"));
+                    return;
+                }
                 stage.setScene(run());
                 if (withIA && turn==Turn.CUT) {
                     gameThread = new Thread(() -> game.play(null, null));
@@ -134,11 +142,21 @@ public class Gui extends Application {
                 this.nbVertices = GuiScene.getNbVertices();
                 Level levelAI1 = GuiScene.getLevel1();
                 Level levelAI2 = GuiScene.getLevel2();
-                this.game = new Game(nbVertices, levelAI1, levelAI2);
+                try {
+                    this.game = new Game(nbVertices, levelAI1, levelAI2);
+                }
+                catch (TimeoutException e) {
+                    Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                            " de réduire le nombre de sommets"));
+                    return;
+                }
                 stage.setScene(run());
                 gameThread = new Thread(game::aiVsAi);
                 gameThread.setDaemon(true);
                 gameThread.start();
+            }
+            case STATS -> {
+                stage.setScene(GuiScene.stats(this::handleButtonClick));
             }
         }
     }
@@ -365,8 +383,10 @@ public class Gui extends Application {
             WebSocketClient client = new WebSocketClient(nbVertices, 0L, turn);
             gameCode = Optional.of(client.getId());
             textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
-            this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
-            if (game == null) {
+            try {
+                this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+            }
+            catch (TimeoutException e) {
                 textField.setText("");
                 Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
                         " de réduire le nombre de sommets"));
@@ -386,7 +406,7 @@ public class Gui extends Application {
             stage.setScene(run());
             if (client.getWaiting() != null)
                 game.play1vs1(client.getWaiting());
-        } catch (IOException | URISyntaxException | InterruptedException | NumberFormatException e) {
+        } catch (IOException | URISyntaxException | InterruptedException | NumberFormatException | TimeoutException e) {
             log.error(e.getMessage());
         }
     }
