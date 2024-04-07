@@ -54,6 +54,7 @@ public class Game {
     private String serverUri;
     private long id;
     private Turn creatorTurn;
+    private static boolean pending = false;
 
     public Game(int nbv) {
         this(nbv, false, Turn.CUT, Level.EASY);
@@ -162,6 +163,7 @@ public class Game {
     }
 
     public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
+        pending = true;
         if (ia2.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
             ia2.setDepth(5);
         if (ia1.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
@@ -190,6 +192,7 @@ public class Game {
         }
         this.turn = this.turn.flip();
         detectWinner();
+        pending = false;
     }
 
     public void showWinner() {
@@ -272,7 +275,7 @@ public class Game {
     }
 
     private void handleEvent(MouseEvent mouseEvent) {
-        if (cutWon || shortWon || ia2 != null)
+        if (cutWon || shortWon || ia2 != null || pending)
             return;
         Line line = null;
         if (mouseEvent.getTarget() instanceof Line line2) {
