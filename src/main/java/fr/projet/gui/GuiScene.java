@@ -252,6 +252,11 @@ public class GuiScene {
         Text shorts = new Text();
         Text online = new Text();
         List<JsonElement> statsList = ws.getStats().asList();
+        if (statsList.isEmpty()) {
+            Text erreurText = UtilsGui.createText("Vérifiez votre connexion internet");
+            root.getChildren().addAll(erreurText, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
+            return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        }
         response.setText(statsList.getFirst().getAsString());
         cut.setText(statsList.get(1).getAsString());
         shorts.setText(statsList.get(2).getAsString());

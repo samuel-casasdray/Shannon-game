@@ -122,12 +122,14 @@ public class Game {
         LocalTime time = LocalTime.now();
         while (!cutWon && !shortWon) {
             AIPlay(ia, ia2, turn);
-            int delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
+            long delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
             if (delay < AIDelay) {
                 try {
                     Thread.sleep(AIDelay-delay);
                 }
-                catch (Exception ignored) {}
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
             time = LocalTime.now();
         }
@@ -196,7 +198,7 @@ public class Game {
     }
     public void showWinner() {
         int typeGame;
-         boolean thereAreAWinner = false;
+        boolean thereAreAWinner = false;
         if (pvpOnline)
             typeGame = 2; // Deux joueurs en ligne
         else if (againstAI)
@@ -230,7 +232,7 @@ public class Game {
     }
 
     public void isolateComponent() {
-        HashSet<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        Set<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !x.isCut(v) && !v.isCut(x));
         Optional<Vertex> u = Optional.empty();
         for (Vertex x : getGraph().getVertices()) {
             if (!component.contains(x)) {
@@ -239,15 +241,15 @@ public class Game {
             }
         }
         if (u.isEmpty()) return;
-        HashSet<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !x.isCut(v) && !v.isCut(x));
-        HashSet<Vertex> smallestComponent;
+        Set<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        Set<Vertex> smallestComponent;
         if (component.size() > secondComponent.size()) {
             smallestComponent = secondComponent;
         }
         else {
             smallestComponent = component;
         }
-        HashSet<Vertex> finalSmallestComponent = smallestComponent;
+        Set<Vertex> finalSmallestComponent = smallestComponent;
         List<Pair<Pair<Vertex, Vertex>, Line>> edgesGreen = Gui.getEdges().stream().filter(pair -> finalSmallestComponent.contains(pair.getKey().getKey())
                 && finalSmallestComponent.contains(pair.getKey().getValue())
                 && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
@@ -323,7 +325,6 @@ public class Game {
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
         getCutted().add(edge);
-        //graph.removeNeighbor(edge);
     }
 
     public void secureEdge(Pair<Vertex, Vertex> edge) {
@@ -349,9 +350,9 @@ public class Game {
             return true;
         }
         HashSet<Vertex> marked = new HashSet<>();
-        Stack<Vertex> pile = new Stack<>();
+        Deque<Vertex> pile = new ArrayDeque<>();
         pile.push(graph.getVertices().getFirst());
-        while (!pile.empty()) {
+        while (!pile.isEmpty()) {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
@@ -451,6 +452,8 @@ public class Game {
     }
 
     public void paintLine(Line line) {
+        if (!lastsLines.isEmpty())
+            lastsLines.getLast().getKey().setVisible(false);
         lastsLines.add(new Pair<>(line, turn));
         line.setStroke(Color.BLUE);
         setColor();

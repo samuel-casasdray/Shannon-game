@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
@@ -166,7 +167,7 @@ public class Gui extends Application {
         if (game.isPvpOnline()) {
             try {
                 game.getClient().close();
-            } catch (Exception ignored) {}
+            } catch (IOException ignored) {}
         }
         if (gameThread != null)
             gameThread.interrupt();
@@ -309,11 +310,10 @@ public class Gui extends Application {
         }
         Vertex v = new Vertex(0, 0);
         for (Vertex vertex : graph.getVertices()) {
-            if (graph.getAdjVertices().get(vertex) != null)
-                if (graph.getAdjVertices().get(vertex).size() <= 5) {
-                    v = vertex;
-                    break;
-                }
+            if (graph.getAdjVertices().get(vertex) != null && (graph.getAdjVertices().get(vertex).size() <= 5)) {
+                v = vertex;
+                break;
+            }
         }
         if (!graph.getAdjVertices().containsKey(v)) return;
 
@@ -326,7 +326,7 @@ public class Gui extends Application {
             boolColors.set(u.getColor(), false);
         }
         for (int i = 0; i < 5; i++) {
-            if (boolColors.get(i)) {
+            if (Boolean.TRUE.equals(boolColors.get(i))) {
                 v.setColor(i);
                 break;
             }
@@ -391,8 +391,16 @@ public class Gui extends Application {
                 Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
                         " de réduire le nombre de sommets"));
             }
-        } catch (IOException | URISyntaxException | InterruptedException e) {
+        } catch (SocketException se) {
+            textField.setText("");
+            Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
+        }
+        catch (IOException | URISyntaxException e) {
             log.error(e.getMessage());
+        }
+        catch (InterruptedException e) {
+            log.error(e.getMessage());
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -403,11 +411,19 @@ public class Gui extends Application {
             if (getGameCode().isPresent() && getGameCode().get() == code) return;
             WebSocketClient client = new WebSocketClient(code);
             game = client.connect(() -> {});
+            if (game == null) return;
             stage.setScene(run());
             if (client.getWaiting() != null)
                 game.play1vs1(client.getWaiting());
-        } catch (IOException | URISyntaxException | InterruptedException | NumberFormatException | TimeoutException e) {
+        } catch (SocketException se) {
+            Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
+        }
+        catch (IOException | URISyntaxException | NumberFormatException | TimeoutException e) {
             log.error(e.getMessage());
+        }
+        catch (InterruptedException e) {
+            log.error(e.getMessage());
+            Thread.currentThread().interrupt();
         }
     }
 }

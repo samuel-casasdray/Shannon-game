@@ -3,6 +3,7 @@ package fr.projet.server;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import fr.projet.Callback;
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
@@ -68,20 +69,23 @@ public class WebSocketClient {
         try {
             container.connectToServer(new WebSocketClient(), new URI(SERVER_HOSTNAME+"game_stat/"+typeGame+"/"+winner+"/"+seed));
         }
-        catch (DeploymentException | URISyntaxException | IOException handshakeError) {}
+        catch (DeploymentException | URISyntaxException | IOException ignored) {} // Rien à faire, la game sera perdue à jamais
+    }
+
+    private boolean doServerRespond() throws InterruptedException {
+        int count = 0;
+        while(response == null) {
+            if (count > 1000) {
+                return false; // Le serveur ne répond pas
+            }
+            Thread.sleep(1); // On attend que le serveur réponde
+            count++;
+        }
+        return true;
     }
 
     private void createConnection() throws InterruptedException, IOException {
-        int count = 0;
-        while(response == null) {
-            if (count > 50) {
-                return; // Le serveur ne répond pas
-            }
-            response = this.getResponse();
-            if (response == null)
-                Thread.sleep(100); // On attend que le serveur réponde
-            count++;
-        }
+        if (!doServerRespond()) return;
         if (response.equals("Not found")) {
             Platform.runLater(() -> Gui.popupMessage("Le code rentré est incorrect", "Aucune partie trouvée."));
             throw new IOException();
@@ -121,7 +125,7 @@ public class WebSocketClient {
             this.game = new Game(this.nbVertices, this.id, joiner, this, SERVER_URI + this.id, seed, turn);
             this.setCallback(function);
             return game;
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | NullPointerException e) {
             this.close();
             return null;
         }
@@ -135,27 +139,18 @@ public class WebSocketClient {
         catch (DeploymentException | URISyntaxException | IOException handshakeError) {
             return new JsonArray();
         }
-        int count = 0;
-        while(response == null) {
-            if (count > 500) {
-                return new JsonArray(); // Le serveur ne répond pas
-            }
-            response = this.getResponse();
-            if (response == null)
-            {
-                try {
-                    Thread.sleep(1); // On attend que le serveur réponde
-                }
-                catch (Exception ignored) {}
-            }
-            count++;
+        try {
+            if(!doServerRespond()) return new JsonArray();
+        }
+        catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
         }
         try {
             JsonElement jsonElement = JsonParser.parseString(response);
             JsonElement stats = jsonElement.getAsJsonObject().get("stats");
             return stats.getAsJsonArray();
         }
-        catch (NumberFormatException e) {
+        catch (JsonSyntaxException e) {
             return new JsonArray();
         }
     }
@@ -222,7 +217,7 @@ public class WebSocketClient {
             JsonElement stats = jsonElement.getAsJsonObject().get("stats");
             if (!stats.isJsonNull()) return;
         }
-        catch (Exception ignored) {}
+        catch (JsonSyntaxException | NullPointerException ignored) {}
         if (message.startsWith("{")) {
             if (callback != null)
                 callback.call();
