@@ -217,7 +217,7 @@ public class WebSocketClient {
             JsonElement stats = jsonElement.getAsJsonObject().get("stats");
             if (!stats.isJsonNull()) return;
         }
-        catch (JsonSyntaxException | NullPointerException ignored) {}
+        catch (JsonSyntaxException | NullPointerException | IllegalStateException ignored) {}
         if (message.startsWith("{")) {
             if (callback != null)
                 callback.call();
