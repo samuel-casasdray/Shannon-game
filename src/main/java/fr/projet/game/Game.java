@@ -40,6 +40,7 @@ public class Game {
     private InterfaceIA ia2;
     private final HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>();
     private final HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>();
+    @Getter
     private boolean pvpOnline = false;
     private long seed;
     @Getter
@@ -167,10 +168,10 @@ public class Game {
     }
 
     public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
-        if (ia2.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
-            ia2.setDepth(5);
-        if (ia1.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
-            ia1.setDepth(5);
+        if (ia2.getDepth() == 5 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
+            ia2.setDepth(ia2.getDepth()+1);
+        if (ia1.getDepth() == 5 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
+            ia1.setDepth(ia1.getDepth()+1);
         Pair<Vertex, Vertex> played;
         if (turn == Turn.CUT) {
             Pair<Vertex, Vertex> v = ia1.playCUT();
@@ -384,10 +385,13 @@ public class Game {
     public void play1vs1(String message) throws IOException {
         if (message.isEmpty()) return;
         if (message.equals("L'adversaire a quitté la partie")) {
+            Turn turnValue;
+            if (joiner) turnValue = creatorTurn == Turn.CUT ? Turn.SHORT: Turn.CUT;
+            else turnValue = creatorTurn == Turn.CUT ? Turn.CUT: Turn.SHORT;
             if (cutWon || shortWon) return;
             if (!getClient().isClosed())
                 client.sendMessage(turn.toString());
-            if (turn == Turn.CUT) {
+            if (turnValue == Turn.CUT) {
                 cutWon = true;
             }
             else {
@@ -423,7 +427,6 @@ public class Game {
                 val = null;
             }
             if (key != null && val != null) {
-                Turn t = getTurn();
                 if (results[2] == 0)
                     setTurn(Turn.CUT);
                 else
@@ -437,7 +440,6 @@ public class Game {
                     client.sendMessage("SHORT!");
                     client.close();
                 }
-                setTurn(t);
             } else {
                 log.info(key + " " + val);
             }
@@ -482,7 +484,11 @@ public class Game {
         return switch (level) {
             case EASY -> new BasicAI(this, turn);
             case MEDIUM -> new Minimax(this, turn, 3);
-            case HARD -> new Minimax(this, turn, 4);
+            case HARD -> new Minimax(this, turn, 5);
         };
+    }
+
+    public boolean getJoiner() {
+        return joiner;
     }
 }
