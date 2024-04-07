@@ -541,4 +541,35 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
             r.append(getVertices().indexOf(v)).append(" ");
         return r.toString();
     }
+
+    public static double distancePointSegment(double x, double y, double x1, double y1, double x2, double y2) {
+        double a = x - x1;
+        double b = y - y1;
+        double c = x2 - x1;
+        double d = y2 - y1;
+
+        double dot = a * c + b * d;
+        double len = c * c + d * d;
+        double param = -1;
+        if (len != 0) //in case of 0 length line
+            param = dot / len;
+
+        double xx;
+        double yy;
+
+        if (param < 0) { // P is between P1 and P2
+            xx = x1;
+            yy = y1;
+        } else if (param > 1) { // closest point in segment is P2
+            xx = x2;
+            yy = y2;
+        } else { // closest point in segment is P1
+            xx = x1 + param * c;
+            yy = y1 + param * d;
+        }
+
+        double dx = x - xx;
+        double dy = y - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 }
