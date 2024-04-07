@@ -11,8 +11,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.util.*;
 import java.util.function.BiPredicate;
 
-import static java.lang.Math.random;
-
 @Accessors(chain = true)
 @Data
 @Slf4j
@@ -93,45 +91,6 @@ public class Graph {
         return det(x1, y1, x3, y3, x4, y4) != det(x2, y2, x3, y3, x4, y4) && det(x1, y1, x2, y2, x3, y3) != det(x1, y1, x2, y2, x4, y4);
     }
 
-    private void generateGraph() {
-        // Instantiation des N (nbVextex) sommets et de leur coordonnées.
-        for (int i = 0; i < nbVertices; i++) {
-            Pair<Integer, Integer> coord;
-            if (aroundCircle) {
-                // Coord autour d'un cercle
-                double toRad = Math.toRadians((double) i * 360F / nbVertices);
-                coord = new Pair<>(
-                        (int) (Math.cos(toRad) * (UtilsGui.WINDOW_SIZE / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_SIZE / 2D),
-                        (int) (Math.sin(toRad) * (UtilsGui.WINDOW_SIZE / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_SIZE / 2D));
-            } else {
-                // Coord aléatoire
-                coord = new Pair<>(
-                        random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
-                        random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
-            }
-            // On ajoute le sommet au graphe
-            addVertex(new Vertex(coord.getKey(), coord.getValue()));
-        }
-        //Instantiation des aretes selon une probabilité (proba) entre 2 sommets
-        for (int i = 0; i < nbVertices; i++) {
-            for (int j = i + 1; j < nbVertices; j++) {
-                float p = random.nextFloat();
-                if (p < proba) {
-                    addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(j)));
-                }
-            }
-        }
-        //ajout d'aretes si jamais le sommet a moins de 2 voisins
-        for (int i=0; i< nbVertices; i++) {
-            while(vertexDegree(i)<2){
-                int r;
-                do {
-                    r=random.nextInt(nbVertices);
-                } while(r==i || adjVertices.get(this.vertices.get(i)).contains(this.vertices.get(r)));
-                addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
-            }
-        } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
-    }
     private void generateGraphPlanaire(int maxDeg, int minDeg) {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 100;
@@ -146,22 +105,16 @@ public class Graph {
                     random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
                     random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
-            // Ce if est dans le cas où on place le premier sommet
-            if (getVertices().isEmpty()) {
-                addVertex(newVertex);
-            }
-            else {
-                boolean distanceOk = true;
-                for (Vertex v1: getVertices()) {
-                    // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
-                    if (newVertex.distance(v1) < minDist) {
-                        distanceOk = false;
-                        break;
-                    }
+            boolean distanceOk = true;
+            for (Vertex v1: getVertices()) {
+                // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
+                if (newVertex.distance(v1) < minDist) {
+                    distanceOk = false;
+                    break;
                 }
-                if (distanceOk)
-                    addVertex(newVertex);
             }
+            if (distanceOk)
+                addVertex(newVertex);
             if (iterCount >= maxIter) return;
         }
         // Ces boucles imbriquées permettent de relier un maximum de sommets
@@ -179,7 +132,7 @@ public class Graph {
                     }
                 }
                 if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
-                    if (getAdjVertices().get(v).size() < maxDeg && getAdjVertices().get(v2).size() < maxDeg)
+                    if (degree(v) < maxDeg && degree(v2) < maxDeg)
                     {
                         Pair<Vertex, Vertex> neighbor = new Pair<>(v, v2);
                         addNeighbor(neighbor);
@@ -254,16 +207,6 @@ public class Graph {
         }
         return false;
     }
-    public int vertexDegree(int indexVertex) {
-        Vertex vertex= getVertices().get(indexVertex);
-        int count = 0;
-        for(Pair<Vertex,Vertex> p: getNeighbors()){
-            if (p.getKey().equals(vertex)){
-                count++;
-            }
-        }
-        return count;
-    }
 
     public int minDeg() {
         //int minDeg = getVertices().getFirst().getNeighbors().size();
@@ -277,10 +220,11 @@ public class Graph {
     }
 
     public int maxDeg() {
-        int maxDeg = getAdjVertices().get(getVertices().getFirst()).size();
+        int maxDeg = degree(getVertices().getFirst());
         for (Vertex v: getVertices()) {
-            if (getAdjVertices().get(v).size() > maxDeg) {
-                maxDeg = getAdjVertices().get(v).size();
+            int dv = degree(v);
+            if (dv > maxDeg) {
+                maxDeg = dv;
             }
         }
         return maxDeg;
@@ -291,9 +235,9 @@ public class Graph {
             return true;
         }
         HashSet<Vertex> marked = new HashSet<>();
-        Stack<Vertex> pile = new Stack<>();
+        Deque<Vertex> pile = new ArrayDeque<>();
         pile.push(getVertices().getFirst());
-        while (!pile.empty()) {
+        while (!pile.isEmpty()) {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
@@ -307,14 +251,14 @@ public class Graph {
         return marked.size() == getVertices().size();
     }
 
-    public HashSet<Vertex> getComponent(Vertex vertex, BiPredicate<Vertex, Vertex> predicate) {
+    public Set<Vertex> getComponent(Vertex vertex, BiPredicate<Vertex, Vertex> predicate) {
         if (getVertices().isEmpty()) {
             return new HashSet<>();
         }
         HashSet<Vertex> marked = new HashSet<>();
-        Stack<Vertex> pile = new Stack<>();
+        Deque<Vertex> pile = new ArrayDeque<>();
         pile.push(vertex);
-        while (!pile.empty()) {
+        while (!pile.isEmpty()) {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);

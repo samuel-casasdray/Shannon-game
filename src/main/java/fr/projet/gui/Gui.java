@@ -9,6 +9,8 @@ import fr.projet.graph.Vertex;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -30,9 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 public class Gui extends Application {
@@ -122,7 +126,14 @@ public class Gui extends Application {
             case JEU -> popupMessage();
             case VERTICES -> {
                 this.nbVertices=GuiScene.getNbVertices();
-                this.game = new Game(nbVertices, withIA, turn, level);
+                try {
+                    this.game = new Game(nbVertices, withIA, turn, level);
+                }
+                catch (TimeoutException e) {
+                    Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                            " de réduire le nombre de sommets"));
+                    return;
+                }
                 stage.setScene(run());
                 if (withIA && turn==Turn.CUT) {
                     gameThread = new Thread(() -> game.play(null, null));
@@ -134,11 +145,21 @@ public class Gui extends Application {
                 this.nbVertices = GuiScene.getNbVertices();
                 Level levelAI1 = GuiScene.getLevel1();
                 Level levelAI2 = GuiScene.getLevel2();
-                this.game = new Game(nbVertices, levelAI1, levelAI2);
+                try {
+                    this.game = new Game(nbVertices, levelAI1, levelAI2);
+                }
+                catch (TimeoutException e) {
+                    Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                            " de réduire le nombre de sommets"));
+                    return;
+                }
                 stage.setScene(run());
                 gameThread = new Thread(game::aiVsAi);
                 gameThread.setDaemon(true);
                 gameThread.start();
+            }
+            case STATS -> {
+                stage.setScene(GuiScene.stats(this::handleButtonClick));
             }
         }
     }
@@ -148,7 +169,7 @@ public class Gui extends Application {
         if (game.isPvpOnline()) {
             try {
                 game.getClient().close();
-            } catch (Exception ignored) {}
+            } catch (IOException ignored) {}
         }
         if (gameThread != null)
             gameThread.interrupt();
@@ -223,7 +244,22 @@ public class Gui extends Application {
 //        }
         edges.clear();
         showGraph();
-        pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+        if (game.isPvpOnline()) {
+            GridPane root = new GridPane();
+            root.setAlignment(Pos.CENTER);
+            root.setHgap(80);
+            root.setVgap(10);
+            Turn turn;
+            if ((game.getJoiner() && game.getCreatorTurn() == Turn.CUT) || (!game.getJoiner() && game.getCreatorTurn() == Turn.SHORT))
+                turn = Turn.SHORT;
+            else
+                turn = Turn.CUT;
+            Text text = UtilsGui.createText("Vous jouez : " + turn);
+            root.add(text, 1, 1);
+            pane.getChildren().addAll(root, UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+        }
+        else
+            pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
 
@@ -291,11 +327,10 @@ public class Gui extends Application {
         }
         Vertex v = new Vertex(0, 0);
         for (Vertex vertex : graph.getVertices()) {
-            if (graph.getAdjVertices().get(vertex) != null)
-                if (graph.getAdjVertices().get(vertex).size() <= 5) {
-                    v = vertex;
-                    break;
-                }
+            if (graph.getAdjVertices().containsKey(vertex) && graph.getAdjVertices().get(vertex).size() <= 5) {
+                v = vertex;
+                break;
+            }
         }
         if (!graph.getAdjVertices().containsKey(v)) return;
 
@@ -307,7 +342,7 @@ public class Gui extends Application {
         for (Vertex u : graph.getAdjVertices().get(v)) {
             boolColors.set(u.getColor(), false);
         }
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < boolColors.size(); i++) {
             if (boolColors.get(i)) {
                 v.setColor(i);
                 break;
@@ -362,17 +397,27 @@ public class Gui extends Application {
             log.info(e.getMessage());
         }
         try {
-            WebSocketClient client = new WebSocketClient(nbVertices, 0L, turn);
+            WebSocketClient client = new WebSocketClient(nbVertices, turn);
             gameCode = Optional.of(client.getId());
             textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
-            this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
-            if (game == null) {
+            try {
+                this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+            }
+            catch (TimeoutException e) {
                 textField.setText("");
                 Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
                         " de réduire le nombre de sommets"));
             }
-        } catch (IOException | URISyntaxException | InterruptedException e) {
+        } catch (SocketException se) {
+            textField.setText("");
+            Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
+        }
+        catch (IOException | URISyntaxException e) {
             log.error(e.getMessage());
+        }
+        catch (InterruptedException e) {
+            log.error(e.getMessage());
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -383,11 +428,19 @@ public class Gui extends Application {
             if (getGameCode().isPresent() && getGameCode().get() == code) return;
             WebSocketClient client = new WebSocketClient(code);
             game = client.connect(() -> {});
+            if (game == null) return;
             stage.setScene(run());
             if (client.getWaiting() != null)
                 game.play1vs1(client.getWaiting());
-        } catch (IOException | URISyntaxException | InterruptedException | NumberFormatException e) {
+        } catch (SocketException se) {
+            Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
+        }
+        catch (IOException | URISyntaxException | NumberFormatException | TimeoutException e) {
             log.error(e.getMessage());
+        }
+        catch (InterruptedException e) {
+            log.error(e.getMessage());
+            Thread.currentThread().interrupt();
         }
     }
 }
