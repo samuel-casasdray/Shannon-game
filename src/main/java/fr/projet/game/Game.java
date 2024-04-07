@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
 
 @Getter
@@ -53,24 +54,30 @@ public class Game {
     private final int minDeg = 3;
     private final int maxDeg = 8;
     private final int AIDelay = 100;
-    public Game(int nbv) { this(nbv,false, Turn.CUT, Level.EASY); }
-    public Game() { this(20,false, Turn.CUT, Level.EASY); }
+    public Game(int nbv) throws TimeoutException { this(nbv,false, Turn.CUT, Level.EASY); }
+    public Game() throws TimeoutException { this(20,false, Turn.CUT, Level.EASY); }
 
-    public Game(int nbv, boolean withIA, Turn typeIA, Level level) {
+    public Game(int nbv, boolean withIA, Turn typeIA, Level level) throws TimeoutException {
         nbVertices = nbv;
+        seed = new Random().nextLong();
+        LocalTime duration = LocalTime.now();
+        int c = 0;
         do {
-            graph = new Graph(nbVertices, maxDeg, minDeg);
+            graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
+            c++;
+            if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                throw new TimeoutException();
+            }
         } while (graphIsNotOkay());
         if (withIA) {
             ia = getIAwithDifficulty(level);
             this.againstAI = true;
             this.typeIA = typeIA;
         }
-        seed = new Random().nextLong();
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
-    public Game(int nbVertices, long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) {
+    public Game(int nbVertices, long id, boolean joiner, WebSocketClient client, String serverUri, Long seed, Turn creatorTurn) throws TimeoutException {
         this.creatorTurn = creatorTurn;
         if (joiner) turn = creatorTurn.flip();
         else turn = creatorTurn;
@@ -80,28 +87,34 @@ public class Game {
         this.serverUri = serverUri;
         this.pvpOnline = true;
         this.nbVertices = nbVertices;
+        this.seed = seed;
         LocalTime duration = LocalTime.now();
         int c = 0;
         do {
             graph = new Graph(nbVertices, maxDeg, minDeg, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
             c++;
             if (!joiner && duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
-                this.creatorTurn = null;
-                return;
+                throw new TimeoutException();
             }
         } while (graphIsNotOkay());
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
 
-    public Game(int nbVertices, Level levelIACut, Level levelIAShort) {
+    public Game(int nbVertices, Level levelIACut, Level levelIAShort) throws TimeoutException {
         this.nbVertices = nbVertices;
+        seed = new Random().nextLong();
+        LocalTime duration = LocalTime.now();
+        int c = 0;
         do {
-            graph = new Graph(nbVertices, maxDeg, minDeg);
+            graph = new Graph(nbVertices, maxDeg, minDeg, seed+c); // On ne génère pas deux fois le même graphe, ce qui faisait crash le client
+            c++;
+            if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                throw new TimeoutException();
+            }
         } while (graphIsNotOkay());
         ia = getIAwithDifficulty(levelIACut);
         ia2 = getIAwithDifficulty(levelIAShort);
-        seed = new Random().nextLong();
         Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
@@ -110,12 +123,14 @@ public class Game {
         LocalTime time = LocalTime.now();
         while (!cutWon && !shortWon) {
             AIPlay(ia, ia2, turn);
-            int delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
+            long delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
             if (delay < AIDelay) {
                 try {
                     Thread.sleep(AIDelay-delay);
                 }
-                catch (Exception ignored) {}
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
             time = LocalTime.now();
         }
@@ -183,22 +198,42 @@ public class Game {
         detectWinner();
     }
     public void showWinner() {
+        int typeGame;
+        boolean thereAreAWinner = false;
+        if (pvpOnline)
+            typeGame = 2; // Deux joueurs en ligne
+        else if (againstAI)
+            typeGame = 1; // Contre l'IA
+        else if (ia2 == null)
+            typeGame = 0; // Deux joueurs local
+        else
+            typeGame = 3; // IA vs IA
         if (cutWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
+            thereAreAWinner = true;
         }
         else if (shortWon()) {
             if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();
+            thereAreAWinner = true;
+        }
+        if (thereAreAWinner) {
+            if (pvpOnline) {
+                if (!joiner)
+                    WebSocketClient.sendStatistics(typeGame, cutWon ? 0 : 1, seed); // Permet d'envoyer qu'une fois la game
+            }
+            else
+                WebSocketClient.sendStatistics(typeGame, cutWon ? 0 : 1, seed);
         }
     }
 
     public void isolateComponent() {
-        HashSet<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        Set<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !x.isCut(v) && !v.isCut(x));
         Optional<Vertex> u = Optional.empty();
         for (Vertex x : getGraph().getVertices()) {
             if (!component.contains(x)) {
@@ -207,15 +242,15 @@ public class Game {
             }
         }
         if (u.isEmpty()) return;
-        HashSet<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !x.isCut(v) && !v.isCut(x));
-        HashSet<Vertex> smallestComponent;
+        Set<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        Set<Vertex> smallestComponent;
         if (component.size() > secondComponent.size()) {
             smallestComponent = secondComponent;
         }
         else {
             smallestComponent = component;
         }
-        HashSet<Vertex> finalSmallestComponent = smallestComponent;
+        Set<Vertex> finalSmallestComponent = smallestComponent;
         List<Pair<Pair<Vertex, Vertex>, Line>> edgesGreen = Gui.getEdges().stream().filter(pair -> finalSmallestComponent.contains(pair.getKey().getKey())
                 && finalSmallestComponent.contains(pair.getKey().getValue())
                 && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
@@ -291,7 +326,6 @@ public class Game {
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
         getCutted().add(edge);
-        //graph.removeNeighbor(edge);
     }
 
     public void secureEdge(Pair<Vertex, Vertex> edge) {
@@ -317,9 +351,9 @@ public class Game {
             return true;
         }
         HashSet<Vertex> marked = new HashSet<>();
-        Stack<Vertex> pile = new Stack<>();
+        Deque<Vertex> pile = new ArrayDeque<>();
         pile.push(graph.getVertices().getFirst());
-        while (!pile.empty()) {
+        while (!pile.isEmpty()) {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
@@ -420,6 +454,8 @@ public class Game {
     }
 
     public void paintLine(Line line) {
+        if (!lastsLines.isEmpty())
+            lastsLines.getLast().getKey().setVisible(false);
         lastsLines.add(new Pair<>(line, turn));
         line.setStroke(Color.BLUE);
         setColor();
