@@ -9,6 +9,8 @@ import fr.projet.graph.Vertex;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -242,7 +244,22 @@ public class Gui extends Application {
 //        }
         edges.clear();
         showGraph();
-        pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+        if (game.isPvpOnline()) {
+            GridPane root = new GridPane();
+            root.setAlignment(Pos.CENTER);
+            root.setHgap(80);
+            root.setVgap(10);
+            Turn turn;
+            if ((game.getJoiner() && game.getCreatorTurn() == Turn.CUT) || (!game.getJoiner() && game.getCreatorTurn() == Turn.SHORT))
+                turn = Turn.SHORT;
+            else
+                turn = Turn.CUT;
+            Text text = UtilsGui.createText("Vous jouez : " + turn);
+            root.add(text, 1, 1);
+            pane.getChildren().addAll(root, UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+        }
+        else
+            pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
 
@@ -310,7 +327,7 @@ public class Gui extends Application {
         }
         Vertex v = new Vertex(0, 0);
         for (Vertex vertex : graph.getVertices()) {
-            if (graph.getAdjVertices().get(vertex) != null && (graph.getAdjVertices().get(vertex).size() <= 5)) {
+            if (graph.getAdjVertices().containsKey(vertex) && graph.getAdjVertices().get(vertex).size() <= 5) {
                 v = vertex;
                 break;
             }
@@ -325,8 +342,8 @@ public class Gui extends Application {
         for (Vertex u : graph.getAdjVertices().get(v)) {
             boolColors.set(u.getColor(), false);
         }
-        for (int i = 0; i < 5; i++) {
-            if (Boolean.TRUE.equals(boolColors.get(i))) {
+        for (int i = 0; i < boolColors.size(); i++) {
+            if (boolColors.get(i)) {
                 v.setColor(i);
                 break;
             }
@@ -380,7 +397,7 @@ public class Gui extends Application {
             log.info(e.getMessage());
         }
         try {
-            WebSocketClient client = new WebSocketClient(nbVertices, 0L, turn);
+            WebSocketClient client = new WebSocketClient(nbVertices, turn);
             gameCode = Optional.of(client.getId());
             textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
             try {
