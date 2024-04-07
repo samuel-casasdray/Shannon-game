@@ -8,6 +8,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -64,7 +65,7 @@ public class UtilsGui {
     }
     public void addEnterOnText(TextField text, EventHandler<KeyEvent> action) {
         text.setOnKeyPressed(event -> {
-            if (event.getCode().getName().equals("Enter")) action.handle(event);
+            if (event.getCode() == KeyCode.ENTER) action.handle(event);
         });
     }
     public Button createButton(String text, EventHandler<ActionEvent> action) {
