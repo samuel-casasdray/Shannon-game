@@ -1,7 +1,9 @@
 package fr.projet.server;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import fr.projet.Callback;
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
@@ -15,10 +17,9 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeoutException;
 
 @ClientEndpoint
 @Slf4j
@@ -63,17 +64,28 @@ public class WebSocketClient {
         createConnection();
     }
 
-    private void createConnection() throws InterruptedException, IOException {
+    public static void sendStatistics(int typeGame, int winner, long seed) {
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        try {
+            container.connectToServer(new WebSocketClient(), new URI(SERVER_HOSTNAME+"game_stat/"+typeGame+"/"+winner+"/"+seed));
+        }
+        catch (DeploymentException | URISyntaxException | IOException ignored) {} // Rien à faire, la game sera perdue à jamais
+    }
+
+    private boolean doServerRespond() throws InterruptedException {
         int count = 0;
         while(response == null) {
-            if (count > 50) {
-                return; // Le serveur ne répond pas
+            if (count > 1000) {
+                return false; // Le serveur ne répond pas
             }
-            response = this.getResponse();
-            if (response == null)
-                Thread.sleep(100); // On attend que le serveur réponde
+            Thread.sleep(1); // On attend que le serveur réponde
             count++;
         }
+        return true;
+    }
+
+    private void createConnection() throws InterruptedException, IOException {
+        if (!doServerRespond()) return;
         if (response.equals("Not found")) {
             Platform.runLater(() -> Gui.popupMessage("Le code rentré est incorrect", "Aucune partie trouvée."));
             throw new IOException();
@@ -104,19 +116,42 @@ public class WebSocketClient {
         }
     }
 
-    public Game connect(Callback function) throws IOException {
+    public Game connect(Callback function) throws IOException, TimeoutException {
         try {
             JsonElement jsonElement = JsonParser.parseString(response);
             long seed = jsonElement.getAsJsonObject().get("seed").getAsLong();
             this.connectServer(SERVER_URI + this.id);
             Turn turn = jsonElement.getAsJsonObject().get("creator_turn").getAsString().equals("Short") ? Turn.SHORT : Turn.CUT;
             this.game = new Game(this.nbVertices, this.id, joiner, this, SERVER_URI + this.id, seed, turn);
-            if (game.getCreatorTurn() == null) return null;
             this.setCallback(function);
             return game;
-        } catch (Exception e) {
+        } catch (URISyntaxException | NullPointerException e) {
             this.close();
             return null;
+        }
+    }
+
+    public JsonArray getStats() {
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        try {
+            container.connectToServer(this, new URI(SERVER_HOSTNAME+"games"));
+        }
+        catch (DeploymentException | URISyntaxException | IOException handshakeError) {
+            return new JsonArray();
+        }
+        try {
+            if(!doServerRespond()) return new JsonArray();
+        }
+        catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+        try {
+            JsonElement jsonElement = JsonParser.parseString(response);
+            JsonElement stats = jsonElement.getAsJsonObject().get("stats");
+            return stats.getAsJsonArray();
+        }
+        catch (JsonSyntaxException e) {
+            return new JsonArray();
         }
     }
 
@@ -177,6 +212,12 @@ public class WebSocketClient {
     public void onMessage(String message) throws IOException {
         response = message;
         log.info("Received message: " + message);
+        try {
+            JsonElement jsonElement = JsonParser.parseString(message);
+            JsonElement stats = jsonElement.getAsJsonObject().get("stats");
+            if (!stats.isJsonNull()) return;
+        }
+        catch (JsonSyntaxException | NullPointerException ignored) {}
         if (message.startsWith("{")) {
             if (callback != null)
                 callback.call();
