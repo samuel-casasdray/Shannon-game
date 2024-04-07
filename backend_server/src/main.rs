@@ -44,11 +44,11 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
     let (mut sender, _receiver) = socket.split();
     let mut games = games.lock().await;
     let mut rng = rand::thread_rng();
-    let mut n = rng.gen_range(0..=1000); // Pour la démo avec Bessy
+    let mut n = rng.gen_range(0..=1000); // 1000 arbitraire, on pourrait mettre beaucoup plus
     while games.games.iter().any(|x| x.id == n) { // On empêche de créer deux fois une game avec le même id
         n = rng.gen_range(0..=1000);
     }
-    let seed = rng.gen::<i64>();
+    let seed = rng.gen::<i64>(); // Seed random pour la game
     let creator_turn = match creator_turn {
         0 => Turn::Cut,
         _ => Turn::Short
@@ -56,7 +56,7 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
     games.games.push(Game {
         id: n,
         seed,
-        tx: Some(broadcast::channel(100).0), // On ajoute une Game avec id et seed random, et un canal de communication
+        tx: Some(broadcast::channel(1).0), // On ajoute une Game avec id et seed random, et un canal de communication
         previous_move: Turn::Short, // C'est à cut de commencer, donc le previous move est SHORT
         joined: false,  // Personne n'a rejoint jusque là
         ended: false, // La game n'est pas encore finie
@@ -64,19 +64,16 @@ async fn create_game(socket: WebSocket, State(games): State<Arc<futures::lock::M
         nb_vertices
     });
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
-    while games.games.len() > 10 {
-        games.games.remove(0); // On ne garde que les 10 dernières games (potentiellement à ajuster/enlever)
-    }
     println!("{:?}", games.games);
     let partial = PartialGame { id: n, seed, creator_turn, nb_vertices }; // On créé une "Game Partielle" pour pouvoir sérializer certaines informations
-    let tx = games.games.last().unwrap().tx.clone().unwrap();
+    let tx = games.games.last().unwrap().tx.clone().unwrap(); // last existe forcément, on vient de l'ajouter
     // Partie compliquée qui consiste à envoyer la Game au Client
     let mut rx = tx.subscribe();
     let game = json!(partial).to_string(); // La Game au format json mais String
-    let _ = tx.send(game);
+    let _ = tx.send(game); // On envoie la Game au client
     let _send_task = tokio::spawn(async move {
         loop {
-            let response = rx.recv().await;
+            let response = rx.recv().await; // On attend une réponse
             match response {
                 Ok(game) => {
                     if let Err(e) = sender.send(Message::Text(game)).await {
@@ -109,7 +106,7 @@ async fn join_game(
     let (mut sender, _receiver) = socket.split();
     let mut games = games.lock().await;
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
-    let (mut games, current_game_indice) = get_current_indice(games, payload);
+    let current_game_indice = get_current_indice(&games, payload);
     if current_game_indice == -1 {
         println!("No game has been found to join");
         let _ = sender.send(Message::Text("Not found".to_string())).await;
@@ -137,7 +134,7 @@ async fn join_game(
             match response {
                 Ok(msg) => {
                     if let Err(e) = sender.send(Message::Text(msg)).await {
-                        println!("Fatal error 2 {}", e);
+                        println!("Erreur send {:?}", e);
                         break;
                     }
                 }
@@ -165,31 +162,31 @@ async fn handle_socket(
 ) {
     let (_sender, mut receiver) = socket.split();
     let _recv_task = tokio::spawn(async move {
-        while let Some(Ok(Message::Text(vertices))) = receiver.next().await {
-            let games = game.lock().await;
-            let (mut games, current_game_indice) = get_current_indice(games, game_id);
+        while let Some(Ok(Message::Text(move_message))) = receiver.next().await {
+            let mut games = game.lock().await;
+            let current_game_indice = get_current_indice(&games, game_id);
             if current_game_indice == -1 {
                 println!("No game has been found to join");
                 return;
             }
             let current_game_indice = current_game_indice as usize;
             let tx = games.games[current_game_indice].tx.clone().unwrap();
-            if vertices == *"Ping" {
+            if move_message == *"Ping" {
                 let _ = tx.send("Pong".to_string());
                 continue;
             }
-            if vertices == *"CUT!" || vertices == *"SHORT!" { // Fin de la game
+            if move_message == *"CUT!" || move_message == *"SHORT!" { // Fin de la game
                 games.games[current_game_indice].ended = true;
                 return;
             }
-            if vertices == *"CUT" || vertices == *"SHORT" { // Un des deux joueurs s'est déconnecté, et celui qui est resté à répondu
-                let _ = tx.send(vertices + " a gagné"); // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
+            if move_message == *"CUT" || move_message == *"SHORT" { // Un des deux joueurs s'est déconnecté, et celui qui est resté à répondu
+                let _ = tx.send(move_message + " a gagné"); // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
                 games.games[current_game_indice].ended = true;
                 return;
             }
             // On récupère les deux vertices depuis le client sous la forme "id1 id2 move" par exemple "3 4 1"
             // 3 et 4 représentent l'id des vertices et 1 représente le type de move (CUT ou SHORT, 0 pour CUT, 1 pour SHORT)
-            let vertices: Vec<i64> = vertices
+            let vertices: Vec<i64> = move_message
                 .split(' ')  // On transforme "x y z" en [x, y, z]
                 .map(|x| x.parse().unwrap())
                 .collect();
@@ -219,8 +216,8 @@ async fn handle_socket(
             let _ = tx.send(json!(vertices).to_string()); // On envoie les vertices aux clients
         }
         // Si on quitte le while, l'un des deux joueurs s'est déconnecté
-        let games = game.lock().await;
-        let (mut games, current_game_indice) = get_current_indice(games, game_id);
+        let mut games = game.lock().await;
+        let current_game_indice = get_current_indice(&games, game_id);
         if current_game_indice != -1 {
             games.games[current_game_indice as usize].ended = true;
             let tx = games.games[current_game_indice as usize].tx.clone().unwrap();
@@ -232,7 +229,7 @@ async fn handle_socket(
     println!("WebSocket context destroyed"); // On ferme la connexion websocket
 }
 
-fn get_current_indice(games: MutexGuard<'_, Games>, game_id: i64) -> (MutexGuard<'_, Games>, i32) {
+fn get_current_indice(games: &MutexGuard<'_, Games>, game_id: i64) -> i32 {
     let mut current_game_indice = -1;
     for i in 0..games.games.len() {
         if games.games[i].id == game_id { // On récupère l'indice de la game
@@ -240,7 +237,7 @@ fn get_current_indice(games: MutexGuard<'_, Games>, game_id: i64) -> (MutexGuard
             break;
         }
     }
-    (games, current_game_indice)
+    current_game_indice // On renvoie -1 si aucune game n'est trouvée
 }
 
 #[derive(Debug)]
@@ -269,13 +266,13 @@ pub struct PartialGame {
     nb_vertices: u32
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Copy)] // On peut comparer deux Turn, les cloner et les sérialiser
 enum Turn {
     Cut,
     Short
 }
 
-impl Turn {
+impl Turn { 
     fn flip(&mut self) {
         *self = match *self {
             Turn::Cut => Turn::Short,

@@ -46,7 +46,7 @@ public class WebSocketClient {
     @Getter
     @Setter
     private String waiting;
-    public WebSocketClient(int nbVertices, long id, Turn turn) throws IOException, URISyntaxException, InterruptedException {
+    public WebSocketClient(int nbVertices, Turn turn) throws IOException, URISyntaxException, InterruptedException {
         this.joiner = false;
         int creatorTurn = turn == Turn.CUT ? 0 : 1;
         if (!this.isClosed())
