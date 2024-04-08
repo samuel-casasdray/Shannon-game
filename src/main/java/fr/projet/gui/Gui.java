@@ -13,6 +13,10 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -26,13 +30,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextBoundsType;
+import javafx.scene.text.*;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
+import jdk.jshell.execution.Util;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +62,7 @@ public class Gui extends Application {
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
     private Stage stage;
     private Level level;
+    @Setter
     private Turn turn;
     private Boolean withIA;
     @Setter
@@ -70,8 +73,12 @@ public class Gui extends Application {
     @Getter
     private Pane pane;
     private Random random = new Random();
+    @Setter
+    private static IntegerProperty victoryAchievedProperty= new SimpleIntegerProperty();
 
     private List<Line> posTransport = new ArrayList<>();
+
+
 
     Timeline timer = new Timeline(new KeyFrame(Duration.millis(20), event -> {
             for(Line line: posTransport) {
@@ -95,6 +102,7 @@ public class Gui extends Application {
                 line.setTranslateY(i*Uy);
             }
     }));
+
 
     @Override
     public void start(Stage stage) {
@@ -209,13 +217,11 @@ public class Gui extends Application {
     }
 
     public static void popupMessage(Turn turn){
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Fin de la partie");
         if (turn==Turn.CUT){
-            alert.setHeaderText("CUT a gagné !");
+            victoryAchievedProperty.set(1);
+            System.out.println(victoryAchievedProperty.toString());
         }
-        else alert.setHeaderText("SHORT a gagné !");
-        alert.show();
+        else victoryAchievedProperty.set(2);
     }
 
     public static void popupMessage(String title, String message){
@@ -259,9 +265,32 @@ public class Gui extends Application {
 //        }
         edges.clear();
         showGraph();
+
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+
+
+        //Ecouteur pour afficher message de victoire
+        victoryAchievedProperty.addListener((observableValue, oldValue, newValue) -> {
+            Platform.runLater(() -> {
+               if(newValue.equals(1)){
+                   //text1.setVisible(true);
+                   Text text1 = UtilsGui.createText("CUT a gagné !",true);
+                   text1.setX((scene.getWidth() - text1.getLayoutBounds().getWidth()) / 2);
+                   text1.setY((scene.getHeight() - text1.getLayoutBounds().getHeight()) / 2);
+                   text1.setTextAlignment(TextAlignment.CENTER);
+                   pane.getChildren().add(text1);
+               } else if (newValue.equals(2)) {
+                   Text text2 = UtilsGui.createText("SHORT a gagné !",true);
+                   text2.setX((scene.getWidth() - text2.getLayoutBounds().getWidth()) / 2);
+                   text2.setY((scene.getHeight() - text2.getLayoutBounds().getHeight()) / 2);
+                   text2.setTextAlignment(TextAlignment.CENTER);
+                   pane.getChildren().add(text2);
+               }
+            });
+        });
+
 
         // Ajout d'un écouteur pour détecter les changements de taille de la fenêtre
         scene.widthProperty().addListener((observableValue, oldWidth, newWidth) -> {
