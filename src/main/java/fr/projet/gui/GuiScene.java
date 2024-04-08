@@ -61,7 +61,7 @@ public class GuiScene {
     public Scene home(HandleClick handleButtonClick) {
         VBox root = getBasicScene();
 
-        Text text1 = UtilsGui.createText("SHANNON GAME", true);
+        Text text1 = UtilsGui.createText("SHANNON GAME",true);
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
 
         //création des boutons d'option de jeu
@@ -220,9 +220,9 @@ public class GuiScene {
     public Scene pvia(HandleClick handleButtonClick) {
         VBox root = getBasicScene();
         Text title = UtilsGui.createText("JOUEUR VS IA", true);
-        Text text1 = UtilsGui.createText("Choisissez la difficulté");
+        Text text1 = UtilsGui.createText("Choisissez la difficulte");
         Button facile = UtilsGui.createButton("facile", event -> handleButtonClick.call(ButtonClickType.PVIA_EASY));
-        Button normal = UtilsGui.createButton("normal", event -> handleButtonClick.call(ButtonClickType.PVIA_MEDIUM));
+        Button normal = UtilsGui.createButton("normale", event -> handleButtonClick.call(ButtonClickType.PVIA_MEDIUM));
         Button difficile = UtilsGui.createButton("difficile", event -> handleButtonClick.call(ButtonClickType.PVIA_HARD));
 
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile);
@@ -231,7 +231,7 @@ public class GuiScene {
 
     public Scene nbVertices(HandleClick handleButtonClick, boolean IA) {
         VBox root = getBasicScene();
-        Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe",true);
+        Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe");
         Spinner<Integer> spinner = new Spinner<>(5, 20, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);

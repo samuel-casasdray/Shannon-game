@@ -22,10 +22,14 @@ import java.net.URL;
 @UtilityClass
 @Slf4j
 public class UtilsGui {
-    public static final String FONT = "Consolas";
+    public static final Font FONT1 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font1.ttf"),50);
+    public static final Font FONT2 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font2.ttf"),30);
+    public static final Font FONT3 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font2.ttf"),20);
+
     public static final double CIRCLE_SIZE = 20D;
-    public static final int WINDOW_SIZE = 700;
+    public static final int WINDOW_SIZE = 800;
     public static final int WINDOW_MARGE = 50;
+
 
     private void addHoverEffect(Button button) {
 
@@ -52,14 +56,14 @@ public class UtilsGui {
         Text text = new Text(content);
         text.setFill(Color.WHITE);
         if (withShadow) {
-            text.setFont(Font.font(FONT, FontWeight.BOLD, 40));
+            text.setFont(FONT1);
             DropShadow dropShadow = new DropShadow();
             dropShadow.setOffsetX(3.0);
             dropShadow.setOffsetY(3.0);
-            dropShadow.setColor(Color.GRAY);
+            dropShadow.setColor(Color.GREY);
             text.setEffect(dropShadow);
         } else {
-            text.setFont(Font.font(FONT, 20));
+            text.setFont(FONT2);
         }
         return text;
     }
@@ -70,9 +74,9 @@ public class UtilsGui {
     }
     public Button createButton(String text, EventHandler<ActionEvent> action) {
         Button button = new Button(text);
-        button.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
-        button.setFont(Font.font("System", FontWeight.BOLD, 14));
-        button.setMinSize(150,35);
+        //button.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
+        button.setFont(FONT3);
+        button.setPrefSize(250,35);
 
         //effet d'ombre des boutons
         DropShadow shadow = new DropShadow();
