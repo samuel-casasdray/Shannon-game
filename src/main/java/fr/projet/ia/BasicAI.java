@@ -1,5 +1,6 @@
 package fr.projet.ia;
 
+import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
 import javafx.scene.shape.Line;
@@ -7,7 +8,9 @@ import javafx.util.Pair;
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class BasicAI extends InterfaceIA {
 
@@ -16,34 +19,22 @@ public class BasicAI extends InterfaceIA {
     }
 
     public Pair<Vertex, Vertex> playCUT() {
-        boolean cutWonState = game.getCutWon();
-        List<Pair<Vertex, Vertex>> neighborsList = graph.getNeighbors().stream().toList();
-        for (int i = neighborsList.size() - 1; i > 0; i--) {
-            var element = neighborsList.get(i);
-            graph.removeNeighbor(element);
-            if (game.cutWon()) {
-                graph.addNeighbor(element);
-                game.setCutWon(cutWonState);
-                for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
-                    if (Vertex.isSameCouple(new Pair<>(element.getKey(), element.getValue()), neighbors.getKey())) {
-                        if (!element.getKey().isCut(element.getValue())
-                            && !element.getKey().isPainted(element.getValue()))
-                        {
-                            game.setCutWon(cutWonState);
-                            return element;
-                        }
-                    }
-                }
-            } else {
-                graph.addNeighbor(element);
+        Set<Pair<Vertex, Vertex>> edges = new HashSet<>();
+        Set<Pair<Vertex, Vertex>> notCutted = new HashSet<>();
+        for (Pair<Vertex, Vertex> edge : game.getGraph().getNeighbors()) {
+            if (!game.getCutted().contains(edge) && !game.getSecured().contains(edge)) {
+                edges.add(edge);
             }
+            if (!game.getCutted().contains(edge))
+                notCutted.add(edge);
         }
-        game.setCutWon(cutWonState);
-        for (var x : graph.getNeighbors()) {
-            if (!x.getKey().isCut(x.getValue()) && !x.getKey().isPainted(x.getValue()))
-                return x;
+        Graph notCuttedGraph = new Graph(notCutted);
+        for (Pair<Vertex, Vertex> edge : edges) {
+            notCuttedGraph.removeNeighbor(edge);
+            if (!notCuttedGraph.estConnexe()) return edge;
+            notCuttedGraph.addNeighbor(edge);
         }
-        return neighborsList.getFirst();
+        return edges.iterator().next();
     }
 
     @Override
