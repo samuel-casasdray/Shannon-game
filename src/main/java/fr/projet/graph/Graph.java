@@ -131,13 +131,11 @@ public class Graph {
                         break; // S'il y a une intersection, pas la peine de continuer
                     }
                 }
-                if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
-                    if (degree(v) < maxDeg && degree(v2) < maxDeg)
-                    {
-                        Pair<Vertex, Vertex> neighbor = new Pair<>(v, v2);
-                        addNeighbor(neighbor);
-                        edges.add(neighbor); // Permet de synchroniser dans le cas des games en ligne
-                    }
+                if (!intersect && !thereAreACircleCollision(radius, v, v2) && (degree(v) < maxDeg && degree(v2) < maxDeg))
+                {
+                    Pair<Vertex, Vertex> neighbor = new Pair<>(v, v2);
+                    addNeighbor(neighbor);
+                    edges.add(neighbor); // Permet de synchroniser dans le cas des games en ligne
                 }
             }
         }
@@ -182,7 +180,7 @@ public class Graph {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         int compteur=0;
         generateGraphPlanaire(7, 3);
-        Graph tree = Kruskal();
+        Graph tree = kruskal();
         if (difference((HashSet<Pair<Vertex, Vertex>>) tree.getNeighbors())) {
             graphForSHORT();
         }
@@ -209,7 +207,6 @@ public class Graph {
     }
 
     public int minDeg() {
-        //int minDeg = getVertices().getFirst().getNeighbors().size();
         int minDeg = getAdjVertices().get(getVertices().getFirst()).size();
         for (Vertex v: getVertices()) {
             if (getAdjVertices().get(v).size() < minDeg) {
@@ -404,7 +401,7 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
                 }
                 //if (!diff.estConnexe()) {
                     // Second spanning tree ?
-                    Graph kruskal = diff.Kruskal();
+                    Graph kruskal = diff.kruskal();
 //                    if (!kruskal.estConnexe()) {
 //                        System.out.println("Kruskal non connexe");
 //                        List<Pair<Vertex, Vertex>> edges = new ArrayList<>(spanningTree.getNeighbors());
@@ -510,7 +507,7 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
         }
     }
 
-    public Graph Kruskal() {
+    public Graph kruskal() {
         List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>(getNeighbors());
         List<Pair<Vertex, Vertex>> result = new ArrayList<>();
         int i = 0;

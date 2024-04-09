@@ -35,7 +35,7 @@ public class Game {
     private final int nbVertices;
     private final int minDeg = 3;
     private final int maxDeg = 8;
-    private final int AIDelay = 100;
+    private final int AIDelay = 500;
     private Graph graph;
     @Setter
     private Turn turn = Turn.CUT;
@@ -49,7 +49,6 @@ public class Game {
     private InterfaceIA ia2;
     private boolean pvpOnline = false;
     private long seed;
-    @Getter
     private boolean joiner;
     private WebSocketClient client;
     private String serverUri;
@@ -184,21 +183,19 @@ public class Game {
             ia1.setDepth(ia1.getDepth()+1);
         Pair<Vertex, Vertex> played;
         if (turn == Turn.CUT) {
-            Pair<Vertex, Vertex> v = ia1.playCUT();
-            played = new Pair<>(v.getKey(), v.getValue());
+            played = ia1.playCUT();
             cutEdge(played);
             for (var element : Gui.getEdges()) {
-                if (element.getKey().equals(v)) {
+                if (element.getKey().equals(played)) {
                     cutLine(element.getValue());
                     break;
                 }
             }
         } else {
-            Pair<Vertex, Vertex> v = ia2.playSHORT();
-            played = new Pair<>(v.getKey(), v.getValue());
+            played = ia2.playSHORT();
             secureEdge(played);
             for (var element : Gui.getEdges()) {
-                if (element.getKey().equals(v)) {
+                if (element.getKey().equals(played)) {
                     paintLine(element.getValue());
                     break;
                 }
