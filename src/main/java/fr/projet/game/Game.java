@@ -154,10 +154,10 @@ public class Game {
     }
 
     public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
-        if (ia2.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
-            ia2.setDepth(5);
-        if (ia1.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
-            ia1.setDepth(5);
+//        if (ia2.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
+//            ia2.setDepth(5);
+//        if (ia1.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
+//            ia1.setDepth(5);
         Pair<Vertex, Vertex> played;
         if (turn == Turn.CUT) {
             Pair<Vertex, Vertex> v = ia1.playCUT();
@@ -292,7 +292,6 @@ public class Game {
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
         getCutted().add(edge);
-        playSoundCut();
         //graph.removeNeighbor(edge);
     }
 
@@ -418,12 +417,14 @@ public class Game {
         line.setStroke(Color.BLUE);
         line.getStrokeDashArray().addAll(25D, 15D);
         setColor();
+        playSoundCut();
     }
 
     public void paintLine(Line line) {
         lastsLines.add(new Pair<>(line, turn));
         line.setStroke(Color.BLUE);
         setColor();
+        playSoundShort();
     }
 
     public void setColor() {
@@ -467,9 +468,41 @@ public class Game {
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(0.1);
-        long time = (long) (sound.getDuration().toMillis() + 1000);
+        mediaPlayer.setVolume(0.06);
+        //stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
+        mediaPlayer.play();
+//        System.out.println("Audio "+audioS);
+//        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+//        System.out.println("Lool "+audioUrl);
+//        assert audioUrl != null;
+//        String audioFile = audioUrl.toExternalForm();
+//        Media sound = new Media(audioFile);
+//        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+//        mediaPlayer.setVolume(0.04);
+//        long time = (long) (sound.getDuration().toMillis() + 1000);
+//        mediaPlayer.play();
+    }
+
+    public void playSoundShort () {
+        Random random = new Random();
+        int i = random.nextInt(3)+1;
+        String audioS = "Sounds/short"+i+".mp3";
+        System.out.println("Audio "+audioS);
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        System.out.println("Lool "+audioUrl);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(0.15);
         mediaPlayer.play();
     }
+
+    private void stopMediaPlayer2(MediaPlayer mp) {
+        if (mp != null) {
+            mp.stop();
+        }
+    }
+
 
 }

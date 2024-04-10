@@ -494,9 +494,21 @@ public class Gui extends Application {
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
         mediaPlayer.setVolume(0.1);
-        long time = (long) (sound.getDuration().toMillis() + 1000);
         mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+        stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
         mediaPlayer.play();
+//        new Thread(() -> {
+//            mediaPlayer.play();
+//        }).start();
+        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
+        //long time = (long) (sound.getDuration().toMillis() + 1000);
+        //mediaPlayer.play();
+    }
+
+    private void stopMediaPlayer(MediaPlayer mp) {
+        if (mp != null) {
+            mp.stop();
+        }
     }
 
 
