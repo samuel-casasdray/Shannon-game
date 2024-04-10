@@ -153,9 +153,9 @@ public class Game {
 
     public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
         if (ia2.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
-            ia2.setDepth(5);
+            ia2.setDepth(6);
         if (ia1.getDepth() == 4 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
-            ia1.setDepth(5);
+            ia1.setDepth(6);
         Pair<Vertex, Vertex> played;
         if (turn == Turn.CUT) {
             Pair<Vertex, Vertex> v = ia1.playCUT();
