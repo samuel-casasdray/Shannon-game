@@ -18,10 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.BiPredicate;
+import javafx.scene.media.*;
 
 @Getter
 @Slf4j
@@ -290,6 +292,7 @@ public class Game {
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
         getCutted().add(edge);
+        playSoundCut();
         //graph.removeNeighbor(edge);
     }
 
@@ -449,4 +452,24 @@ public class Game {
             case HARD -> new Minimax(this, turn, 4);
         };
     }
+
+
+
+
+    public void playSoundCut () {
+        Random random = new Random();
+        int i = random.nextInt(2)+1;
+        String audioS = "Sounds/cut"+i+".mp3";
+        System.out.println("Audio "+audioS);
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        System.out.println("Lool "+audioUrl);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(0.1);
+        long time = (long) (sound.getDuration().toMillis() + 1000);
+        mediaPlayer.play();
+    }
+
 }

@@ -39,6 +39,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import javafx.scene.media.*;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -119,6 +120,7 @@ public class Gui extends Application {
             stage.getIcons().add(icon);
         }
         stage.show();
+        mainTheme ();
     }
     public void handleButtonClick(ButtonClickType buttonClickType) {
         switch (buttonClickType) {
@@ -441,6 +443,8 @@ public class Gui extends Application {
         timer.play();
     }
 
+
+
     public void create(Text textField, Turn turn, int nbVertices) {
         try {
             if (game != null)
@@ -478,5 +482,23 @@ public class Gui extends Application {
             log.error(e.getMessage());
         }
     }
+
+
+    public void mainTheme () {
+        String audioS = "Sounds/testMusic.mp3";
+        System.out.println("Audio "+audioS);
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        System.out.println("Lool "+audioUrl);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(0.1);
+        long time = (long) (sound.getDuration().toMillis() + 1000);
+        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+        mediaPlayer.play();
+    }
+
+
 }
 
