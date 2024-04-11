@@ -1,20 +1,16 @@
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
-    extract::{Path, State},
-    response::IntoResponse,
-    routing::get,
-    Router,
+    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, Path, State}, http::StatusCode, response::{IntoResponse, Result}, routing::{get, post}, Json, Router
 };
 use futures::{lock::MutexGuard, SinkExt, StreamExt};
 use rand::Rng;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::sync::Arc;
 
 use serde_json::json;
 use tokio::sync::broadcast;
 
 use mongodb::{
-    bson::{doc, Document},
+    bson::doc,
     options::ClientOptions,
     Client, Collection,
 };
@@ -22,6 +18,26 @@ use mongodb::{
 #[tokio::main]
 async fn main() {
     let games = Arc::new(futures::lock::Mutex::new(Games { games: vec![] }));
+    match dotenv::from_path("/home/julien/backend_server/.env").ok() {
+        None => {
+            return;
+        }
+        Some(_) => {}
+    }
+    let client_options = ClientOptions::parse(
+		"mongodb+srv://shannon:".to_owned()
+			+ &std::env::var("PASSWORD_SHANNON").unwrap()
+			+ "@cluster0.lbnu03x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+	)
+	.await
+	.unwrap();
+	let client = Client::with_options(client_options).unwrap();
+	let my_coll: Collection<Player> = client
+		.database("shannon_switching_game")
+		.collection("players");
+	let stats: Collection<serde_json::Value> = client
+		.database("shannon_switching_game")
+		.collection("games");
     let app = Router::new()
         .route(
             "/create_game/:creator_turn/:nb_vertices",
@@ -29,12 +45,16 @@ async fn main() {
         ) // Ici, c'est pour créer une game
         .route("/join_game/:id", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
+        .with_state((games, my_coll.clone()))
         .route(
             "/game_stat/:type_game/:winner/:seed",
-            get(game_stat_handler),
+            get(add_stat_handler),
         )
         .route("/games", get(get_games_handler))
-        .with_state(games);
+        .with_state(stats)
+        .route("/add_player", post(insert_player_handler))
+        .route("/login", post(log_in))
+        .with_state(my_coll);
     // 51.75.126.59:2999 (ip de mon serveur)
     let listener = tokio::net::TcpListener::bind("0.0.0.0:2999") // Port random mais probablement pas déjà pris
         .await
@@ -46,7 +66,7 @@ async fn main() {
 
 async fn create_game_handler(
     ws: WebSocketUpgrade,
-    State(games): State<Arc<futures::lock::Mutex<Games>>>,
+    State((games, _)): State<(Arc<futures::lock::Mutex<Games>>, Collection<Player>)>,
     Path(params): Path<(u8, u32)>,
 ) -> impl IntoResponse {
     ws.on_upgrade(move |socket| create_game(socket, State(games), params))
@@ -79,6 +99,8 @@ async fn create_game(
         ended: false,               // La game n'est pas encore finie
         creator_turn,
         nb_vertices,
+        cut_player: "",
+        short_player: "",
     });
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
     println!("{:?}", games.games);
@@ -114,7 +136,7 @@ async fn create_game(
 
 async fn join_game_handler(
     ws: WebSocketUpgrade,
-    State(games): State<Arc<futures::lock::Mutex<Games>>>,
+    State((games, _)): State<(Arc<futures::lock::Mutex<Games>>, Collection<Player>)>,
     Path(game_id): Path<i64>,
 ) -> impl IntoResponse {
     ws.on_upgrade(move |socket| join_game(socket, State(games), game_id))
@@ -168,15 +190,16 @@ async fn join_game(
 
 async fn ws_handler(
     websocket: WebSocketUpgrade,
-    State(games): State<Arc<futures::lock::Mutex<Games>>>,
+    State((games, my_coll)): State<(Arc<futures::lock::Mutex<Games>>, Collection<Player>)>,
     Path(game_id): Path<i64>,
 ) -> impl IntoResponse {
-    websocket.on_upgrade(move |socket| handle_socket(socket, State(games), game_id))
+    websocket.on_upgrade(move |socket| handle_socket(socket, State(games), my_coll, game_id))
 }
 
 async fn handle_socket(
     socket: WebSocket,
     game: State<Arc<futures::lock::Mutex<Games>>>,
+    my_coll: Collection<Player>,
     game_id: i64,
 ) {
     let (_sender, mut receiver) = socket.split();
@@ -189,6 +212,8 @@ async fn handle_socket(
                 return;
             }
             let current_game_indice = current_game_indice as usize;
+            let cut_player = games.games[current_game_indice as usize].cut_player;
+            let short_player = games.games[current_game_indice as usize].short_player;
             let tx = games.games[current_game_indice].tx.clone().unwrap();
             if move_message == *"Ping" {
                 let _ = tx.send("Pong".to_string());
@@ -196,13 +221,14 @@ async fn handle_socket(
             }
             if move_message == *"CUT!" || move_message == *"SHORT!" {
                 // Fin de la game
+                update_players(&my_coll,  cut_player, short_player).await;
                 games.games[current_game_indice].ended = true;
                 return;
             }
             if move_message == *"CUT" || move_message == *"SHORT" {
                 // Un des deux joueurs s'est déconnecté, et celui qui est resté à répondu
                 let _ = tx.send(move_message + " a gagné"); // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
-                games.games[current_game_indice].ended = true;
+                update_players(&my_coll, cut_player, short_player).await;
                 return;
             }
             // On récupère les deux vertices depuis le client sous la forme "id1 id2 move" par exemple "3 4 1"
@@ -237,16 +263,23 @@ async fn handle_socket(
             let _ = tx.send(json!(vertices).to_string()); // On envoie les vertices aux clients
         }
         // Si on quitte le while, l'un des deux joueurs s'est déconnecté
+        // 
         let mut games = game.lock().await;
         let current_game_indice = get_current_indice(&games, game_id);
         if current_game_indice != -1 {
-            games.games[current_game_indice as usize].ended = true;
+        	games.games[current_game_indice as usize].ended = true;
+        	let cut_player = games.games[current_game_indice as usize].cut_player;
+         let short_player = games.games[current_game_indice as usize].short_player;
+            update_players(&my_coll, cut_player, short_player).await;
             let tx = games.games[current_game_indice as usize]
                 .tx
                 .clone()
                 .unwrap();
+            let cut_player = games.games[current_game_indice as usize].cut_player;
+            let short_player = games.games[current_game_indice as usize].short_player;
             if games.games[current_game_indice as usize].joined {
                 let _ = tx.send("L'adversaire a quitté la partie".to_string()); // On envoie au joueur restant l'information
+                update_players(&my_coll, cut_player, short_player).await;
             }
         }
     });
@@ -265,57 +298,21 @@ fn get_current_indice(games: &MutexGuard<'_, Games>, game_id: i64) -> i32 {
     current_game_indice // On renvoie -1 si aucune game n'est trouvée
 }
 
-async fn game_stat_handler(Path(game): Path<(u32, u8, i64)>) -> impl IntoResponse {
-    game_stat(game).await;
+async fn add_stat_handler(State(my_coll): State<Collection<serde_json::Value>>, Path(game): Path<(u32, u8, i64)>) -> impl IntoResponse {
+    add_stat(my_coll, game).await;
 }
 
-async fn game_stat((type_game, winner, seed): (u32, u8, i64)) {
-    match dotenv::from_path("/home/julien/backend_server/.env").ok() {
-        None => {
-            println!("Returned");
-            return;
-        }
-        Some(_) => {}
-    }
-    let client_options = ClientOptions::parse(
-        "mongodb+srv://shannon:".to_owned()
-            + &std::env::var("PASSWORD_SHANNON").unwrap()
-            + "@cluster0.lbnu03x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-    )
-    .await
-    .unwrap();
-    let client = Client::with_options(client_options).unwrap();
-    let my_coll = client
-        .database("shannon_switching_game")
-        .collection("games");
+async fn add_stat(my_coll: Collection<serde_json::Value>, (type_game, winner, seed): (u32, u8, i64)) {
     let doc = json!({"type_game": type_game, "winner": winner, "seed": seed});
     my_coll.insert_one(doc, None).await.unwrap();
 }
 
-async fn get_games_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
-    ws.on_upgrade(get_games)
+async fn get_games_handler(State(my_coll): State<Collection<serde_json::Value>>, ws: WebSocketUpgrade) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| get_games(socket, my_coll))
 }
 
-async fn get_games(socket: WebSocket) {
+async fn get_games(socket: WebSocket, my_coll: Collection<serde_json::Value>) {
     let (mut sender, _receiver) = socket.split();
-    match dotenv::from_path("/home/julien/backend_server/.env").ok() {
-        None => {
-            println!("Returned");
-            return;
-        }
-        Some(_) => {}
-    }
-    let client_options = ClientOptions::parse(
-        "mongodb+srv://shannon:".to_owned()
-            + &std::env::var("PASSWORD_SHANNON").unwrap()
-            + "@cluster0.lbnu03x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-    )
-    .await
-    .unwrap();
-    let client = Client::with_options(client_options).unwrap();
-    let my_coll: Collection<Document> = client
-        .database("shannon_switching_game")
-        .collection("games");
     let number_total_games = my_coll.count_documents(None, None).await.unwrap();
     let number_cut_games = my_coll
         .count_documents(doc! { "winner": 0}, None)
@@ -351,6 +348,110 @@ async fn get_games(socket: WebSocket) {
     });
 }
 
+async fn insert_player_handler(State(my_coll): State<Collection<Player>>, Json(player): Json<CreatePlayer>) -> Result<String, (StatusCode, String)> {
+	let pseudo = player.pseudo;
+	let password = player.password;
+	let password_repeat = player.password_repeat;
+	if password != password_repeat
+	{
+		return Err((StatusCode::UNAUTHORIZED, "Passwords do not match".to_string()));
+	}
+	let sha256_password_with_salt = bcrypt::hash(password, 12).unwrap(); // Hash avec bcrypt pour simplifier le salage
+    insert_player(&pseudo.to_string(), sha256_password_with_salt, my_coll).await?;
+    Ok("Player inserted".to_string())
+}
+
+async fn insert_player(pseudo: &str, password_hash: String, my_coll: Collection<Player>) -> Result<(), (StatusCode, String)> {
+    let player = Player {
+		pseudo: pseudo.to_string(),
+		password_hash,
+		elo: 1200,
+		nb_games: 0,
+	};
+    if my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap().is_some() {
+    	return Err((StatusCode::CONFLICT, "Pseudo already taken".to_string()));
+    }
+    my_coll.insert_one(player, None).await.unwrap();
+    Ok(())
+}
+
+async fn log_in(State(my_coll): State<Collection<Player>>, Json(player): Json<LogInPlayer>) -> Result<String, (StatusCode, String)> {
+	let user = my_coll.find_one(doc! {"pseudo": player.pseudo}, None).await.unwrap();
+	match user {
+		None => {
+			Err((StatusCode::UNAUTHORIZED, "Pseudo or password incorrect".to_string()))
+		}
+		Some(user) => {
+			if bcrypt::verify(player.password, &user.password_hash).unwrap() {
+				Ok("Logged in".to_string())
+			}
+			else {
+				Err((StatusCode::UNAUTHORIZED, "Pseudo or password incorrect".to_string()))
+			}
+		}
+	}
+}
+
+async fn set_elo(my_coll: &Collection<Player>, pseudo: &str, elo: u32) {
+	let user = my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap();
+	match user {
+		None => {}
+		Some(_) => {
+			my_coll.update_one(doc! {"pseudo": pseudo}, doc! {"$set": {"elo": elo}}, None).await.unwrap();
+		}
+	}
+}
+
+async fn increase_nb_games(my_coll: &Collection<Player>, pseudo: &str) {
+	let user = my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap();
+	match user {
+		None => {}
+		Some(user) => {
+			my_coll.update_one(doc! {"pseudo": pseudo}, doc! {"$set": {"nb_games": user.nb_games+1}}, None).await.unwrap();
+		}
+	}
+}
+
+async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_short: &str) {
+	let cut_player = my_coll.find_one(doc! {"pseudo": player_cut}, None).await.unwrap();
+	let short_player = my_coll.find_one(doc! {"pseudo": player_short}, None).await.unwrap();
+	match cut_player {
+		None => {}
+		Some(player) => {
+			set_elo(my_coll, &player.pseudo, player.elo + 16).await;
+			increase_nb_games(my_coll, &player.pseudo).await;
+		}
+	}
+	match short_player {
+		None => {}
+		Some(player) => {
+			set_elo(my_coll, &player.pseudo, player.elo - 16).await;
+			increase_nb_games(my_coll, &player.pseudo).await;
+		}
+	}
+}
+
+#[derive(Deserialize)]
+struct CreatePlayer {
+    pseudo: String,
+    password: String,
+    password_repeat: String,
+}
+
+#[derive(Deserialize)]
+struct LogInPlayer {
+    pseudo: String,
+    password: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+struct Player {
+    pseudo: String,
+    password_hash: String,
+    elo: u32,
+    nb_games: u32,
+}
+
 #[derive(Debug)]
 pub struct Game {
     id: i64,
@@ -361,6 +462,8 @@ pub struct Game {
     ended: bool,
     creator_turn: Turn,
     nb_vertices: u32,
+    cut_player: &'static str,
+    short_player: &'static str,
 }
 
 #[derive(Debug)]
