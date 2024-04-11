@@ -23,10 +23,12 @@ import java.net.URL;
 @UtilityClass
 @Slf4j
 public class UtilsGui {
+
     public static final Font FONT1 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font1.ttf"),50);
     public static final Font FONT2 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font.otf"),35);
     public static final Font FONT3 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font.otf"),25);
     public static final Font FONT4= Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font1.ttf"),100);
+
 
     public static final double CIRCLE_SIZE = 20D;
     public static final double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
