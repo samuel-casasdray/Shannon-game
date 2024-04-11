@@ -135,11 +135,13 @@ public class Game {
                         played = new Pair<>(key, value);
                         cutEdge(played);
                         cutLine(neighbors.getValue());
+                        detectWinner();
 
                     } else {
                         played = new Pair<>(key, value);
                         secureEdge(played);
                         paintLine(neighbors.getValue());
+                        detectWinner();
                     }
                     if (!pvpOnline) {
                         turn = turn.flip();
@@ -185,13 +187,13 @@ public class Game {
     }
     public void showWinner() {
         if (cutWon()) {
-            if (ia2 == null)
+            //if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
         }
         else if (shortWon()) {
-            if (ia2 == null)
+            //if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();

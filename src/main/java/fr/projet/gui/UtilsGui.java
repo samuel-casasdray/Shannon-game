@@ -13,6 +13,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.Screen;
 import javafx.util.Duration;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +24,14 @@ import java.net.URL;
 @Slf4j
 public class UtilsGui {
     public static final Font FONT1 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font1.ttf"),50);
-    public static final Font FONT2 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font2.ttf"),30);
-    public static final Font FONT3 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font2.ttf"),20);
+    public static final Font FONT2 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font.otf"),35);
+    public static final Font FONT3 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font.otf"),25);
+    public static final Font FONT4= Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font1.ttf"),100);
 
     public static final double CIRCLE_SIZE = 20D;
-    public static final int WINDOW_SIZE = 800;
-    public static final int WINDOW_MARGE = 50;
+    public static final double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
+    public static final double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight()-73;
+    public static final int WINDOW_MARGE = 60;
 
 
     private void addHoverEffect(Button button) {
@@ -76,12 +79,13 @@ public class UtilsGui {
         Button button = new Button(text);
         //button.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         button.setFont(FONT3);
-        button.setPrefSize(250,35);
+        button.setPrefSize(350,35);
 
         //effet d'ombre des boutons
         DropShadow shadow = new DropShadow();
-        shadow.setOffsetX(5.0); // Décalage horizontal pour l'effet 3D
-        shadow.setOffsetY(5.0);
+        shadow.setOffsetX(3.0); // Décalage horizontal pour l'effet 3D
+        shadow.setOffsetY(3.0);
+        shadow.setColor(Color.DARKGREY);
         button.setEffect(shadow);
 
         //effet de grossissement lors du survol
