@@ -237,12 +237,12 @@ public class Gui extends Application {
     public Scene run() {
         // Création d'un BorderPane pour centrer le contenu
         BorderPane borderPane = new BorderPane();
-        borderPane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        borderPane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
         // Création du Pane pour afficher le graphique
         pane = new Pane();
         pane.setBackground(GuiScene.getBackground());
-        pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        pane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //        if (!result.isEmpty()) {
@@ -271,7 +271,7 @@ public class Gui extends Application {
 
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
-        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
 
         //Ecouteur pour afficher message de victoire
@@ -279,13 +279,15 @@ public class Gui extends Application {
             Platform.runLater(() -> {
                if(newValue.equals(1)){
                    //text1.setVisible(true);
-                   Text text1 = UtilsGui.createText("CUT a gagné !",true);
+                   Text text1 = UtilsGui.createText("CUT a gagné !");
+                   text1.setFont(UtilsGui.FONT4);
                    text1.setX((scene.getWidth() - text1.getLayoutBounds().getWidth()) / 2);
                    text1.setY((scene.getHeight() - text1.getLayoutBounds().getHeight()) / 2);
                    text1.setTextAlignment(TextAlignment.CENTER);
                    pane.getChildren().add(text1);
                } else if (newValue.equals(2)) {
-                   Text text2 = UtilsGui.createText("SHORT a gagné !",true);
+                   Text text2 = UtilsGui.createText("SHORT a gagné !");
+                   text2.setFont(UtilsGui.FONT4);
                    text2.setX((scene.getWidth() - text2.getLayoutBounds().getWidth()) / 2);
                    text2.setY((scene.getHeight() - text2.getLayoutBounds().getHeight()) / 2);
                    text2.setTextAlignment(TextAlignment.CENTER);
@@ -315,8 +317,8 @@ public class Gui extends Application {
 
 //fonction qui recalcule les position des aretes et sommets lors d'un redimensionnement
     private void updateGraphLayout(Pane pane) {
-        double xOffset = (pane.getWidth() - UtilsGui.WINDOW_SIZE) / 2;
-        double yOffset = (pane.getHeight() - UtilsGui.WINDOW_SIZE) / 2;
+        double xOffset = (pane.getWidth() - UtilsGui.WINDOW_WIDTH) / 2;
+        double yOffset = (pane.getHeight() - UtilsGui.WINDOW_HEIGHT) / 2;
 
         // Mise à jour des positions des arêtes
         for (Pair<Pair<Vertex, Vertex>, Line> edge : edges) {
