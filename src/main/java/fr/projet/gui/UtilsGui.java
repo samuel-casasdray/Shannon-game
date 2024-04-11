@@ -22,9 +22,9 @@ import java.net.URL;
 @UtilityClass
 @Slf4j
 public class UtilsGui {
-    public static final Font FONT1 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font1.ttf"),50);
-    public static final Font FONT2 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font2.ttf"),30);
-    public static final Font FONT3 = Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font2.ttf"),20);
+    public static final Font FONT1 = Font.loadFont(UtilsGui.class.getResourceAsStream("/fonts/Font1.ttf"),50);
+    public static final Font FONT2 = Font.loadFont(UtilsGui.class.getResourceAsStream("/fonts/Font2.ttf"),30);
+    public static final Font FONT3 = Font.loadFont(UtilsGui.class.getResourceAsStream("/fonts/Font2.ttf"),20);
 
     public static final double CIRCLE_SIZE = 20D;
     public static final int WINDOW_SIZE = 800;
