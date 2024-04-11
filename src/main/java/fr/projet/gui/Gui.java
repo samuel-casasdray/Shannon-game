@@ -61,7 +61,8 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
-    private Stage stage;
+    @Getter
+    private static Stage stage;
     private Level level;
     @Setter
     private Turn turn;
