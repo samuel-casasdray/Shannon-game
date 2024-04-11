@@ -441,6 +441,7 @@ public class Gui extends Application {
         }
         timer.setCycleCount(Animation.INDEFINITE);
         timer.play();
+        game.playSound("fight",1);
     }
 
 

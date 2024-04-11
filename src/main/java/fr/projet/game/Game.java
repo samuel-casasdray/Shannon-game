@@ -461,13 +461,14 @@ public class Game {
         Random random = new Random();
         int i = random.nextInt(2)+1;
         String audioS = "Sounds/cut"+i+".mp3";
-        System.out.println("Audio "+audioS);
+        //System.out.println("Audio "+audioS);
         URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        System.out.println("Lool "+audioUrl);
+        //System.out.println("Lool "+audioUrl);
         assert audioUrl != null;
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
         mediaPlayer.setVolume(0.06);
         //stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
         mediaPlayer.play();
@@ -483,17 +484,29 @@ public class Game {
 //        mediaPlayer.play();
     }
 
-    public void playSoundShort () {
-        Random random = new Random();
-        int i = random.nextInt(3)+1;
-        String audioS = "Sounds/short"+i+".mp3";
-        System.out.println("Audio "+audioS);
+    public void playSound (String name, float v) {
+        String audioS = "Sounds/"+name+".mp3";
         URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        System.out.println("Lool "+audioUrl);
         assert audioUrl != null;
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(v);
+        mediaPlayer.play();
+    }
+
+    public void playSoundShort () {
+        Random random = new Random();
+        int i = random.nextInt(3)+1;
+        String audioS = "Sounds/short"+i+".mp3";
+        //System.out.println("Audio "+audioS);
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        //System.out.println("Lool "+audioUrl);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
         mediaPlayer.setVolume(0.15);
         mediaPlayer.play();
     }
