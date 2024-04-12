@@ -226,27 +226,9 @@ public class Game {
         List<Pair<Pair<Vertex, Vertex>, Line>> cuttedLines = Gui.getEdges().stream().filter(x ->
                 cutted.contains(x.getKey())).toList();
         createTimer(cuttedLines, true, 100);
-        affExplode(cuttedLines, 100);
     }
 
-    public void affExplode (List<Pair<Pair<Vertex, Vertex>, Line>> edges, int period) {
-        List<Vertex> vertices = new ArrayList<>();
-        for (Pair<Pair<Vertex, Vertex>, Line> p : edges) {
-            if (!vertices.contains(p.getKey().getKey())) {
-                vertices.add(p.getKey().getKey());
-            }
-            if (!vertices.contains(p.getKey().getValue())) {
-                vertices.add(p.getKey().getValue());
-            }
-        }
-        for (Vertex v : vertices)
-        try {
-            Thread.sleep(1000); // 1000 milliseconds = 1 seconde
-            Gui.destroy(v);
-        } catch (InterruptedException e) {
-            System.out.println("L'interruption de l'attente s'est produite.");
-        }
-    }
+
 
 
 
