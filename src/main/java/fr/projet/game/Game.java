@@ -165,14 +165,14 @@ public class Game {
                     }
                     if (!pvpOnline) {
                         turn = turn.flip();
-                        detectWinner();
+                        showWinner();
                         if (cutWon || shortWon) return;
                     }
                     if (againstAI) new Thread(() -> AIPlay(ia, ia, typeIA)).start();
                 }
             }
         }
-        detectWinner();
+        showWinner();
     }
 
     public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
@@ -202,7 +202,7 @@ public class Game {
             }
         }
         this.turn = this.turn.flip();
-        detectWinner();
+        showWinner();
         pending = false;
     }
 
@@ -296,14 +296,6 @@ public class Game {
             }
         };
         t.scheduleAtFixedRate(tt, 100, period);
-    }
-
-    private void detectWinner() {
-        if (client == null) {
-            showWinner();
-        } else {
-            Platform.runLater(this::showWinner); // Cas d'une game online
-        }
     }
 
     private void handleEvent(MouseEvent mouseEvent) {
