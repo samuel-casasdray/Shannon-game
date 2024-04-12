@@ -221,10 +221,13 @@ public class Gui extends Application {
 
     public static void popupMessage(Turn turn){
         if (turn==Turn.CUT){
+            victoryAchievedProperty.set(0);
             victoryAchievedProperty.set(1);
-            System.out.println(victoryAchievedProperty.toString());
         }
-        else victoryAchievedProperty.set(2);
+        else {
+            victoryAchievedProperty.set(0);
+            victoryAchievedProperty.set(2);
+        }
     }
 
     public static void popupMessage(String title, String message){
