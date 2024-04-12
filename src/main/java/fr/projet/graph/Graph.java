@@ -532,6 +532,107 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
         return new Graph(result);
     }
 
+
+
+
+
+
+
+    //Stratégie Gagnante :
+
+    public Graph soustraction (Graph dif) {
+        HashSet <Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.neighbors);
+        newNeib.removeAll(dif.getNeighbors());
+        Graph g1 = new Graph(newNeib);
+        for (Vertex v : dif.getVertices()) {
+            if (!g1.getVertices().contains(v)) {
+                g1.addVertex(v);
+            }
+        }
+        return g1;
+    }
+
+
+    public boolean endEvalutation (ArrayList<ArrayList<Vertex>> P) {
+        boolean result = true;
+        for (ArrayList<Vertex> partition : P) {
+            HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.getNeighbors());
+            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+                if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
+                    newNeib.add(edge);
+                }
+            }
+            Graph toTest = new Graph(newNeib);
+            for (Vertex v : partition) {
+                if (!toTest.getVertices().contains(v)) {
+                    toTest.addVertex(v);
+                }
+            }
+            if (!toTest.estConnexe()) {
+                result=false;
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<Graph> graphInPartitions (ArrayList<ArrayList<Vertex>> P) {
+        ArrayList<Graph> res = new ArrayList<>();
+        for (ArrayList<Vertex> partition : P) {
+            HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.getNeighbors());
+            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+                if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
+                    newNeib.add(edge);
+                }
+            }
+            Graph toTest = new Graph(newNeib);
+            for (Vertex v : partition) {
+                if (!toTest.getVertices().contains(v)) {
+                    toTest.addVertex(v);
+                }
+            }
+            res.add(toTest);
+        }
+        return res;
+    }
+
+//    public composantesConnexe (ArrayList<Graph> listG) {
+//        ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
+//        for (Graph G : listG) {
+//
+//            for (Vertex v : G.getVertices()) {
+//
+//            }
+//        }
+//    }
+
+
+
+    public boolean winningStrat () {
+        Graph T1 = kruskal();
+        Graph T2 = this.soustraction(T1);
+        if (T2.estConnexe()) {
+            return true; //Short Win
+        }
+        ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
+        ArrayList<ArrayList<Vertex>> P1 = new ArrayList<>();
+        P1.add(allVertice);
+        ArrayList<ArrayList<ArrayList<Vertex>>> listP = new ArrayList<>();
+        listP.add(P1);
+        ArrayList<Graph> etapes = new ArrayList<>();
+        etapes.add(T1);
+        etapes.add(T2);
+        boolean turn2 = true;
+        while (!T1.endEvalutation(P1) && !T2.endEvalutation(P1)) {
+            if (turn2) {
+
+            }
+        }
+
+
+        return true;
+    }
+
+
     public String toString() {
         StringBuilder r = new StringBuilder();
         for (Vertex v : getVertices())
