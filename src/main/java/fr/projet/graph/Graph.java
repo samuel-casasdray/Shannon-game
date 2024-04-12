@@ -101,13 +101,13 @@ public class Graph {
                 // Coord autour d'un cercle
                 double toRad = Math.toRadians((double) i * 360F / nbVertices);
                 coord = new Pair<>(
-                        (int) (Math.cos(toRad) * (UtilsGui.WINDOW_SIZE / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_SIZE / 2D),
-                        (int) (Math.sin(toRad) * (UtilsGui.WINDOW_SIZE / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_SIZE / 2D));
+                        (int) (Math.cos(toRad) * (UtilsGui.WINDOW_WIDTH / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_HEIGHT / 2D),
+                        (int) (Math.sin(toRad) * (UtilsGui.WINDOW_WIDTH / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_HEIGHT / 2D));
             } else {
                 // Coord aléatoire
                 coord = new Pair<>(
-                        random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
-                        random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
+                        random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE),
+                        random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE));
             }
             // On ajoute le sommet au graphe
             addVertex(new Vertex(coord.getKey(), coord.getValue()));
@@ -143,8 +143,8 @@ public class Graph {
             iterCount++;
             // Coord aléatoire
             Pair<Integer, Integer> coord = new Pair<>(
-                    random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
-                    random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
+                    random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE),
+                    random.nextInt(UtilsGui.WINDOW_MARGE+15, (int) UtilsGui.WINDOW_HEIGHT - UtilsGui.WINDOW_MARGE));
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
             // Ce if est dans le cas où on place le premier sommet
             if (getVertices().isEmpty()) {
