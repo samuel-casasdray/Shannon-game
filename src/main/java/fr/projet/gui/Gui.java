@@ -7,10 +7,7 @@ import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
-import javafx.animation.Animation;
-import javafx.animation.AnimationTimer;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -282,18 +279,20 @@ public class Gui extends Application {
             Platform.runLater(() -> {
                if(newValue.equals(1)){
                    //text1.setVisible(true);
-                   Text text1 = UtilsGui.createText("CUT a gagné !");
+                   Text text1 = UtilsGui.createText("CUT a gagné !",true);
                    text1.setFont(UtilsGui.FONT4);
                    text1.setX((scene.getWidth() - text1.getLayoutBounds().getWidth()) / 2);
                    text1.setY((scene.getHeight() - text1.getLayoutBounds().getHeight()) / 2);
                    text1.setTextAlignment(TextAlignment.CENTER);
+                   animationTexte(text1);
                    pane.getChildren().add(text1);
                } else if (newValue.equals(2)) {
-                   Text text2 = UtilsGui.createText("SHORT a gagné !");
+                   Text text2 = UtilsGui.createText("SHORT a gagné !",true);
                    text2.setFont(UtilsGui.FONT4);
                    text2.setX((scene.getWidth() - text2.getLayoutBounds().getWidth()) / 2);
                    text2.setY((scene.getHeight() - text2.getLayoutBounds().getHeight()) / 2);
                    text2.setTextAlignment(TextAlignment.CENTER);
+                   animationTexte(text2);
                    pane.getChildren().add(text2);
                }
             });
@@ -316,6 +315,16 @@ public class Gui extends Application {
         });
 
         return scene;
+}
+
+private void animationTexte (Text text){
+    TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(2), text);
+    translateTransition.setToY(40); // Déplacement de 50 pixels vers le bas
+    translateTransition.setCycleCount(Animation.INDEFINITE); // Répéter indéfiniment
+    translateTransition.setAutoReverse(true); // Revenir en arrière après chaque itération
+
+    // Démarrer la translation
+    translateTransition.play();
 }
 
 //fonction qui recalcule les position des aretes et sommets lors d'un redimensionnement
