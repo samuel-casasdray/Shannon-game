@@ -52,7 +52,7 @@ public class WebSocketClient {
         int creatorTurn = turn == Turn.CUT ? 0 : 1;
         if (!this.isClosed())
             this.close();
-        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices);
+        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices+"/A");
         createConnection();
     }
 
@@ -60,7 +60,7 @@ public class WebSocketClient {
         this.joiner = true;
         if (!this.isClosed())
             this.close();
-        this.connectServer(JOIN_GAME_URI + id);
+        this.connectServer(JOIN_GAME_URI + id + "/B");
         createConnection();
     }
 

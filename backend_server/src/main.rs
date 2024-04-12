@@ -40,10 +40,10 @@ async fn main() {
 		.collection("games");
     let app = Router::new()
         .route(
-            "/create_game/:creator_turn/:nb_vertices",
+            "/create_game/:creator_turn/:nb_vertices/:pseudo",
             get(create_game_handler),
         ) // Ici, c'est pour créer une game
-        .route("/join_game/:id", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
+        .route("/join_game/:id/:pseudo", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
         .with_state(games.clone())
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
         .with_state((games, my_coll.clone()))
@@ -68,15 +68,18 @@ async fn main() {
 async fn create_game_handler(
     ws: WebSocketUpgrade,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
-    Path(params): Path<(u8, u32)>,
+    Path(params): Path<(u8, u32, String)>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| create_game(socket, State(games), params))
+    let pseudo = params.2;
+    ws.on_upgrade(move |socket| create_game(socket, State(games), params.0, params.1, pseudo))
 }
 
 async fn create_game(
     socket: WebSocket,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
-    (creator_turn, nb_vertices): (u8, u32),
+    creator_turn: u8,
+    nb_vertices: u32,
+    pseudo: String,
 ) {
     let (mut sender, _receiver) = socket.split();
     let mut games = games.lock().await;
@@ -100,8 +103,8 @@ async fn create_game(
         ended: false,               // La game n'est pas encore finie
         creator_turn,
         nb_vertices,
-        cut_player: "Wronsk",
-        short_player: "",
+        cut_player: pseudo,
+        short_player: "".to_string(),
     });
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
     println!("{:?}", games.games);
@@ -138,15 +141,16 @@ async fn create_game(
 async fn join_game_handler(
     ws: WebSocketUpgrade,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
-    Path(game_id): Path<i64>,
+    Path((game_id, pseudo)): Path<(i64, String)>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| join_game(socket, State(games), game_id))
+    ws.on_upgrade(move |socket| join_game(socket, State(games), game_id, pseudo))
 }
 
 async fn join_game(
     socket: WebSocket,
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
     payload: i64,
+    pseudo: String
 ) {
     let (mut sender, _receiver) = socket.split();
     let mut games = games.lock().await;
@@ -165,7 +169,7 @@ async fn join_game(
         nb_vertices: games.games[current_game_indice].nb_vertices,
     };
     games.games[current_game_indice].joined = true;
-    games.games[current_game_indice].short_player = "Carlsen";
+    games.games[current_game_indice].short_player = pseudo;
     let msg = json!(partial).to_string();
     let tx = games.games[current_game_indice].tx.clone().unwrap();
     // Partie compliquée qui sert à envoyer la game à la personne qui veut rejoindre la game
@@ -214,8 +218,8 @@ async fn handle_socket(
                 return;
             }
             let current_game_indice = current_game_indice as usize;
-            let cut_player = games.games[current_game_indice].cut_player;
-            let short_player = games.games[current_game_indice].short_player;
+            let cut_player = &games.games[current_game_indice].cut_player;
+            let short_player = &games.games[current_game_indice].short_player;
             let tx = games.games[current_game_indice].tx.clone().unwrap();
             if move_message == *"Ping" {
                 let _ = tx.send("Pong".to_string());
@@ -427,7 +431,7 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 		None => {}
 		Some(player) => {
 			if short_player.is_some() {
-				let k_cut = match player.nb_games {
+				let mut k_cut = match player.nb_games {
 					0..=29 => 40.0,
 					_ => 20.0,
 				};
@@ -436,6 +440,9 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 					_ => 0.0,
 				};
 				let elo = player.elo as f64;
+				if elo > 2400.0 && player.nb_games >= 30 {
+				    k_cut = 10.0;
+				}
 				let short_elo = short_player.as_ref().unwrap().elo as f64;
 				let new_elo = elo+k_cut*(w_cut-p(elo-short_elo));
 				set_elo(my_coll, player, new_elo as u32).await;
@@ -447,7 +454,7 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 		None => {}
 		Some(player) => {
 			if cut_player.is_some() {
-				let k_short = match player.nb_games {
+				let mut k_short = match player.nb_games {
 					0..=29 => 40.0,
 					_ => 20.0,
 				};
@@ -456,6 +463,9 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 					_ => 0.0,
 				};
 				let elo = player.elo as f64;
+				if elo > 2400.0 && player.nb_games >= 30 {
+				    k_short = 10.0;
+				}
 				let new_elo = elo+k_short*(w_short-p(elo-cut_elo));
 				set_elo(my_coll, player, new_elo as u32).await;
 				increase_nb_games(my_coll, player).await;
@@ -499,8 +509,8 @@ pub struct Game {
     ended: bool,
     creator_turn: Turn,
     nb_vertices: u32,
-    cut_player: &'static str,
-    short_player: &'static str,
+    cut_player: String,
+    short_player: String,
 }
 
 #[derive(Debug)]
