@@ -73,7 +73,7 @@ public class Gui extends Application {
     private Optional<Long> gameCode = Optional.empty();
     private Thread gameThread;
     @Getter
-    private Pane pane;
+    private static Pane pane;
     private Random random = new Random();
     @Setter
     private static IntegerProperty victoryAchievedProperty= new SimpleIntegerProperty();
@@ -486,6 +486,25 @@ public class Gui extends Application {
     }
 
 
+    public static void destroy (Vertex v) {
+        String name = "boom.gif";
+        URL ressource = Gui.stage.getClass().getClassLoader().getResource(name);
+        Image image = new Image(ressource.toExternalForm());
+        ImageView imageView = new ImageView(image);
+        double initialWidth = image.getWidth();
+        double initialHeight = image.getHeight();
+        imageView.setFitWidth(initialWidth / 2);
+        imageView.setFitHeight(initialHeight / 2);
+        double newX = v.getX() - (imageView.getFitWidth() / 2);
+        double newY = v.getY() - (imageView.getFitHeight() / 2);
+        imageView.setLayoutX(newX);
+        imageView.setLayoutY(newY);
+        double width = image.getWidth();
+        double height = image.getHeight();
+        Gui.pane.getChildren().addAll(imageView);
+    }
+
+
     public void mainTheme () {
         String audioS = "Sounds/testMusic.mp3";
         System.out.println("Audio "+audioS);
@@ -495,7 +514,7 @@ public class Gui extends Application {
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(0.1);
+        mediaPlayer.setVolume(1.7);
         mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
         stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
         mediaPlayer.play();

@@ -245,6 +245,7 @@ public class Game {
                         pair.getValue().setVisible(false);
                     }
                     else {
+                        Gui.destroy(pair.getKey().getKey());
                         pair.getValue().setStroke(Color.LIGHTGREEN);
                     }
                     i++;
@@ -257,6 +258,15 @@ public class Game {
         };
         t.scheduleAtFixedRate(tt, 100, period);
     }
+
+
+//    public void explode (HashSet<Vertex> vertices) {
+//        for (Vertex v : vertices) {
+//            Gui.destroy(v);
+//        }
+//    }
+
+
 
     private void detectWinner() {
         if (client == null) {
@@ -288,6 +298,9 @@ public class Game {
         }
 
     }
+
+
+
 
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
@@ -482,7 +495,7 @@ public class Game {
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
         //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        mediaPlayer.setVolume(0.15);
+        mediaPlayer.setVolume(2);
         Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
         mediaPlayer.play();
     }
@@ -499,7 +512,7 @@ public class Game {
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(0.06);
+        mediaPlayer.setVolume(1);
         Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
         mediaPlayer.play();
 
