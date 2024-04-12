@@ -44,6 +44,7 @@ async fn main() {
             get(create_game_handler),
         ) // Ici, c'est pour créer une game
         .route("/join_game/:id", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
+        .with_state(games.clone())
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
         .with_state((games, my_coll.clone()))
         .route(
@@ -66,7 +67,7 @@ async fn main() {
 
 async fn create_game_handler(
     ws: WebSocketUpgrade,
-    State((games, _)): State<(Arc<futures::lock::Mutex<Games>>, Collection<Player>)>,
+    State(games): State<Arc<futures::lock::Mutex<Games>>>,
     Path(params): Path<(u8, u32)>,
 ) -> impl IntoResponse {
     ws.on_upgrade(move |socket| create_game(socket, State(games), params))
@@ -99,7 +100,7 @@ async fn create_game(
         ended: false,               // La game n'est pas encore finie
         creator_turn,
         nb_vertices,
-        cut_player: "",
+        cut_player: "Wronsk",
         short_player: "",
     });
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
@@ -136,7 +137,7 @@ async fn create_game(
 
 async fn join_game_handler(
     ws: WebSocketUpgrade,
-    State((games, _)): State<(Arc<futures::lock::Mutex<Games>>, Collection<Player>)>,
+    State(games): State<Arc<futures::lock::Mutex<Games>>>,
     Path(game_id): Path<i64>,
 ) -> impl IntoResponse {
     ws.on_upgrade(move |socket| join_game(socket, State(games), game_id))
@@ -164,6 +165,7 @@ async fn join_game(
         nb_vertices: games.games[current_game_indice].nb_vertices,
     };
     games.games[current_game_indice].joined = true;
+    games.games[current_game_indice].short_player = "Carlsen";
     let msg = json!(partial).to_string();
     let tx = games.games[current_game_indice].tx.clone().unwrap();
     // Partie compliquée qui sert à envoyer la game à la personne qui veut rejoindre la game
@@ -212,23 +214,32 @@ async fn handle_socket(
                 return;
             }
             let current_game_indice = current_game_indice as usize;
-            let cut_player = games.games[current_game_indice as usize].cut_player;
-            let short_player = games.games[current_game_indice as usize].short_player;
+            let cut_player = games.games[current_game_indice].cut_player;
+            let short_player = games.games[current_game_indice].short_player;
             let tx = games.games[current_game_indice].tx.clone().unwrap();
             if move_message == *"Ping" {
                 let _ = tx.send("Pong".to_string());
                 continue;
             }
-            if move_message == *"CUT!" || move_message == *"SHORT!" {
+            if (move_message == *"CUT!" || move_message == *"SHORT!") && !games.games[current_game_indice].ended {
                 // Fin de la game
-                update_players(&my_coll,  cut_player, short_player).await;
+                if move_message == *"CUT!" {
+					update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
+				} else {
+					update_players(&my_coll, short_player, cut_player, Turn::Short).await;
+				}
                 games.games[current_game_indice].ended = true;
                 return;
             }
-            if move_message == *"CUT" || move_message == *"SHORT" {
-                // Un des deux joueurs s'est déconnecté, et celui qui est resté à répondu
-                let _ = tx.send(move_message + " a gagné"); // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
-                update_players(&my_coll, cut_player, short_player).await;
+            if (move_message == *"CUT" || move_message == *"SHORT") && !games.games[current_game_indice].ended {
+                // Un des deux joueurs s'est déconnecté, et celui qui est resté a répondu
+                if move_message == *"CUT" {
+					update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
+				} else {
+					update_players(&my_coll, short_player, cut_player, Turn::Short).await;
+				}
+				games.games[current_game_indice].ended = true;
+				let _ = tx.send(move_message + " a gagné"); // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
                 return;
             }
             // On récupère les deux vertices depuis le client sous la forme "id1 id2 move" par exemple "3 4 1"
@@ -263,23 +274,20 @@ async fn handle_socket(
             let _ = tx.send(json!(vertices).to_string()); // On envoie les vertices aux clients
         }
         // Si on quitte le while, l'un des deux joueurs s'est déconnecté
-        // 
         let mut games = game.lock().await;
         let current_game_indice = get_current_indice(&games, game_id);
         if current_game_indice != -1 {
-        	games.games[current_game_indice as usize].ended = true;
-        	let cut_player = games.games[current_game_indice as usize].cut_player;
-         let short_player = games.games[current_game_indice as usize].short_player;
-            update_players(&my_coll, cut_player, short_player).await;
-            let tx = games.games[current_game_indice as usize]
+        	let current_game_indice = current_game_indice as usize;
+        	games.games[current_game_indice].ended = true;
+            let tx = games.games[current_game_indice]
                 .tx
                 .clone()
                 .unwrap();
-            let cut_player = games.games[current_game_indice as usize].cut_player;
-            let short_player = games.games[current_game_indice as usize].short_player;
-            if games.games[current_game_indice as usize].joined {
+            // let cut_player = games.games[current_game_indice].cut_player;
+            // let short_player = games.games[current_game_indice].short_player;
+            if games.games[current_game_indice].joined {
                 let _ = tx.send("L'adversaire a quitté la partie".to_string()); // On envoie au joueur restant l'information
-                update_players(&my_coll, cut_player, short_player).await;
+                //update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
             }
         }
     });
@@ -362,15 +370,21 @@ async fn insert_player_handler(State(my_coll): State<Collection<Player>>, Json(p
 }
 
 async fn insert_player(pseudo: &str, password_hash: String, my_coll: Collection<Player>) -> Result<(), (StatusCode, String)> {
+    if pseudo.len() < 3 {
+		return Err((StatusCode::BAD_REQUEST, "Pseudo too short".to_string()));
+	}
+    else if pseudo.len() > 20 {
+    	return Err((StatusCode::BAD_REQUEST, "Pseudo too long".to_string()));
+    }
+    else if my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap().is_some() {
+    	return Err((StatusCode::CONFLICT, "Pseudo already taken".to_string()));
+    }
     let player = Player {
 		pseudo: pseudo.to_string(),
 		password_hash,
 		elo: 1200,
 		nb_games: 0,
 	};
-    if my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap().is_some() {
-    	return Err((StatusCode::CONFLICT, "Pseudo already taken".to_string()));
-    }
     my_coll.insert_one(player, None).await.unwrap();
     Ok(())
 }
@@ -392,43 +406,66 @@ async fn log_in(State(my_coll): State<Collection<Player>>, Json(player): Json<Lo
 	}
 }
 
-async fn set_elo(my_coll: &Collection<Player>, pseudo: &str, elo: u32) {
-	let user = my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap();
-	match user {
-		None => {}
-		Some(_) => {
-			my_coll.update_one(doc! {"pseudo": pseudo}, doc! {"$set": {"elo": elo}}, None).await.unwrap();
-		}
-	}
+async fn set_elo(my_coll: &Collection<Player>, player: &Player, elo: u32) {
+	my_coll.update_one(doc! {"pseudo": &player.pseudo}, doc! {"$set": {"elo": elo}}, None).await.unwrap();
 }
 
-async fn increase_nb_games(my_coll: &Collection<Player>, pseudo: &str) {
-	let user = my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap();
-	match user {
-		None => {}
-		Some(user) => {
-			my_coll.update_one(doc! {"pseudo": pseudo}, doc! {"$set": {"nb_games": user.nb_games+1}}, None).await.unwrap();
-		}
-	}
+async fn increase_nb_games(my_coll: &Collection<Player>, player: &Player) {
+	my_coll.update_one(doc! {"pseudo": &player.pseudo}, doc! {"$set": {"nb_games": player.nb_games+1}}, None).await.unwrap();
 }
 
-async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_short: &str) {
+async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_short: &str, winner: Turn) {
 	let cut_player = my_coll.find_one(doc! {"pseudo": player_cut}, None).await.unwrap();
 	let short_player = my_coll.find_one(doc! {"pseudo": player_short}, None).await.unwrap();
-	match cut_player {
+	let cut_elo = if let Some(player) = &cut_player {
+		player.elo as f64
+	}
+	else {
+		0.0
+	};
+	match &cut_player {
 		None => {}
 		Some(player) => {
-			set_elo(my_coll, &player.pseudo, player.elo + 16).await;
-			increase_nb_games(my_coll, &player.pseudo).await;
+			if short_player.is_some() {
+				let k_cut = match player.nb_games {
+					0..=29 => 40.0,
+					_ => 20.0,
+				};
+				let w_cut = match winner {
+					Turn::Cut => 1.0,
+					_ => 0.0,
+				};
+				let elo = player.elo as f64;
+				let short_elo = short_player.as_ref().unwrap().elo as f64;
+				let new_elo = elo+k_cut*(w_cut-p(elo-short_elo));
+				set_elo(my_coll, player, new_elo as u32).await;
+				increase_nb_games(my_coll, player).await;
+			}
 		}
 	}
-	match short_player {
+	match &short_player {
 		None => {}
 		Some(player) => {
-			set_elo(my_coll, &player.pseudo, player.elo - 16).await;
-			increase_nb_games(my_coll, &player.pseudo).await;
+			if cut_player.is_some() {
+				let k_short = match player.nb_games {
+					0..=29 => 40.0,
+					_ => 20.0,
+				};
+				let w_short = match winner {
+					Turn::Short => 1.0,
+					_ => 0.0,
+				};
+				let elo = player.elo as f64;
+				let new_elo = elo+k_short*(w_short-p(elo-cut_elo));
+				set_elo(my_coll, player, new_elo as u32).await;
+				increase_nb_games(my_coll, player).await;
+			}
 		}
 	}
+}
+
+fn p(d: f64) -> f64 {
+	1.0 / (1.0 + 10.0_f64.powf(-d / 400.0))
 }
 
 #[derive(Deserialize)]
