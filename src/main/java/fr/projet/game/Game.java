@@ -135,11 +135,13 @@ public class Game {
                         played = new Pair<>(key, value);
                         cutEdge(played);
                         cutLine(neighbors.getValue());
+                        detectWinner();
 
                     } else {
                         played = new Pair<>(key, value);
                         secureEdge(played);
                         paintLine(neighbors.getValue());
+                        detectWinner();
                     }
                     if (!pvpOnline) {
                         turn = turn.flip();
@@ -185,13 +187,13 @@ public class Game {
     }
     public void showWinner() {
         if (cutWon()) {
-            if (ia2 == null)
+            //if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
         }
         else if (shortWon()) {
-            if (ia2 == null)
+            //if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();
@@ -224,9 +226,31 @@ public class Game {
         List<Pair<Pair<Vertex, Vertex>, Line>> cuttedLines = Gui.getEdges().stream().filter(x ->
                 cutted.contains(x.getKey())).toList();
         createTimer(cuttedLines, true, 100);
+        affExplode(cuttedLines, 100);
     }
 
-    public void deleteCuttedEdge() {
+    public void affExplode (List<Pair<Pair<Vertex, Vertex>, Line>> edges, int period) {
+        List<Vertex> vertices = new ArrayList<>();
+        for (Pair<Pair<Vertex, Vertex>, Line> p : edges) {
+            if (!vertices.contains(p.getKey().getKey())) {
+                vertices.add(p.getKey().getKey());
+            }
+            if (!vertices.contains(p.getKey().getValue())) {
+                vertices.add(p.getKey().getValue());
+            }
+        }
+        for (Vertex v : vertices)
+        try {
+            Thread.sleep(1000); // 1000 milliseconds = 1 seconde
+            Gui.destroy(v);
+        } catch (InterruptedException e) {
+            System.out.println("L'interruption de l'attente s'est produite.");
+        }
+    }
+
+
+
+public void deleteCuttedEdge() {
         List<Pair<Pair<Vertex, Vertex>, Line>> securedEdges = Gui.getEdges().stream().filter(x ->
                 cutted.contains(x.getKey()) || !secured.contains(x.getKey())).toList();
         createTimer(securedEdges, true, 100);
@@ -245,7 +269,6 @@ public class Game {
                         pair.getValue().setVisible(false);
                     }
                     else {
-                        Gui.destroy(pair.getKey().getKey());
                         pair.getValue().setStroke(Color.LIGHTGREEN);
                     }
                     i++;

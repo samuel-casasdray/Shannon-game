@@ -14,6 +14,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import lombok.Getter;
 import lombok.Setter;
@@ -44,6 +45,7 @@ public class GuiScene {
         root.setBackground(getBackground());
         root.setAlignment(Pos.CENTER);
 
+
         return root;
     }
 
@@ -72,7 +74,8 @@ public class GuiScene {
 
         root.getChildren().addAll(text1, text2, button1, button2, button3, button4);
 
-        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
     public Scene pvp(HandleClick handleButtonClick, JoinCreateField joinField, JoinCreateField createField) {
@@ -94,10 +97,10 @@ public class GuiScene {
         Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin, creatorTurn, 0));
 
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin, creatorTurn, 0));
-        TextField nbVertices = new TextField();
+        Spinner<Integer> nbVertices = new Spinner<>(5,20,20);
         Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
-        nbVertices.setText("20");
         Text textCreate = UtilsGui.createText(" ");
+        //textCreate.setFont(Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font3.ttf"),30));
 
         Text textTurn = UtilsGui.createText("Choisir son joueur");
         ComboBox<String> choixTurn = new ComboBox<>();
@@ -117,10 +120,10 @@ public class GuiScene {
                     }
                     int nbSommets;
                     try {
-                        nbSommets = Integer.parseInt(nbVertices.getText());
+                        nbSommets = nbVertices.getValue();
                     }
                     catch (NumberFormatException e) {
-                        nbVertices.setText("20");
+                        //nbVertices.setText("20");
                         nbSommets = 20;
                     }
                     createField.call(textCreate, turn, nbSommets);
@@ -138,7 +141,7 @@ public class GuiScene {
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
 
 
-        return new Scene(scene, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
     public Scene aivsai(HandleClick handleButtonClick) {
@@ -159,9 +162,10 @@ public class GuiScene {
         choixIA2.getItems().addAll("EASY", "MEDIUM", "HARD");
         choixIA2.getSelectionModel().select(1);
         choixIA1.getSelectionModel().select(1);
-        TextField nbVerticesField = new TextField();
+        Spinner<Integer> spinner = new Spinner<>(5, 20, 20);
+        spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
+        spinner.setEditable(true);
         Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
-        nbVerticesField.setText("20");
         Button buttonCreate = UtilsGui.createButton(
                 "Lancer",
                 event -> {
@@ -181,10 +185,9 @@ public class GuiScene {
                     };
                     int nbSommets;
                     try {
-                        nbSommets = Integer.parseInt(nbVerticesField.getText());
+                        nbSommets = spinner.getValue();
                     }
                     catch (NumberFormatException e) {
-                        nbVerticesField.setText("20");
                         nbSommets = 20;
                     }
                     nbVertices = nbSommets;
@@ -198,12 +201,13 @@ public class GuiScene {
         root.add(choixIA2, 2, 1);
         root.add(buttonCreate, 1, 3);
         root.add(TextNbVertices, 2, 2);
-        root.add(nbVerticesField, 2, 3);
+        root.add(spinner, 2, 3);
 
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
 
 
-        return new Scene(scene, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+
     }
 
     public Scene joueur(HandleClick handleButtonClick) {
@@ -214,7 +218,8 @@ public class GuiScene {
         Button cutbut = UtilsGui.createButton("CUT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_CUT));
 
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut);
-        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+
     }
 
     public Scene pvia(HandleClick handleButtonClick) {
@@ -226,7 +231,8 @@ public class GuiScene {
         Button difficile = UtilsGui.createButton("difficile", event -> handleButtonClick.call(ButtonClickType.PVIA_HARD));
 
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile);
-        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+
     }
 
     public Scene nbVertices(HandleClick handleButtonClick, boolean IA) {
@@ -242,7 +248,8 @@ public class GuiScene {
         });
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
-        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+
     }
 
 }
