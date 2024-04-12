@@ -488,24 +488,24 @@ public class Gui extends Application {
     }
 
 
-    public static void destroy (Vertex v) {
-        System.out.println("odjdoajdz");
-        String name = "boom.gif";
-        URL ressource = Gui.stage.getClass().getClassLoader().getResource(name);
-        Image image = new Image(ressource.toExternalForm());
-        ImageView imageView = new ImageView(image);
-        double initialWidth = image.getWidth();
-        double initialHeight = image.getHeight();
-        imageView.setFitWidth(initialWidth / 2);
-        imageView.setFitHeight(initialHeight / 2);
-        double newX = v.getX() - (imageView.getFitWidth() / 2);
-        double newY = v.getY() - (imageView.getFitHeight() / 2);
-        imageView.setLayoutX(newX);
-        imageView.setLayoutY(newY);
-        double width = image.getWidth();
-        double height = image.getHeight();
-        Gui.pane.getChildren().addAll(imageView);
-    }
+//    public static void destroy (Vertex v) {
+//        System.out.println("odjdoajdz");
+//        String name = "boom.gif";
+//        URL ressource = Gui.stage.getClass().getClassLoader().getResource(name);
+//        Image image = new Image(ressource.toExternalForm());
+//        ImageView imageView = new ImageView(image);
+//        double initialWidth = image.getWidth();
+//        double initialHeight = image.getHeight();
+//        imageView.setFitWidth(initialWidth / 2);
+//        imageView.setFitHeight(initialHeight / 2);
+//        double newX = v.getX() - (imageView.getFitWidth() / 2);
+//        double newY = v.getY() - (imageView.getFitHeight() / 2);
+//        imageView.setLayoutX(newX);
+//        imageView.setLayoutY(newY);
+//        double width = image.getWidth();
+//        double height = image.getHeight();
+//        Gui.pane.getChildren().addAll(imageView);
+//    }
 
 
     public void mainTheme () {
