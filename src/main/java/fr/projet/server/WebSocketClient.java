@@ -47,12 +47,19 @@ public class WebSocketClient {
     @Getter
     @Setter
     private String waiting;
+    @Getter
+    @Setter
+    private static String pseudoCUT = "A";
+    @Getter
+    @Setter
+    private static String pseudoSHORT = "B";
+
     public WebSocketClient(int nbVertices, Turn turn) throws IOException, URISyntaxException, InterruptedException {
         this.joiner = false;
         int creatorTurn = turn == Turn.CUT ? 0 : 1;
         if (!this.isClosed())
             this.close();
-        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices+"/A");
+        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices+"/"+pseudoCUT);
         createConnection();
     }
 
@@ -60,7 +67,7 @@ public class WebSocketClient {
         this.joiner = true;
         if (!this.isClosed())
             this.close();
-        this.connectServer(JOIN_GAME_URI + id + "/B");
+        this.connectServer(JOIN_GAME_URI + id + "/"+pseudoSHORT);
         createConnection();
     }
 

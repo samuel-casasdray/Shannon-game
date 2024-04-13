@@ -5,14 +5,12 @@ import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.Minimax;
+import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -53,7 +51,9 @@ public class GuiScene {
 
     public Scene home(HandleClick handleButtonClick) {
         VBox root = getBasicScene();
-
+        String pseudo = WebSocketClient.getPseudoCUT();
+        Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
+        Text elo = UtilsGui.createText("Elo : " + HttpsClient.getElo(WebSocketClient.getPseudoCUT()));
         Text text1 = UtilsGui.createText("SHANNON GAME", true);
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
 
@@ -62,12 +62,16 @@ public class GuiScene {
         Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO));
         Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL));
         Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA));
-
+        Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED));
         Button statsButton = new Button("?");
         statsButton.setOnAction(event -> handleButtonClick.call(ButtonClickType.STATS));
         statsButton.setStyle("-fx-background-color: LIGHTGREY;");
         statsButton.setAlignment(Pos.TOP_RIGHT);
-        root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4);
+        root.setSpacing(root.getSpacing()/1.5);
+        if (pseudo.length() >= 3)
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, pseudoText, elo);
+        else
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5);
 
         return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
     }
@@ -80,7 +84,9 @@ public class GuiScene {
         root.setHgap(90);
         root.setVgap(25);
         root.setPadding(new Insets(30, 5, 5, 5));
-
+        String pseudo = WebSocketClient.getPseudoCUT();
+        Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
+        Text elo = UtilsGui.createText("Elo : " + HttpsClient.getElo(WebSocketClient.getPseudoCUT()));
         Text text1 = UtilsGui.createText("Joueur vs Joueur", true);
 
         Turn creatorTurn = Turn.CUT;
@@ -121,7 +127,11 @@ public class GuiScene {
                     }
                     createField.call(textCreate, turn, nbSommets);
                 });
-
+        if (pseudo.length() >= 3)
+        {
+            root.add(pseudoText, 0, 4);
+            root.add(elo, 0, 5);
+        }
         root.add(textJoin, 0, 1);
         root.add(buttonJoin, 0, 0);
         root.add(textCreate, 1, 3);
@@ -276,4 +286,92 @@ public class GuiScene {
         return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
     }
 
+    public Scene ranked(HandleClick handleButtonClick) {
+        VBox root = getBasicScene();
+        Button button1 = UtilsGui.createButton("Se connecter", event -> handleButtonClick.call(ButtonClickType.LOGIN));
+        Button button2 = UtilsGui.createButton("S'inscrire", event -> handleButtonClick.call(ButtonClickType.REGISTER));
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
+        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+    }
+
+    public Scene login(HandleClick handleButtonClick) {
+        VBox scene = getBasicScene();
+        GridPane root = new GridPane();
+        root.setAlignment(Pos.CENTER);
+        root.setHgap(90);
+        root.setVgap(25);
+        root.setPadding(new Insets(30, 5, 5, 5));
+        Text title = UtilsGui.createText("Login",true);
+        TextField username = new TextField();
+        PasswordField password = new PasswordField();
+        Button login = UtilsGui.createButton("Se connecter", event -> {
+            if (HttpsClient.login(username.getText(), password.getText()).getKey()) {
+                WebSocketClient.setPseudoCUT(username.getText());
+                WebSocketClient.setPseudoSHORT(username.getText());
+                handleButtonClick.call(ButtonClickType.HOME_PVPO);
+            }
+            else {
+                Text error = UtilsGui.createText("Pseudo ou mot de passe incorrect",false);
+                error.setFill(Color.RED);
+                root.add(error, 0, 4);
+                password.clear();
+            }
+        });
+        root.setOnKeyPressed(event ->
+        {
+            if (event.getCode() == KeyCode.ENTER)
+                login.fire();
+        });
+        username.setPromptText("Pseudo");
+        password.setPromptText("Mot de passe");
+        root.add(title, 0, 0);
+        root.add(username, 0, 1);
+        root.add(password, 0, 2);
+        root.add(login, 0, 3);
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root);
+        return new Scene(scene, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+    }
+
+    public Scene register(HandleClick handleButtonClick) {
+        VBox scene = getBasicScene();
+        GridPane root = new GridPane();
+        root.setAlignment(Pos.CENTER);
+        root.setHgap(90);
+        root.setVgap(25);
+        root.setPadding(new Insets(30, 5, 5, 5));
+        Text title = UtilsGui.createText("Inscription",true);
+        TextField username = new TextField();
+        PasswordField password = new PasswordField();
+        PasswordField passwordRepeat = new PasswordField();
+        Button register = UtilsGui.createButton("S'inscrire", event -> {
+            var response = HttpsClient.register(username.getText(), password.getText(), passwordRepeat.getText());
+            if (response.getKey()) {
+                WebSocketClient.setPseudoCUT(username.getText());
+                WebSocketClient.setPseudoSHORT(username.getText());
+                handleButtonClick.call(ButtonClickType.HOME_PVPO);
+            }
+            else {
+                Text error = UtilsGui.createText(response.getValue(),false);
+                error.setFill(Color.RED);
+                root.add(error, 0, 5);
+                password.clear();
+                passwordRepeat.clear();
+            }
+        });
+        root.setOnKeyPressed(event ->
+        {
+            if (event.getCode() == KeyCode.ENTER)
+                register.fire();
+        });
+        username.setPromptText("Pseudo");
+        password.setPromptText("Mot de passe");
+        passwordRepeat.setPromptText("Répétez le mot de passe");
+        root.add(title, 0, 0);
+        root.add(username, 0, 1);
+        root.add(password, 0, 2);
+        root.add(passwordRepeat, 0, 3);
+        root.add(register, 0, 4);
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root);
+        return new Scene(scene, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+    }
 }

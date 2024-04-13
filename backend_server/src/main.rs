@@ -46,16 +46,18 @@ async fn main() {
         .route("/join_game/:id/:pseudo", get(join_game_handler)) // Pour rejoindre une game par son identifiant, il s'agit d'un code d'invitation
         .with_state(games.clone())
         .route("/ws/:id", get(ws_handler)) // La route permettetant de transmettre les données (CUT, SHORT, etc)
-        .with_state((games, my_coll.clone()))
+        .with_state((games, my_coll.clone())) // On peut clone car il s'agit d'un Arc
         .route(
             "/game_stat/:type_game/:winner/:seed",
-            get(add_stat_handler),
+            get(add_stat_handler), // Route permettant d'ajouter une stat à la base de données
         )
-        .route("/games", get(get_games_handler))
+        .route("/games", get(get_games_handler)) // Route permettant de récupérer les statistiques des games
         .with_state(stats)
-        .route("/add_player", post(insert_player_handler))
-        .route("/login", post(log_in))
+        .route("/add_player", post(insert_player_handler)) // Route permettant d'ajouter un joueur à la base de données (inscription)
+        .route("/login", post(log_in)) // Route permettant de se connecter
+        .route("/get_elo/:pseudo", get(get_elo)) // Route permettant de récupérer l'elo d'un joueur
         .with_state(my_coll);
+        
     // 51.75.126.59:2999 (ip de mon serveur)
     let listener = tokio::net::TcpListener::bind("0.0.0.0:2999") // Port random mais probablement pas déjà pris
         .await
@@ -94,6 +96,11 @@ async fn create_game(
         0 => Turn::Cut,
         _ => Turn::Short,
     };
+    let (cut_player, short_player) = if creator_turn == Turn::Cut {
+		(pseudo, "".to_string())
+	} else {
+		("".to_string(), pseudo)
+	};
     games.games.push(Game {
         id: n,
         seed,
@@ -101,10 +108,10 @@ async fn create_game(
         previous_move: Turn::Short, // C'est à cut de commencer, donc le previous move est SHORT
         joined: false,              // Personne n'a rejoint jusque là
         ended: false,               // La game n'est pas encore finie
-        creator_turn,
-        nb_vertices,
-        cut_player: pseudo,
-        short_player: "".to_string(),
+        creator_turn,				// Le joueur qui a créé la game
+        nb_vertices,				// Le nombre de sommets
+        cut_player,					// Le pseudo du joueur qui a choisi CUT
+        short_player,				// Le pseudo du joueur qui a choisi SHORT
     });
     games.games.retain(|game| !game.ended); // On ne garde que les games non finies.
     println!("{:?}", games.games);
@@ -169,7 +176,12 @@ async fn join_game(
         nb_vertices: games.games[current_game_indice].nb_vertices,
     };
     games.games[current_game_indice].joined = true;
-    games.games[current_game_indice].short_player = pseudo;
+    if games.games[current_game_indice].creator_turn == Turn::Cut {
+		games.games[current_game_indice].short_player = pseudo; // Si le créateur a choisi CUT, on ajoute le pseudo 
+		// du joueur qui a rejoint en SHORT
+	} else {
+		games.games[current_game_indice].cut_player = pseudo; // Sinon en CUT
+	}
     let msg = json!(partial).to_string();
     let tx = games.games[current_game_indice].tx.clone().unwrap();
     // Partie compliquée qui sert à envoyer la game à la personne qui veut rejoindre la game
@@ -225,25 +237,30 @@ async fn handle_socket(
                 let _ = tx.send("Pong".to_string());
                 continue;
             }
-            if (move_message == *"CUT!" || move_message == *"SHORT!") && !games.games[current_game_indice].ended {
+            if move_message == *"CUT!" || move_message == *"SHORT!" {
                 // Fin de la game
-                if move_message == *"CUT!" {
-					update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
-				} else {
-					update_players(&my_coll, short_player, cut_player, Turn::Short).await;
-				}
+                if !games.games[current_game_indice].ended {
+	                if move_message == *"CUT!" {
+						update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
+					} else {
+						update_players(&my_coll, short_player, cut_player, Turn::Short).await;
+					}
+                }
                 games.games[current_game_indice].ended = true;
                 return;
             }
-            if (move_message == *"CUT" || move_message == *"SHORT") && !games.games[current_game_indice].ended {
+            if move_message == *"CUT" || move_message == *"SHORT"  {
                 // Un des deux joueurs s'est déconnecté, et celui qui est resté a répondu
-                if move_message == *"CUT" {
-					update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
-				} else {
-					update_players(&my_coll, short_player, cut_player, Turn::Short).await;
-				}
+                // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
+                if !games.games[current_game_indice].ended {
+	               	if move_message == *"CUT" {
+						update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
+					} else {
+						update_players(&my_coll, short_player, cut_player, Turn::Short).await;
+					}
+                }
 				games.games[current_game_indice].ended = true;
-				let _ = tx.send(move_message + " a gagné"); // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
+				let _ = tx.send(move_message + " a gagné"); 
                 return;
             }
             // On récupère les deux vertices depuis le client sous la forme "id1 id2 move" par exemple "3 4 1"
@@ -366,27 +383,27 @@ async fn insert_player_handler(State(my_coll): State<Collection<Player>>, Json(p
 	let password_repeat = player.password_repeat;
 	if password != password_repeat
 	{
-		return Err((StatusCode::UNAUTHORIZED, "Passwords do not match".to_string()));
+		return Err((StatusCode::UNAUTHORIZED, "Les mots de passe ne correspondent pas".to_string()));
 	}
-	let sha256_password_with_salt = bcrypt::hash(password, 12).unwrap(); // Hash avec bcrypt pour simplifier le salage
-    insert_player(&pseudo.to_string(), sha256_password_with_salt, my_coll).await?;
+	let bcrypt_password_with_salt = bcrypt::hash(password, 12).unwrap(); // Hash avec bcrypt pour simplifier le salage
+    insert_player(&pseudo.to_string(), bcrypt_password_with_salt, my_coll).await?;
     Ok("Player inserted".to_string())
 }
 
 async fn insert_player(pseudo: &str, password_hash: String, my_coll: Collection<Player>) -> Result<(), (StatusCode, String)> {
     if pseudo.len() < 3 {
-		return Err((StatusCode::BAD_REQUEST, "Pseudo too short".to_string()));
+		return Err((StatusCode::BAD_REQUEST, "Pseudo trop court".to_string()));
 	}
     else if pseudo.len() > 20 {
-    	return Err((StatusCode::BAD_REQUEST, "Pseudo too long".to_string()));
+    	return Err((StatusCode::BAD_REQUEST, "Pseudo trop long".to_string()));
     }
     else if my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap().is_some() {
-    	return Err((StatusCode::CONFLICT, "Pseudo already taken".to_string()));
+    	return Err((StatusCode::CONFLICT, "Pseudo déjà pris".to_string()));
     }
     let player = Player {
 		pseudo: pseudo.to_string(),
 		password_hash,
-		elo: 1200,
+		elo: 1200, // Elo de base
 		nb_games: 0,
 	};
     my_coll.insert_one(player, None).await.unwrap();
@@ -397,14 +414,16 @@ async fn log_in(State(my_coll): State<Collection<Player>>, Json(player): Json<Lo
 	let user = my_coll.find_one(doc! {"pseudo": player.pseudo}, None).await.unwrap();
 	match user {
 		None => {
-			Err((StatusCode::UNAUTHORIZED, "Pseudo or password incorrect".to_string()))
+			Err((StatusCode::UNAUTHORIZED, "Pseudo ou mot de passe incorrect".to_string()))
 		}
 		Some(user) => {
-			if bcrypt::verify(player.password, &user.password_hash).unwrap() {
+			if bcrypt::verify(player.password, &user.password_hash).unwrap() { 
+				// On vérifie le mot de passe avec bcrypt pour éviter les attaques par dictionnaire,
+				// les attaques par rainbow tables ainsi que les attaques par brute force
 				Ok("Logged in".to_string())
 			}
 			else {
-				Err((StatusCode::UNAUTHORIZED, "Pseudo or password incorrect".to_string()))
+				Err((StatusCode::UNAUTHORIZED, "Pseudo ou mot de passe incorrect".to_string()))
 			}
 		}
 	}
@@ -419,13 +438,16 @@ async fn increase_nb_games(my_coll: &Collection<Player>, player: &Player) {
 }
 
 async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_short: &str, winner: Turn) {
+	if player_cut == player_short {
+		return;
+	}
 	let cut_player = my_coll.find_one(doc! {"pseudo": player_cut}, None).await.unwrap();
 	let short_player = my_coll.find_one(doc! {"pseudo": player_short}, None).await.unwrap();
 	let cut_elo = if let Some(player) = &cut_player {
 		player.elo as f64
 	}
 	else {
-		0.0
+		0.0 // Si le joueur n'existe pas, on met son elo à 0, ce n'est pas grave car il ne sera pas utilisé
 	};
 	match &cut_player {
 		None => {}
@@ -443,6 +465,7 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 				if elo > 2400.0 && player.nb_games >= 30 {
 				    k_cut = 10.0;
 				}
+				// Calcul du nouvel elo
 				let short_elo = short_player.as_ref().unwrap().elo as f64;
 				let new_elo = elo+k_cut*(w_cut-p(elo-short_elo));
 				set_elo(my_coll, player, new_elo as u32).await;
@@ -450,6 +473,7 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 			}
 		}
 	}
+	// On fait la même chose pour le joueur short
 	match &short_player {
 		None => {}
 		Some(player) => {
@@ -474,8 +498,21 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 	}
 }
 
+// Fonction de calcul de probabilité de victoire (wikipedia)
 fn p(d: f64) -> f64 {
 	1.0 / (1.0 + 10.0_f64.powf(-d / 400.0))
+}
+
+async fn get_elo(State(my_coll): State<Collection<Player>>, Path(pseudo): Path<String>) -> Result<String, (StatusCode, String)> {
+	let player = my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap();
+	match player {
+		None => {
+			Err((StatusCode::NOT_FOUND, "Joueur non trouvé".to_string()))
+		}
+		Some(player) => {
+			Ok(player.elo.to_string())
+		}
+	}
 }
 
 #[derive(Deserialize)]

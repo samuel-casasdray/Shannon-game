@@ -15,5 +15,8 @@ public enum ButtonClickType {
     JEU,
     VERTICES,
     AIvsAI,
-    STATS
+    STATS,
+    RANKED,
+    LOGIN,
+    REGISTER
 }
