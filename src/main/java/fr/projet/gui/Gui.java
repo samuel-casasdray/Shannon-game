@@ -158,9 +158,10 @@ public class Gui extends Application {
                 gameThread.setDaemon(true);
                 gameThread.start();
             }
-            case STATS -> {
-                stage.setScene(GuiScene.stats(this::handleButtonClick));
-            }
+            case STATS -> stage.setScene(GuiScene.stats(this::handleButtonClick));
+            case RANKED -> stage.setScene(GuiScene.ranked(this::handleButtonClick));
+            case LOGIN -> stage.setScene(GuiScene.login(this::handleButtonClick));
+            case REGISTER -> stage.setScene(GuiScene.register(this::handleButtonClick));
         }
     }
 
