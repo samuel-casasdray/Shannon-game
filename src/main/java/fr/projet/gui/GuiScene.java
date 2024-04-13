@@ -3,8 +3,6 @@ package fr.projet.gui;
 import com.google.gson.JsonElement;
 import fr.projet.game.Level;
 import fr.projet.game.Turn;
-import fr.projet.ia.BasicAI;
-import fr.projet.ia.Minimax;
 import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
 import javafx.geometry.Insets;
@@ -15,13 +13,16 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import jdk.jshell.execution.Util;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
@@ -93,10 +94,11 @@ public class GuiScene {
 
         TextField textJoin = new TextField();
         textJoin.setPromptText("code de partie");
-        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin, creatorTurn, 0));
+        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin));
 
-        UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin, creatorTurn, 0));
+        UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         TextField nbVertices = new TextField();
+        Text code = UtilsGui.createText("");
         Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
         nbVertices.setText("20");
         Text textCreate = UtilsGui.createText(" ");
@@ -125,22 +127,36 @@ public class GuiScene {
                         nbVertices.setText("20");
                         nbSommets = 20;
                     }
-                    createField.call(textCreate, turn, nbSommets);
+                    WebSocketClient client = null;
+                    try {
+                        client = new WebSocketClient(nbSommets, turn);
+                    } catch (IOException | URISyntaxException e) {
+                        log.error("Erreur lors de la création de la partie", e);
+                        return;
+                    }
+                    catch (InterruptedException e) {
+                        log.error("Erreur lors de la création de la partie", e);
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    Optional<Long> gameCode = Optional.of(client.getId());
+                    code.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
+                    createField.call(client);
                 });
         if (pseudo.length() >= 3)
         {
-            root.add(pseudoText, 0, 4);
-            root.add(elo, 0, 5);
+            root.add(pseudoText, 0, 2);
+            root.add(elo, 0, 3);
         }
         root.add(textJoin, 0, 1);
         root.add(buttonJoin, 0, 0);
         root.add(textCreate, 1, 3);
         root.add(buttonCreate, 1, 0);
-        root.add(textTurn, 1, 1);
-        root.add(choixTurn, 1, 2);
-        root.add(TextNbVertices, 0, 2);
-        root.add(nbVertices, 0, 3);
-
+        root.add(textTurn, 1, 3);
+        root.add(choixTurn, 1, 4);
+        root.add(TextNbVertices, 1, 1);
+        root.add(nbVertices, 1, 2);
+        root.add(code, 1, 5);
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
 
 

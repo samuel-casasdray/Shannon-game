@@ -9,7 +9,6 @@ import fr.projet.graph.Vertex;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -29,8 +28,6 @@ import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
@@ -96,13 +93,11 @@ public class Gui extends Application {
             case HOME_PVPO -> stage.setScene(
                 GuiScene.pvp(
                     this::handleButtonClick,
-                    (textField, turn, nbVertices) -> join((TextField) textField),
-                    (textField, turn, nbVertices) -> create((Text) textField, turn, nbVertices)
+                    textField -> join((TextField) textField),
+                    client -> create((WebSocketClient) client)
                 )
             );
-            case HOME_IAVIA -> {
-                stage.setScene(GuiScene.aivsai(this::handleButtonClick));
-            }
+            case HOME_IAVIA -> stage.setScene(GuiScene.aivsai(this::handleButtonClick));
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
                 stage.setScene(GuiScene.nbVertices(this::handleButtonClick,withIA));
@@ -389,36 +384,27 @@ public class Gui extends Application {
         pane.setOnMouseClicked(handler);
     }
 
-    public void create(Text textField, Turn turn, int nbVertices) {
+    public void create(WebSocketClient client) {
         try {
             if (game != null)
                 game.getClient().close();
         }
         catch (IOException | NullPointerException e) {
             log.info(e.getMessage());
+            return;
         }
         try {
-            WebSocketClient client = new WebSocketClient(nbVertices, turn);
-            gameCode = Optional.of(client.getId());
-            textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
-            try {
-                this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
-            }
-            catch (TimeoutException e) {
-                textField.setText("");
-                Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
-                        " de réduire le nombre de sommets"));
-            }
-        } catch (SocketException se) {
-            textField.setText("");
+            this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+        }
+        catch (TimeoutException e) {
+            Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                    " de réduire le nombre de sommets"));
+        }
+        catch (SocketException se) {
             Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
         }
-        catch (IOException | URISyntaxException e) {
+        catch (IOException e) {
             log.error(e.getMessage());
-        }
-        catch (InterruptedException e) {
-            log.error(e.getMessage());
-            Thread.currentThread().interrupt();
         }
     }
 
