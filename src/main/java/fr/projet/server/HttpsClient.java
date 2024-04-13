@@ -42,7 +42,6 @@ public class HttpsClient {
                 .build();
         CompletableFuture<HttpResponse<String>> futureResponse = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
         var response = futureResponse.join();
-        System.out.println(response.statusCode());
         if (response.statusCode() == 200)
             return Integer.parseInt(response.body());
         return -1;
