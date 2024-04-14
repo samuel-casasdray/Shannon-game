@@ -72,8 +72,7 @@ async fn create_game_handler(
     State(games): State<Arc<futures::lock::Mutex<Games>>>,
     Path(params): Path<(u8, u32, String)>,
 ) -> impl IntoResponse {
-    let pseudo = params.2;
-    ws.on_upgrade(move |socket| create_game(socket, State(games), params.0, params.1, pseudo))
+    ws.on_upgrade(move |socket| create_game(socket, State(games), params.0, params.1, params.2))
 }
 
 async fn create_game(
@@ -384,6 +383,9 @@ async fn insert_player_handler(State(my_coll): State<Collection<Player>>, Json(p
 	if password != password_repeat
 	{
 		return Err((StatusCode::UNAUTHORIZED, "Les mots de passe ne correspondent pas".to_string()));
+	}
+	if password.is_empty() {
+		return Err((StatusCode::BAD_REQUEST, "Le mot de passe est vide".to_string()));
 	}
 	let bcrypt_password_with_salt = bcrypt::hash(password, 12).unwrap(); // Hash avec bcrypt pour simplifier le salage
     insert_player(&pseudo.to_string(), bcrypt_password_with_salt, my_coll).await?;
