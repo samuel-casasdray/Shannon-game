@@ -24,6 +24,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @UtilityClass
@@ -65,12 +66,18 @@ public class GuiScene {
         Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA));
         Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED));
         Button statsButton = new Button("?");
+        Button deconnexion = new Button("Déconnexion");
+        deconnexion.setOnAction(event -> {
+            WebSocketClient.setPseudoCUT("A");
+            WebSocketClient.setPseudoSHORT("B");
+            handleButtonClick.call(ButtonClickType.HOME);
+        });
         statsButton.setOnAction(event -> handleButtonClick.call(ButtonClickType.STATS));
         statsButton.setStyle("-fx-background-color: LIGHTGREY;");
         statsButton.setAlignment(Pos.TOP_RIGHT);
         root.setSpacing(root.getSpacing()/1.5);
         if (pseudo.length() >= 3)
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, pseudoText, elo);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion);
         else
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5);
 
@@ -89,8 +96,6 @@ public class GuiScene {
         Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
         Text elo = UtilsGui.createText("Elo : " + HttpsClient.getElo(WebSocketClient.getPseudoCUT()));
         Text text1 = UtilsGui.createText("Joueur vs Joueur", true);
-
-        Turn creatorTurn = Turn.CUT;
 
         TextField textJoin = new TextField();
         textJoin.setPromptText("code de partie");
@@ -324,7 +329,7 @@ public class GuiScene {
             if (HttpsClient.login(username.getText(), password.getText()).getKey()) {
                 WebSocketClient.setPseudoCUT(username.getText());
                 WebSocketClient.setPseudoSHORT(username.getText());
-                handleButtonClick.call(ButtonClickType.HOME_PVPO);
+                handleButtonClick.call(ButtonClickType.HOME);
             }
             else {
                 Text error = UtilsGui.createText("Pseudo ou mot de passe incorrect",false);
@@ -359,17 +364,19 @@ public class GuiScene {
         TextField username = new TextField();
         PasswordField password = new PasswordField();
         PasswordField passwordRepeat = new PasswordField();
+        AtomicReference<Text> error = new AtomicReference<>(UtilsGui.createText("", false));
         Button register = UtilsGui.createButton("S'inscrire", event -> {
             var response = HttpsClient.register(username.getText(), password.getText(), passwordRepeat.getText());
             if (response.getKey()) {
                 WebSocketClient.setPseudoCUT(username.getText());
                 WebSocketClient.setPseudoSHORT(username.getText());
-                handleButtonClick.call(ButtonClickType.HOME_PVPO);
+                handleButtonClick.call(ButtonClickType.HOME);
             }
             else {
-                Text error = UtilsGui.createText(response.getValue(),false);
-                error.setFill(Color.RED);
-                root.add(error, 0, 5);
+                error.get().setText("");
+                error.set(UtilsGui.createText(response.getValue(), false));
+                error.get().setFill(Color.RED);
+                root.add(error.get(), 0, 5);
                 password.clear();
                 passwordRepeat.clear();
             }
