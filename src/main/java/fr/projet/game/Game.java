@@ -20,11 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
+import javafx.scene.media.*;
 
 @Getter
 @Slf4j
@@ -157,11 +159,13 @@ public class Game {
                         played = new Pair<>(key, value);
                         cutEdge(played);
                         cutLine(neighbors.getValue());
+                        //detectWinner();
 
                     } else {
                         played = new Pair<>(key, value);
                         secureEdge(played);
                         paintLine(neighbors.getValue());
+                        //detectWinner();
                     }
                     if (!pvpOnline) {
                         turn = turn.flip();
@@ -177,10 +181,10 @@ public class Game {
 
     public void AIPlay(InterfaceIA ia1, InterfaceIA ia2, Turn turn) {
         pending = true;
-        if (ia2.getDepth() == 5 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
-            ia2.setDepth(ia2.getDepth()+1);
-        if (ia1.getDepth() == 5 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
-            ia1.setDepth(ia1.getDepth()+1);
+        //if (ia2.getDepth() == 5 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
+            //ia2.setDepth(ia2.getDepth()+1);
+        //if (ia1.getDepth() == 5 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
+          //  ia1.setDepth(ia1.getDepth()+1);
         Pair<Vertex, Vertex> played;
         if (turn == Turn.CUT) {
             played = ia1.playCUT();
@@ -218,14 +222,15 @@ public class Game {
         else
             typeGame = 3; // IA vs IA
         if (cutWon()) {
-            if (ia2 == null)
+            //if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
+                System.out.println("Cutwon");
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
             thereAreAWinner = true;
         }
         else if (shortWon()) {
-            if (ia2 == null)
+            //if (ia2 == null)
                 Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();
@@ -268,7 +273,11 @@ public class Game {
         createTimer(cuttedLines, true, 100);
     }
 
-    public void deleteCuttedEdge() {
+
+
+
+
+public void deleteCuttedEdge() {
         List<Pair<Pair<Vertex, Vertex>, Line>> securedEdges = Gui.getEdges().stream().filter(x ->
             cutted.contains(x.getKey()) || !secured.contains(x.getKey())).toList();
         createTimer(securedEdges, true, 100);
@@ -337,6 +346,9 @@ public class Game {
             play(move.getKey(), move.getValue());
         }
     }
+
+
+
 
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
@@ -464,6 +476,7 @@ public class Game {
         line.setStroke(Color.BLUE);
         line.getStrokeDashArray().addAll(25D, 15D);
         setColor();
+        playSoundCut();
     }
 
     public void paintLine(Line line) {
@@ -472,15 +485,17 @@ public class Game {
         lastsLines.add(new Pair<>(line, turn));
         line.setStroke(Color.BLUE);
         setColor();
+        playSoundShort();
     }
 
     public void setColor() {
         if (lastsLines.size() < 2) return;
-        if (lastsLines.get(lastsLines.size() - 2).getValue() == Turn.CUT) {
-            lastsLines.get(lastsLines.size() - 2).getKey().setStroke(Color.BLACK);
-            lastsLines.get(lastsLines.size() - 2).getKey().getStrokeDashArray().addAll(25D, 15D);
-        } else {
-            lastsLines.get(lastsLines.size() - 2).getKey().setStroke(Color.RED);
+        if (lastsLines.get(lastsLines.size()-2).getValue() == Turn.CUT) {
+            lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.BLACK);
+            lastsLines.get(lastsLines.size()-2).getKey().getStrokeDashArray().addAll(25D, 15D);
+        }
+        else {
+            lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.ORANGERED);
         }
     }
 
@@ -506,5 +521,70 @@ public class Game {
 
     public boolean getJoiner() {
         return joiner;
+    }
+
+    public void playSound (String name, float v) {
+        String audioS = "Sounds/"+name+".mp3";
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(v);
+        mediaPlayer.play();
+    }
+
+    public void playSoundShort () {
+        Random random = new Random();
+        //int i = random.nextInt(3)+1;
+        String audioS = "Sounds/short"+1+".mp3";
+        //System.out.println("Audio "+audioS);
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        //System.out.println("Lool "+audioUrl);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
+        mediaPlayer.setVolume(2);
+        Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
+        mediaPlayer.play();
+    }
+
+
+    public void playSoundCut () {
+        Random random = new Random();
+        int i = random.nextInt(2)+1;
+        String audioS = "Sounds/cut"+i+".mp3";
+        //System.out.println("Audio "+audioS);
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        //System.out.println("Lool "+audioUrl);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(1);
+        Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
+        mediaPlayer.play();
+
+        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
+        //stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
+//        System.out.println("Audio "+audioS);
+//        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+//        System.out.println("Lool "+audioUrl);
+//        assert audioUrl != null;
+//        String audioFile = audioUrl.toExternalForm();
+//        Media sound = new Media(audioFile);
+//        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+//        mediaPlayer.setVolume(0.04);
+//        long time = (long) (sound.getDuration().toMillis() + 1000);
+//        mediaPlayer.play();
+    }
+
+
+    private void stopMediaPlayer2(MediaPlayer mp) {
+        if (mp != null) {
+            mp.stop();
+        }
     }
 }

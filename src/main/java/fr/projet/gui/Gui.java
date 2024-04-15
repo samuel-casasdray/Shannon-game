@@ -1,39 +1,51 @@
 package fr.projet.gui;
 
+import fr.projet.Main;
 import fr.projet.server.WebSocketClient;
 import fr.projet.game.Game;
 import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextBoundsType;
+import javafx.scene.text.*;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.Pair;
+import jdk.jshell.execution.Util;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import javafx.scene.media.*;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class Gui extends Application {
@@ -50,8 +62,10 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
-    private Stage stage;
+    @Getter
+    private static Stage stage;
     private Level level;
+    @Setter
     private Turn turn;
     private Boolean withIA;
     @Setter
@@ -60,7 +74,38 @@ public class Gui extends Application {
     private Optional<Long> gameCode = Optional.empty();
     private Thread gameThread;
     @Getter
-    private Pane pane;
+    private static Pane pane;
+    private Random random = new Random();
+    @Setter
+    private static IntegerProperty victoryAchievedProperty= new SimpleIntegerProperty();
+
+    private List<Line> posTransport = new ArrayList<>();
+
+
+
+    Timeline timer = new Timeline(new KeyFrame(Duration.millis(20), event -> {
+            for(Line line: posTransport) {
+                ObservableMap<Object, Object> properties = line.getProperties();
+                int i = (int) properties.get("i");
+                double Ux = (double) properties.get("Ux");
+                double Uy = (double) properties.get("Uy");
+                int Ax = (int) properties.get("Ax");
+                int Ay = (int) properties.get("Ay");
+                int Bx = (int) properties.get("Bx");
+                int By = (int) properties.get("By");
+                i++;
+                properties.put("i", i);
+                double posX = i * Ux + Ax;
+                double posY = i * Uy + Ay;
+                if ((Ax < Bx && posX > Bx) || (Ax > Bx && posX < Bx) || (Ay < By && posY > By) || (Ay > By && posY < By)) {
+                    i = 0;
+                    properties.put("i", i);
+                }
+                line.setTranslateX(i*Ux);
+                line.setTranslateY(i*Uy);
+            }
+    }));
+
 
     @Override
     public void start(Stage stage) {
@@ -77,6 +122,7 @@ public class Gui extends Application {
             stage.getIcons().add(icon);
         }
         stage.show();
+        mainTheme ();
     }
     public void handleButtonClick(ButtonClickType buttonClickType) {
         switch (buttonClickType) {
@@ -191,13 +237,14 @@ public class Gui extends Application {
     }
 
     public static void popupMessage(Turn turn){
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Fin de la partie");
         if (turn==Turn.CUT){
-            alert.setHeaderText("CUT a gagné !");
+            victoryAchievedProperty.set(0);
+            victoryAchievedProperty.set(1);
         }
-        else alert.setHeaderText("SHORT a gagné !");
-        alert.show();
+        else {
+            victoryAchievedProperty.set(0);
+            victoryAchievedProperty.set(2);
+        }
     }
 
     public static void popupMessage(String title, String message){
@@ -210,11 +257,13 @@ public class Gui extends Application {
     public Scene run() {
         // Création d'un BorderPane pour centrer le contenu
         BorderPane borderPane = new BorderPane();
-        borderPane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        borderPane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
         // Création du Pane pour afficher le graphique
         pane = new Pane();
-        pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        //pane.setBackground(Background.fill(Color.BLACK));
+        GuiScene.setEtoiles(GuiScene.generer(1000));
+        pane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //        if (!result.isEmpty()) {
@@ -257,7 +306,48 @@ public class Gui extends Application {
         else
             pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
-        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+
+        //Set<Line> pairs = pane.getChildren().stream().filter(x -> x.getProperties().containsKey("pair")).map(x -> (Line) x).collect(Collectors.toSet());
+//        Timeline t = new Timeline(new KeyFrame(Duration.millis(20), e -> {
+//            GuiScene.draw(pane, pane.getChildren().stream().filter(x -> x instanceof ImageView).toList());
+//            pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+//        }));
+//        t.setCycleCount(Timeline.INDEFINITE);
+//        t.play();
+        GuiScene.getStars().stop();
+        GuiScene.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            GuiScene.draw(pane, pane.getChildren().stream().filter(x -> x instanceof ImageView).toList());
+            pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+        })));
+        GuiScene.getStars().setCycleCount(Timeline.INDEFINITE);
+        GuiScene.getStars().play();
+        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+
+
+        //Ecouteur pour afficher message de victoire
+        victoryAchievedProperty.addListener((observableValue, oldValue, newValue) -> {
+            Platform.runLater(() -> {
+               if(newValue.equals(1)){
+                   //text1.setVisible(true);
+                   Text text1 = UtilsGui.createText("CUT a gagné !",true);
+                   text1.setFont(UtilsGui.FONT4);
+                   text1.setX((scene.getWidth() - text1.getLayoutBounds().getWidth()) / 2);
+                   text1.setY((scene.getHeight() - text1.getLayoutBounds().getHeight()) / 2);
+                   text1.setTextAlignment(TextAlignment.CENTER);
+                   animationTexte(text1);
+                   pane.getChildren().add(text1);
+               } else if (newValue.equals(2)) {
+                   Text text2 = UtilsGui.createText("SHORT a gagné !",true);
+                   text2.setFont(UtilsGui.FONT4);
+                   text2.setX((scene.getWidth() - text2.getLayoutBounds().getWidth()) / 2);
+                   text2.setY((scene.getHeight() - text2.getLayoutBounds().getHeight()) / 2);
+                   text2.setTextAlignment(TextAlignment.CENTER);
+                   animationTexte(text2);
+                   pane.getChildren().add(text2);
+               }
+            });
+        });
+
 
         // Ajout d'un écouteur pour détecter les changements de taille de la fenêtre
         scene.widthProperty().addListener((observableValue, oldWidth, newWidth) -> {
@@ -277,14 +367,23 @@ public class Gui extends Application {
         return scene;
 }
 
+private void animationTexte (Text text){
+    TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(2), text);
+    translateTransition.setToY(40); // Déplacement de 50 pixels vers le bas
+    translateTransition.setCycleCount(Animation.INDEFINITE); // Répéter indéfiniment
+    translateTransition.setAutoReverse(true); // Revenir en arrière après chaque itération
+
+    // Démarrer la translation
+    translateTransition.play();
+}
+
 //fonction qui recalcule les position des aretes et sommets lors d'un redimensionnement
     private void updateGraphLayout(Pane pane) {
-        double xOffset = (pane.getWidth() - UtilsGui.WINDOW_SIZE) / 2;
-        double yOffset = (pane.getHeight() - UtilsGui.WINDOW_SIZE) / 2;
+        double xOffset = (pane.getWidth() - UtilsGui.WINDOW_WIDTH) / 2;
+        double yOffset = (pane.getHeight() - UtilsGui.WINDOW_HEIGHT) / 2;
 
         // Mise à jour des positions des arêtes
         for (Pair<Pair<Vertex, Vertex>, Line> edge : edges) {
-            //System.out.println("aretes");
             Line line = edge.getValue();
             Pair<Vertex, Vertex> pair = edge.getKey();
             line.setStartX(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE + xOffset);
@@ -293,16 +392,17 @@ public class Gui extends Application {
             line.setEndY(pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE + yOffset);
         }
 
-        int nodeIndex=0;
+//        int nodeIndex=0;
         // Mise à jour des positions des sommets et des textes
+//        List<Node> nodes = pane.getChildren();
+//        for (int i = 0; i < nodes.size(); i++) {
+//            Node node = nodes.get(i);
+//        }
         for (Node node : pane.getChildren()) {
-            if (node instanceof Circle vertex) {
-                //System.out.println("cercle");
-                Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(nodeIndex).getCoords();
-                vertex.relocate(coord.getKey()+ xOffset,coord.getValue() + yOffset);
-                nodeIndex++;
+            if (node instanceof Circle || node instanceof ImageView) {
+                node.setTranslateX(xOffset + UtilsGui.CIRCLE_SIZE);
+                node.setTranslateY(yOffset + UtilsGui.CIRCLE_SIZE);
             } else if (node instanceof Text text) {
-                //System.out.println("texte");
                 int i = Integer.parseInt(text.getText());
                 Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i-1).getCoords();
                 // Centrage du texte
@@ -314,7 +414,7 @@ public class Gui extends Application {
             }
         }
     }
-    private static List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
+    private static List<String> colors = List.of("1", "2", "3", "4", "5", "6");
     private void colorPlanarGraph(Graph graph) {
         if (graph.getNbVertices() <= 6) {
             for (int i = 0; i < graph.getVertices().size(); i++) {
@@ -350,41 +450,66 @@ public class Gui extends Application {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
         for (Pair<Vertex, Vertex> pair : this.game.getGraph().getNeighbors()) {
-            Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+            int Ax = pair.getKey().getCoords().getKey();
+            int Ay = pair.getKey().getCoords().getValue();
+            int Bx = pair.getValue().getCoords().getKey();
+            int By = pair.getValue().getCoords().getValue();
+            double pas = random.nextDouble() / 200 + 0.0025;
+            double Ux = (Bx-Ax) * pas;
+            double Uy = (By-Ay) * pas;
+            Line line = new Line(Ax, Ay, Bx, By);
+            line.setStroke(Paint.valueOf("#a2d2ff"));
+            Line line2 = new Line(Ax, Ay, Ax+Ux, Ay+Uy);
             line.setStrokeWidth(5);
+            line2.setStrokeWidth(7);
+            line2.setStroke(Paint.valueOf("#a2d2ff"));
+            line.setOnMouseClicked(handler);
+            line2.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
+            line2.getProperties().put("Ux", Ux);
+            line2.getProperties().put("Uy", Uy);
+            line2.getProperties().put("Ax", Ax);
+            line2.getProperties().put("Ay", Ay);
+            line2.getProperties().put("Bx", Bx);
+            line2.getProperties().put("By", By);
+            line2.getProperties().put("i", 0);
             // Ajout de la ligne sur sur l'affichage
-            pane.getChildren().add(line);
+            pane.getChildren().addAll(line, line2);
             edges.add(new Pair<>(pair, line));
+            posTransport.add(line2);
+
         }
         // Ajout des sommets sur l'affichage
         for (int i = 0; i < this.game.getGraph().getNbVertices(); i++) {
             Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i).getCoords();
-            // On crée un texte pour le numéro du sommet
-            Text text = new Text(String.valueOf(i + 1));
-            text.setBoundsType(TextBoundsType.VISUAL);
-            text.setFont(Font.font(UtilsGui.FONT, FontWeight.BOLD,15));
-            // Centrage du texte
-            if (i >= 9) {
-                text.relocate(coord.getKey() + 13.50, coord.getValue() + 15.50);
-            }
-            else {
-                text.relocate(coord.getKey() + 16.50, coord.getValue() + 15.50);
-            }
             // Un cercle pour représenter le sommet
             colorPlanarGraph(game.getGraph());
-            Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.web(colors.get(game.getGraph().getVertices().get(i).getColor())));
-            vertex.relocate(coord.getKey(), coord.getValue());
+            Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.rgb(0, 0, 0, 0));
+
+            String name = "planet" + i % 14 + ".gif";
+            URL ressource = this.getClass().getClassLoader().getResource(name);
+            if(Objects.isNull(ressource)) {
+                log.error("Impossible de recupérer la ressource : " + name);
+                vertex.relocate(coord.getKey(), coord.getValue());
+                pane.getChildren().addAll(vertex);
+                continue;
+            }
+            Image image = new Image(ressource.toExternalForm());
+            ImageView imageView = new ImageView(image);
+            double width = image.getWidth();
+            double height = image.getHeight();
+            vertex.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
+            imageView.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
             // On ajoute les 2 élements sur l'affichage
-            pane.getChildren().addAll(vertex, text);
+            pane.getChildren().addAll(vertex, imageView);
         }
         pane.setOnMouseClicked(handler);
     }
 
     public void create(WebSocketClient client) {
+        timer.setCycleCount(Animation.INDEFINITE);
+        timer.play();
+        game.playSound("fight",1);
         try {
             if (game != null)
                 game.getClient().close();
@@ -430,5 +555,55 @@ public class Gui extends Application {
             Thread.currentThread().interrupt();
         }
     }
+
+
+//    public static void destroy (Vertex v) {
+//        System.out.println("odjdoajdz");
+//        String name = "boom.gif";
+//        URL ressource = Gui.stage.getClass().getClassLoader().getResource(name);
+//        Image image = new Image(ressource.toExternalForm());
+//        ImageView imageView = new ImageView(image);
+//        double initialWidth = image.getWidth();
+//        double initialHeight = image.getHeight();
+//        imageView.setFitWidth(initialWidth / 2);
+//        imageView.setFitHeight(initialHeight / 2);
+//        double newX = v.getX() - (imageView.getFitWidth() / 2);
+//        double newY = v.getY() - (imageView.getFitHeight() / 2);
+//        imageView.setLayoutX(newX);
+//        imageView.setLayoutY(newY);
+//        double width = image.getWidth();
+//        double height = image.getHeight();
+//        Gui.pane.getChildren().addAll(imageView);
+//    }
+
+
+    public void mainTheme () {
+        String audioS = "Sounds/testMusic.mp3";
+        System.out.println("Audio "+audioS);
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        System.out.println("Lool "+audioUrl);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(1.7);
+        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+        stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
+        mediaPlayer.play();
+//        new Thread(() -> {
+//            mediaPlayer.play();
+//        }).start();
+        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
+        //long time = (long) (sound.getDuration().toMillis() + 1000);
+        //mediaPlayer.play();
+    }
+
+    private void stopMediaPlayer(MediaPlayer mp) {
+        if (mp != null) {
+            mp.stop();
+        }
+    }
+
+
 }
 

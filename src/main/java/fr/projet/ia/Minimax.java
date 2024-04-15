@@ -165,7 +165,7 @@ public class Minimax extends InterfaceIA {
     public int alpha_beta (HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player, int alpha, int beta) { //1 pour CUT 0 pour SHORT
         int eval = evaluate(secured, cutted);
         if (d == 0 || eval != 0) {
-            return eval;
+            return (int) (eval*Math.pow(2,(d+1)));
         }
         int val = 0;
         if (player == 1) {

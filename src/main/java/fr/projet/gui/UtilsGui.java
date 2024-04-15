@@ -14,6 +14,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.Screen;
 import javafx.util.Duration;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -23,10 +24,18 @@ import java.net.URL;
 @UtilityClass
 @Slf4j
 public class UtilsGui {
-    public static final String FONT = "Consolas";
+
+    public static final Font FONT1 = Font.loadFont(UtilsGui.class.getResourceAsStream("/fonts/Font1.ttf"),50);
+    public static final Font FONT2 = Font.loadFont(UtilsGui.class.getResourceAsStream("/fonts/Font.otf"),35);
+    public static final Font FONT3 = Font.loadFont(UtilsGui.class.getResourceAsStream("/fonts/Font.otf"),25);
+    public static final Font FONT4= Font.loadFont(UtilsGui.class.getResourceAsStream("/fonts/Font1.ttf"),100);
+
+
     public static final double CIRCLE_SIZE = 20D;
-    public static final int WINDOW_SIZE = 700;
-    public static final int WINDOW_MARGE = 50;
+    public static final double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
+    public static final double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight()-100;
+    public static final int WINDOW_MARGE = 100;
+
 
     private void addHoverEffect(Button button) {
 
@@ -51,15 +60,16 @@ public class UtilsGui {
     public Text createText(String content) { return createText(content, false); }
     public Text createText(String content, boolean withShadow) {
         Text text = new Text(content);
+        text.setFill(Color.WHITE);
         if (withShadow) {
-            text.setFont(Font.font(FONT, FontWeight.BOLD, 40));
+            text.setFont(FONT1);
             DropShadow dropShadow = new DropShadow();
             dropShadow.setOffsetX(3.0);
             dropShadow.setOffsetY(3.0);
-            dropShadow.setColor(Color.GRAY);
+            dropShadow.setColor(Color.GREY);
             text.setEffect(dropShadow);
         } else {
-            text.setFont(Font.font(FONT, 20));
+            text.setFont(FONT2);
         }
         return text;
     }
@@ -70,14 +80,15 @@ public class UtilsGui {
     }
     public Button createButton(String text, EventHandler<ActionEvent> action) {
         Button button = new Button(text);
-        button.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
-        button.setFont(Font.font("System", FontWeight.BOLD, 14));
-        button.setMinSize(150,35);
+        //button.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
+        button.setFont(FONT3);
+        button.setPrefSize(350,35);
 
         //effet d'ombre des boutons
         DropShadow shadow = new DropShadow();
-        shadow.setOffsetX(5.0); // Décalage horizontal pour l'effet 3D
-        shadow.setOffsetY(5.0);
+        shadow.setOffsetX(3.0); // Décalage horizontal pour l'effet 3D
+        shadow.setOffsetY(3.0);
+        shadow.setColor(Color.DARKGREY);
         button.setEffect(shadow);
 
         //effet de grossissement lors du survol
@@ -90,7 +101,7 @@ public class UtilsGui {
     }
 
     public Button getReturnButton(ButtonClickType nomscene, HandleClick handleButtonClick){
-        URL url = UtilsGui.class.getResource("/fleche-retour.png");
+        URL url = UtilsGui.class.getResource("/fleche-retour-blanc.png");
         ImageView imageView = null;
         if(url == null) {
             log.error("Pas d'icon fleche retour");
@@ -109,6 +120,11 @@ public class UtilsGui {
         if(imageView != null)
             returnButton.setGraphic(imageView);
 
+        DropShadow shadow = new DropShadow();
+        shadow.setOffsetX(5.0); // Décalage horizontal pour l'effet 3D
+        shadow.setOffsetY(5.0);
+        shadow.setColor(Color.GRAY);
+        returnButton.setEffect(shadow);
         return returnButton;
     }
 
