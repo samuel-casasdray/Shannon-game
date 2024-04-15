@@ -16,6 +16,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class Gui extends Application {
@@ -241,7 +243,8 @@ public class Gui extends Application {
 
         // Création du Pane pour afficher le graphique
         pane = new Pane();
-        pane.setBackground(GuiScene.getBackground());
+        GuiScene.setEtoiles(GuiScene.generer(1000));
+        pane.setBackground(Background.fill(Color.BLACK));
         pane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
@@ -268,9 +271,16 @@ public class Gui extends Application {
 //        }
         edges.clear();
         showGraph();
-
+        //edges.removeIf(x -> !x.getValue().isVisible() || x.getValue().getOpacity() < 1);
         pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
+        //Set<Line> pairs = pane.getChildren().stream().filter(x -> x.getProperties().containsKey("pair")).map(x -> (Line) x).collect(Collectors.toSet());
+        Timeline t = new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            GuiScene.draw(pane, pane.getChildren().stream().filter(x -> x instanceof ImageView).toList());
+            pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+        }));
+        t.setCycleCount(Timeline.INDEFINITE);
+        t.play();
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
 
