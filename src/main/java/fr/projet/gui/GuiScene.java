@@ -1,6 +1,5 @@
 package fr.projet.gui;
 
-import fr.projet.game.Game;
 import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import javafx.animation.KeyFrame;
@@ -42,13 +41,14 @@ public class GuiScene {
     private static final Random random = new Random();
     @Getter
     @Setter
-    private List<Etoile> etoiles = generer(1000);
+    private List<Etoile> etoiles = new ArrayList<>();
     private int planZ = 10;
     @Getter
+    @Setter
     private static Timeline stars;
+    private static final Random rnd = new Random();
     public static List<Etoile> generer(int nb) {
         List<Etoile> lst = new ArrayList<>();
-        Random rnd = new Random();
         for (int i = 0; i < nb; i++)
         {
             Etoile e = new Etoile();
@@ -67,7 +67,7 @@ public class GuiScene {
                 e.setZ(e.getZ()+1000);
             }
         }
-        root.getChildren().removeIf(node -> node instanceof Rectangle);
+        root.getChildren().removeIf(Rectangle.class::isInstance);
         etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed());
         for (Etoile etoile : etoiles.stream().filter(e -> e.getZ() >= planZ).toList()) {
             float x = planZ * etoile.getX() / etoile.getZ() + width/2;
@@ -107,15 +107,22 @@ public class GuiScene {
         button3.setLayoutY(500);
         button4.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
         button4.setLayoutY(600);
-        root.getChildren().clear();
         if (stars != null)
             stars.stop();
-        GuiScene.setEtoiles(generer(3000));
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(root, List.of(button1, button2, button3, button4, text1, text2));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        etoiles = generer(3000);
+        if (stars == null || stars.getStatus() == Timeline.Status.STOPPED)
+        {
+            stars = new Timeline(new KeyFrame(Duration.millis(20), e ->
+            {
+                draw(root, List.of(button1, button2, button3, button4, text1, text2));
+                if (etoiles.size() < 8000) {
+                    List<Etoile> newEtoiles = generer(100);
+                    etoiles.addAll(newEtoiles);
+                }
+            }));
+            stars.setCycleCount(Timeline.INDEFINITE);
+            stars.play();
+        }
         root.getChildren().addAll(text1, text2, button1, button2, button3, button4);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
@@ -203,7 +210,6 @@ public class GuiScene {
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         stars.stop();
-        scene.getChildren().clear();
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVPO, handleButtonClick), text1, root);
         stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
             draw(scene, List.of(text1, buttonJoin, textJoin, textCreate, buttonCreate, textTurn, choixTurn, TextNbVertices, nbVertices));
@@ -273,7 +279,6 @@ public class GuiScene {
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         stars.stop();
-        scene.getChildren().clear();
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
         stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
             draw(scene, List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, TextNbVertices, spinner));
@@ -301,11 +306,9 @@ public class GuiScene {
         cutbut.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - cutbut.getPrefWidth()/2);
         cutbut.setLayoutY(400);
         stars.stop();
-        root.getChildren().clear();
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut);
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(root, List.of(title, text1, shortbut, cutbut));
-        }));
+        stars = new Timeline(new KeyFrame(Duration.millis(20), e ->
+                draw(root, List.of(title, text1, shortbut, cutbut))));
         stars.setCycleCount(Timeline.INDEFINITE);
         stars.play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);

@@ -4,6 +4,7 @@ target/
 !**/src/test/**/target/
 
 backend_server/target/
+backend_server/.env
 
 ### IntelliJ IDEA ###
 .idea/
