@@ -12,8 +12,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.util.*;
 import java.util.function.BiPredicate;
 
-import static java.lang.Math.random;
-
 @Accessors(chain = true)
 @Data
 @Slf4j
@@ -93,46 +91,7 @@ public class Graph {
     private boolean intersect(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4) {
         return det(x1, y1, x3, y3, x4, y4) != det(x2, y2, x3, y3, x4, y4) && det(x1, y1, x2, y2, x3, y3) != det(x1, y1, x2, y2, x4, y4);
     }
-
-    private void generateGraph() {
-        // Instantiation des N (nbVextex) sommets et de leur coordonnées.
-        for (int i = 0; i < nbVertices; i++) {
-            Pair<Integer, Integer> coord;
-            if (aroundCircle) {
-                // Coord autour d'un cercle
-                double toRad = Math.toRadians((double) i * 360F / nbVertices);
-                coord = new Pair<>(
-                        (int) (Math.cos(toRad) * (UtilsGui.WINDOW_WIDTH / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_HEIGHT / 2D),
-                        (int) (Math.sin(toRad) * (UtilsGui.WINDOW_WIDTH / 2D - UtilsGui.WINDOW_MARGE) + UtilsGui.WINDOW_HEIGHT / 2D));
-            } else {
-                // Coord aléatoire
-                coord = new Pair<>(
-                        random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE),
-                        random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE));
-            }
-            // On ajoute le sommet au graphe
-            addVertex(new Vertex(coord.getKey(), coord.getValue()));
-        }
-        //Instantiation des aretes selon une probabilité (proba) entre 2 sommets
-        for (int i = 0; i < nbVertices; i++) {
-            for (int j = i + 1; j < nbVertices; j++) {
-                float p = random.nextFloat();
-                if (p < proba) {
-                    addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(j)));
-                }
-            }
-        }
-        //ajout d'aretes si jamais le sommet a moins de 2 voisins
-        for (int i=0; i< nbVertices; i++) {
-            while(vertexDegree(i)<2){
-                int r;
-                do {
-                    r=random.nextInt(nbVertices);
-                } while(r==i || adjVertices.get(this.vertices.get(i)).contains(this.vertices.get(r)));
-                addNeighbor(new Pair<>(this.vertices.get(i), this.vertices.get(r)));
-            }
-        } // Réfléchir à régénérer le graphe tant qu'il existe des sommets de degré < 2 (pour avoir moins d'arêtes)
-    }
+  
     private void generateGraphPlanaire(int maxDeg, int minDeg) {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 100;
@@ -147,22 +106,16 @@ public class Graph {
                     random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE),
                     random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_HEIGHT - UtilsGui.WINDOW_MARGE));
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
-            // Ce if est dans le cas où on place le premier sommet
-            if (getVertices().isEmpty()) {
-                addVertex(newVertex);
-            }
-            else {
-                boolean distanceOk = true;
-                for (Vertex v1: getVertices()) {
-                    // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
-                    if (newVertex.distance(v1) < minDist) {
-                        distanceOk = false;
-                        break;
-                    }
+            boolean distanceOk = true;
+            for (Vertex v1: getVertices()) {
+                // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
+                if (newVertex.distance(v1) < minDist) {
+                    distanceOk = false;
+                    break;
                 }
-                if (distanceOk)
-                    addVertex(newVertex);
             }
+            if (distanceOk)
+                addVertex(newVertex);
             if (iterCount >= maxIter) return;
         }
         // Ces boucles imbriquées permettent de relier un maximum de sommets
@@ -179,13 +132,11 @@ public class Graph {
                         break; // S'il y a une intersection, pas la peine de continuer
                     }
                 }
-                if (!intersect && !thereAreACircleCollision(radius, v, v2)) {
-                    if (getAdjVertices().get(v).size() < maxDeg && getAdjVertices().get(v2).size() < maxDeg)
-                    {
-                        Pair<Vertex, Vertex> neighbor = new Pair<>(v, v2);
-                        addNeighbor(neighbor);
-                        edges.add(neighbor); // Permet de synchroniser dans le cas des games en ligne
-                    }
+                if (!intersect && !thereAreACircleCollision(radius, v, v2) && (degree(v) < maxDeg && degree(v2) < maxDeg))
+                {
+                    Pair<Vertex, Vertex> neighbor = new Pair<>(v, v2);
+                    addNeighbor(neighbor);
+                    edges.add(neighbor); // Permet de synchroniser dans le cas des games en ligne
                 }
             }
         }
@@ -230,7 +181,7 @@ public class Graph {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         int compteur=0;
         generateGraphPlanaire(7, 3);
-        Graph tree = Kruskal();
+        Graph tree = kruskal();
         if (difference((HashSet<Pair<Vertex, Vertex>>) tree.getNeighbors())) {
             graphForSHORT();
         }
@@ -255,19 +206,8 @@ public class Graph {
         }
         return false;
     }
-    public int vertexDegree(int indexVertex) {
-        Vertex vertex= getVertices().get(indexVertex);
-        int count = 0;
-        for(Pair<Vertex,Vertex> p: getNeighbors()){
-            if (p.getKey().equals(vertex)){
-                count++;
-            }
-        }
-        return count;
-    }
 
     public int minDeg() {
-        //int minDeg = getVertices().getFirst().getNeighbors().size();
         int minDeg = getAdjVertices().get(getVertices().getFirst()).size();
         for (Vertex v: getVertices()) {
             if (getAdjVertices().get(v).size() < minDeg) {
@@ -278,10 +218,11 @@ public class Graph {
     }
 
     public int maxDeg() {
-        int maxDeg = getAdjVertices().get(getVertices().getFirst()).size();
+        int maxDeg = degree(getVertices().getFirst());
         for (Vertex v: getVertices()) {
-            if (getAdjVertices().get(v).size() > maxDeg) {
-                maxDeg = getAdjVertices().get(v).size();
+            int dv = degree(v);
+            if (dv > maxDeg) {
+                maxDeg = dv;
             }
         }
         return maxDeg;
@@ -292,9 +233,9 @@ public class Graph {
             return true;
         }
         HashSet<Vertex> marked = new HashSet<>();
-        Stack<Vertex> pile = new Stack<>();
+        Deque<Vertex> pile = new ArrayDeque<>();
         pile.push(getVertices().getFirst());
-        while (!pile.empty()) {
+        while (!pile.isEmpty()) {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
@@ -308,14 +249,14 @@ public class Graph {
         return marked.size() == getVertices().size();
     }
 
-    public HashSet<Vertex> getComponent(Vertex vertex, BiPredicate<Vertex, Vertex> predicate) {
+    public Set<Vertex> getComponent(Vertex vertex, BiPredicate<Vertex, Vertex> predicate) {
         if (getVertices().isEmpty()) {
             return new HashSet<>();
         }
         HashSet<Vertex> marked = new HashSet<>();
-        Stack<Vertex> pile = new Stack<>();
+        Deque<Vertex> pile = new ArrayDeque<>();
         pile.push(vertex);
-        while (!pile.empty()) {
+        while (!pile.isEmpty()) {
             Vertex v = pile.pop();
             if (!marked.contains(v)) {
                 marked.add(v);
@@ -461,7 +402,7 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
                 }
                 //if (!diff.estConnexe()) {
                     // Second spanning tree ?
-                    Graph kruskal = diff.Kruskal();
+                    Graph kruskal = diff.kruskal();
 //                    if (!kruskal.estConnexe()) {
 //                        System.out.println("Kruskal non connexe");
 //                        List<Pair<Vertex, Vertex>> edges = new ArrayList<>(spanningTree.getNeighbors());
@@ -567,7 +508,7 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
         }
     }
 
-    public Graph Kruskal() {
+    public Graph kruskal() {
         List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>(getNeighbors());
         List<Pair<Vertex, Vertex>> result = new ArrayList<>();
         int i = 0;
@@ -597,5 +538,36 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
         for (Vertex v : getVertices())
             r.append(getVertices().indexOf(v)).append(" ");
         return r.toString();
+    }
+
+    public static double distancePointSegment(double x, double y, double x1, double y1, double x2, double y2) {
+        double a = x - x1;
+        double b = y - y1;
+        double c = x2 - x1;
+        double d = y2 - y1;
+
+        double dot = a * c + b * d;
+        double len = c * c + d * d;
+        double param = -1;
+        if (len != 0) //in case of 0 length line
+            param = dot / len;
+
+        double xx;
+        double yy;
+
+        if (param < 0) { // P is between P1 and P2
+            xx = x1;
+            yy = y1;
+        } else if (param > 1) { // closest point in segment is P2
+            xx = x2;
+            yy = y2;
+        } else { // closest point in segment is P1
+            xx = x1 + param * c;
+            yy = y1 + param * d;
+        }
+
+        double dx = x - xx;
+        double dy = y - yy;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 }

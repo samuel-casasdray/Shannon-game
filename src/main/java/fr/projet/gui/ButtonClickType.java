@@ -14,5 +14,9 @@ public enum ButtonClickType {
     PVIA_HARD,
     JEU,
     VERTICES,
-    AIvsAI
+    AIvsAI,
+    STATS,
+    RANKED,
+    LOGIN,
+    REGISTER
 }

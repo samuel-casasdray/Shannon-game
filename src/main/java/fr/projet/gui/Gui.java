@@ -16,6 +16,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
+import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -38,11 +39,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import javafx.scene.media.*;
-
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -137,13 +139,11 @@ public class Gui extends Application {
             case HOME_PVPO -> stage.setScene(
                 GuiScene.pvp(
                     this::handleButtonClick,
-                    (textField, turn, nbVertices) -> join((TextField) textField),
-                    (textField, turn, nbVertices) -> create((Text) textField, turn, nbVertices)
+                    textField -> join((TextField) textField),
+                    client -> create((WebSocketClient) client)
                 )
             );
-            case HOME_IAVIA -> {
-                stage.setScene(GuiScene.aivsai(this::handleButtonClick));
-            }
+            case HOME_IAVIA -> stage.setScene(GuiScene.aivsai(this::handleButtonClick));
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
                 stage.setScene(GuiScene.nbVertices(this::handleButtonClick,withIA));
@@ -167,7 +167,14 @@ public class Gui extends Application {
             case JEU -> popupMessage();
             case VERTICES -> {
                 this.nbVertices=GuiScene.getNbVertices();
-                this.game = new Game(nbVertices, withIA, turn, level);
+                try {
+                    this.game = new Game(nbVertices, withIA, turn, level);
+                }
+                catch (TimeoutException e) {
+                    Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                            " de réduire le nombre de sommets"));
+                    return;
+                }
                 stage.setScene(run());
                 if (withIA && turn==Turn.CUT) {
                     gameThread = new Thread(() -> game.play(null, null));
@@ -179,12 +186,23 @@ public class Gui extends Application {
                 this.nbVertices = GuiScene.getNbVertices();
                 Level levelAI1 = GuiScene.getLevel1();
                 Level levelAI2 = GuiScene.getLevel2();
-                this.game = new Game(nbVertices, levelAI1, levelAI2);
+                try {
+                    this.game = new Game(nbVertices, levelAI1, levelAI2);
+                }
+                catch (TimeoutException e) {
+                    Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                            " de réduire le nombre de sommets"));
+                    return;
+                }
                 stage.setScene(run());
                 gameThread = new Thread(game::aiVsAi);
                 gameThread.setDaemon(true);
                 gameThread.start();
             }
+            case STATS -> stage.setScene(GuiScene.stats(this::handleButtonClick));
+            case RANKED -> stage.setScene(GuiScene.ranked(this::handleButtonClick));
+            case LOGIN -> stage.setScene(GuiScene.login(this::handleButtonClick));
+            case REGISTER -> stage.setScene(GuiScene.register(this::handleButtonClick));
         }
     }
 
@@ -193,7 +211,7 @@ public class Gui extends Application {
         if (game.isPvpOnline()) {
             try {
                 game.getClient().close();
-            } catch (Exception ignored) {}
+            } catch (IOException ignored) {}
         }
         if (gameThread != null)
             gameThread.interrupt();
@@ -271,8 +289,22 @@ public class Gui extends Application {
 //        }
         edges.clear();
         showGraph();
-        //edges.removeIf(x -> !x.getValue().isVisible() || x.getValue().getOpacity() < 1);
-        pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+        if (game.isPvpOnline()) {
+            GridPane root = new GridPane();
+            root.setAlignment(Pos.CENTER);
+            root.setHgap(80);
+            root.setVgap(10);
+            Turn turn;
+            if ((game.getJoiner() && game.getCreatorTurn() == Turn.CUT) || (!game.getJoiner() && game.getCreatorTurn() == Turn.SHORT))
+                turn = Turn.SHORT;
+            else
+                turn = Turn.CUT;
+            Text text = UtilsGui.createText("Vous jouez : " + turn);
+            root.add(text, 1, 1);
+            pane.getChildren().addAll(root, UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+        }
+        else
+            pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
         borderPane.setCenter(pane);
 
         //Set<Line> pairs = pane.getChildren().stream().filter(x -> x.getProperties().containsKey("pair")).map(x -> (Line) x).collect(Collectors.toSet());
@@ -391,11 +423,10 @@ private void animationTexte (Text text){
         }
         Vertex v = new Vertex(0, 0);
         for (Vertex vertex : graph.getVertices()) {
-            if (graph.getAdjVertices().get(vertex) != null)
-                if (graph.getAdjVertices().get(vertex).size() <= 5) {
-                    v = vertex;
-                    break;
-                }
+            if (graph.getAdjVertices().containsKey(vertex) && graph.getAdjVertices().get(vertex).size() <= 5) {
+                v = vertex;
+                break;
+            }
         }
         if (!graph.getAdjVertices().containsKey(v)) return;
 
@@ -407,7 +438,7 @@ private void animationTexte (Text text){
         for (Vertex u : graph.getAdjVertices().get(v)) {
             boolColors.set(u.getColor(), false);
         }
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < boolColors.size(); i++) {
             if (boolColors.get(i)) {
                 v.setColor(i);
                 break;
@@ -472,32 +503,32 @@ private void animationTexte (Text text){
             // On ajoute les 2 élements sur l'affichage
             pane.getChildren().addAll(vertex, imageView);
         }
+        pane.setOnMouseClicked(handler);
+    }
+
+    public void create(WebSocketClient client) {
         timer.setCycleCount(Animation.INDEFINITE);
         timer.play();
         game.playSound("fight",1);
-    }
-
-
-
-    public void create(Text textField, Turn turn, int nbVertices) {
         try {
             if (game != null)
                 game.getClient().close();
         }
         catch (IOException | NullPointerException e) {
             log.info(e.getMessage());
+            return;
         }
         try {
-            WebSocketClient client = new WebSocketClient(nbVertices, 0L, turn);
-            gameCode = Optional.of(client.getId());
-            textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
             this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
-            if (game == null) {
-                textField.setText("");
-                Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
-                        " de réduire le nombre de sommets"));
-            }
-        } catch (IOException | URISyntaxException | InterruptedException e) {
+        }
+        catch (TimeoutException e) {
+            Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                    " de réduire le nombre de sommets"));
+        }
+        catch (SocketException se) {
+            Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
+        }
+        catch (IOException e) {
             log.error(e.getMessage());
         }
     }
@@ -509,11 +540,19 @@ private void animationTexte (Text text){
             if (getGameCode().isPresent() && getGameCode().get() == code) return;
             WebSocketClient client = new WebSocketClient(code);
             game = client.connect(() -> {});
+            if (game == null) return;
             stage.setScene(run());
             if (client.getWaiting() != null)
                 game.play1vs1(client.getWaiting());
-        } catch (IOException | URISyntaxException | InterruptedException | NumberFormatException e) {
+        } catch (SocketException se) {
+            Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
+        }
+        catch (IOException | URISyntaxException | NumberFormatException | TimeoutException e) {
             log.error(e.getMessage());
+        }
+        catch (InterruptedException e) {
+            log.error(e.getMessage());
+            Thread.currentThread().interrupt();
         }
     }
 
