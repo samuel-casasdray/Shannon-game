@@ -1,5 +1,6 @@
 package fr.projet.graph;
 
+import fr.projet.gui.Gui;
 import fr.projet.gui.UtilsGui;
 import javafx.util.Pair;
 import lombok.Data;
@@ -90,7 +91,7 @@ public class Graph {
     private boolean intersect(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4) {
         return det(x1, y1, x3, y3, x4, y4) != det(x2, y2, x3, y3, x4, y4) && det(x1, y1, x2, y2, x3, y3) != det(x1, y1, x2, y2, x4, y4);
     }
-
+  
     private void generateGraphPlanaire(int maxDeg, int minDeg) {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 100;
@@ -102,8 +103,8 @@ public class Graph {
             iterCount++;
             // Coord aléatoire
             Pair<Integer, Integer> coord = new Pair<>(
-                    random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE),
-                    random.nextInt(UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_SIZE - UtilsGui.WINDOW_MARGE));
+                    random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE),
+                    random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_HEIGHT - UtilsGui.WINDOW_MARGE));
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
             boolean distanceOk = true;
             for (Vertex v1: getVertices()) {
