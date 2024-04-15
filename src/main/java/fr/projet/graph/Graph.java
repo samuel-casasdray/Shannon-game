@@ -95,7 +95,8 @@ public class Graph {
     private void generateGraphPlanaire(int maxDeg, int minDeg) {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         double minDist = 100;
-        double radius = UtilsGui.CIRCLE_SIZE*2;
+        int maxSize = 1000;
+        double radius = UtilsGui.CIRCLE_SIZE*2.5;
         int maxIter = nbVertices*1000;
         int iterCount = 0;
         List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
@@ -103,8 +104,8 @@ public class Graph {
             iterCount++;
             // Coord aléatoire
             Pair<Integer, Integer> coord = new Pair<>(
-                    random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE),
-                    random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_HEIGHT - UtilsGui.WINDOW_MARGE));
+                    random.nextInt(UtilsGui.WINDOW_MARGE, maxSize),
+                    random.nextInt(UtilsGui.WINDOW_MARGE, maxSize));
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
             boolean distanceOk = true;
             for (Vertex v1: getVertices()) {
@@ -145,6 +146,15 @@ public class Graph {
             if (p > proba && degree(edge.getKey()) > minDeg && degree(edge.getValue()) > minDeg)
                 removeNeighbor(edge);
         }
+
+        for (Vertex v : getVertices()) {
+            v.setCoords(new Pair<>((int) toScreenSize(v.getX(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_WIDTH-UtilsGui.WINDOW_MARGE),
+                    (int) toScreenSize(v.getY(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_HEIGHT-UtilsGui.WINDOW_MARGE)));
+        }
+    }
+
+    private double toScreenSize(double x, double a, double b, double c, double d) {
+        return (x-a)*(d-c)/(b-a)+c;
     }
 
     public int degree(Vertex v) {

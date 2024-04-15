@@ -33,11 +33,12 @@ import javafx.scene.media.*;
 public class Game {
     private final HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>();
     private final HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>();
-    private final ArrayList<Pair<Line, Turn>> lastsLines = new ArrayList<>();
+    private final ArrayList<Pair<Line, Turn>> lastsLinesCut = new ArrayList<>();
+    private final ArrayList<Pair<Line, Turn>> lastsLinesPaint = new ArrayList<>();
     private final int nbVertices;
     private final int minDeg = 3;
     private final int maxDeg = 8;
-    private final int AIDelay = 500;
+    private final int AIDelay = 700;
     private Graph graph;
     @Setter
     private Turn turn = Turn.CUT;
@@ -57,6 +58,9 @@ public class Game {
     private long id;
     private Turn creatorTurn;
     private static boolean pending = false;
+    @Setter
+    @Getter
+    private boolean interrupted = false;
 
     public Game(int nbv) throws TimeoutException { 
       this(nbv,false, Turn.CUT, Level.EASY); 
@@ -132,12 +136,14 @@ public class Game {
     public void aiVsAi() {
         LocalTime time = LocalTime.now();
         while (!cutWon && !shortWon) {
+            if (interrupted) return;
             AIPlay(ia, ia2, turn);
             long delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
             if (delay < AIDelay) {
                 try {
                     Thread.sleep(AIDelay - delay);
                 } catch (InterruptedException e) {
+                    log.error(e.getMessage() + "Interrupted");
                     Thread.currentThread().interrupt();
                 }
             }
@@ -152,7 +158,7 @@ public class Game {
             Pair<Vertex, Vertex> played;
             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                 if (Vertex.isSameCouple(new Pair<>(key, value), neighbors.getKey())) {
-                    if (key.isCutOrPanted(value)) {
+                    if (key.isCutOrPanted(value) || isInterrupted()) {
                         return;
                     }
                     if (turn == Turn.CUT) {
@@ -186,6 +192,7 @@ public class Game {
         //if (ia1.getDepth() == 5 && graph.getNeighbors().size() - (cutted.size() + secured.size()) <= 20)
           //  ia1.setDepth(ia1.getDepth()+1);
         Pair<Vertex, Vertex> played;
+        if (interrupted) return;
         if (turn == Turn.CUT) {
             played = ia1.playCUT();
             cutEdge(played);
@@ -223,7 +230,7 @@ public class Game {
             typeGame = 3; // IA vs IA
         if (cutWon()) {
             //if (ia2 == null)
-                Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
+            Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
                 System.out.println("Cutwon");
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
@@ -291,11 +298,16 @@ public void deleteCuttedEdge() {
             @Override
             public void run() {
                 if (i < edges.size()) {
+                    if (interrupted) {
+                        t.cancel();
+                        t.purge();
+                        return;
+                    }
                     Pair<Pair<Vertex, Vertex>, Line> pair = edges.get(i);
                     if (opacity) {
-                        pair.getValue().setVisible(false);
+                        Platform.runLater(() -> pair.getValue().setVisible(false));
                     } else {
-                        pair.getValue().setStroke(Color.LIGHTGREEN);
+                        Platform.runLater(() -> pair.getValue().setStroke(Color.LIGHTGREEN));
                     }
                     i++;
                 } else {
@@ -472,30 +484,40 @@ public void deleteCuttedEdge() {
     }
 
     public void cutLine(Line line) {
-        lastsLines.add(new Pair<>(line, turn));
-        line.setStroke(Color.BLUE);
-        line.getStrokeDashArray().addAll(25D, 15D);
+        lastsLinesCut.add(new Pair<>(line, turn));
+        Platform.runLater(() -> {
+            line.setStroke(Color.BLUE);
+            line.getStrokeDashArray().addAll(25D, 15D);
+        });
         setColor();
         playSoundCut();
     }
 
     public void paintLine(Line line) {
-        if (!lastsLines.isEmpty())
-            lastsLines.getLast().getKey().setVisible(false);
-        lastsLines.add(new Pair<>(line, turn));
-        line.setStroke(Color.BLUE);
+        if (!lastsLinesCut.isEmpty())
+            Platform.runLater(() -> lastsLinesCut.getLast().getKey().setVisible(false));
+        lastsLinesPaint.add(new Pair<>(line, turn));
+        Platform.runLater(() -> line.setStroke(Color.RED));
         setColor();
         playSoundShort();
     }
 
     public void setColor() {
-        if (lastsLines.size() < 2) return;
-        if (lastsLines.get(lastsLines.size()-2).getValue() == Turn.CUT) {
-            lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.BLACK);
-            lastsLines.get(lastsLines.size()-2).getKey().getStrokeDashArray().addAll(25D, 15D);
+        if (lastsLinesCut.size() < 2) return;
+        if (lastsLinesCut.get(lastsLinesCut.size()-2).getValue() == Turn.CUT) {
+            Platform.runLater(() -> lastsLinesCut.get(lastsLinesCut.size()-2).getKey().setStroke(Color.BLACK));
+            Platform.runLater(() -> lastsLinesCut.get(lastsLinesCut.size()-2).getKey().getStrokeDashArray().addAll(25D, 15D));
         }
         else {
-            lastsLines.get(lastsLines.size()-2).getKey().setStroke(Color.ORANGERED);
+            Platform.runLater(() -> lastsLinesCut.get(lastsLinesCut.size()-2).getKey().setStroke(Color.ORANGERED));
+        }
+        if (lastsLinesPaint.size() < 2) return;
+        if (lastsLinesPaint.get(lastsLinesPaint.size()-2).getValue() == Turn.CUT) {
+            Platform.runLater(() -> lastsLinesPaint.get(lastsLinesPaint.size()-2).getKey().setStroke(Color.BLACK));
+            Platform.runLater(() -> lastsLinesPaint.get(lastsLinesPaint.size()-2).getKey().getStrokeDashArray().addAll(25D, 15D));
+        }
+        else {
+            Platform.runLater(() -> lastsLinesPaint.get(lastsLinesPaint.size()-2).getKey().setStroke(Color.ORANGERED));
         }
     }
 

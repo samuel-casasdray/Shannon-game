@@ -20,7 +20,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lombok.Getter;
@@ -36,7 +35,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.net.URL;
 import java.util.*;
-import java.util.List;
 
 @Slf4j
 @UtilityClass
@@ -50,50 +48,6 @@ public class GuiScene {
     @Setter
     private Level level2;
     private static final Random random = new Random();
-    @Getter
-    @Setter
-    private List<Etoile> etoiles = new ArrayList<>();
-    private int planZ = 10;
-    @Getter
-    @Setter
-    private static Timeline stars;
-    private static final Random rnd = new Random();
-    public static List<Etoile> generer(int nb) {
-        List<Etoile> lst = new ArrayList<>();
-        for (int i = 0; i < nb; i++)
-        {
-            Etoile e = new Etoile();
-            e.randomize(rnd);
-            lst.add(e);
-        }
-        return lst;
-    }
-
-    public static void draw(Pane root, List<Node> nodes) {
-        float width = (float) UtilsGui.WINDOW_WIDTH;
-        float height = (float) UtilsGui.WINDOW_HEIGHT;
-        for (Etoile e : etoiles) {
-            e.setZ(e.getZ() - 1);
-            if (e.getZ() < 0) {
-                e.setZ(e.getZ()+1000);
-            }
-        }
-        root.getChildren().removeIf(Rectangle.class::isInstance);
-        etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed());
-        for (Etoile etoile : etoiles.stream().filter(e -> e.getZ() >= planZ).toList()) {
-            float x = planZ * etoile.getX() / etoile.getZ() + width/2;
-            float y = planZ * etoile.getY() / etoile.getZ() + height/2;
-            if (x >= 0 && x <= width && y >= 0 && y <= height) {
-                Rectangle pixel;
-                Color color = etoile.pixelColor();
-                pixel = new Rectangle(x, y, 2,2);
-                pixel.setFill(color);
-                if (nodes.stream().noneMatch(node -> pixel.intersects(node.getBoundsInParent()))) {
-                    root.getChildren().add(pixel);
-                }
-            }
-        }
-    }
 
     public Scene home(HandleClick handleButtonClick) {
         Pane root = getBasicScene();
@@ -141,21 +95,23 @@ public class GuiScene {
         elo.setY(850);
         deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - deconnexion.getPrefWidth()/2);
         deconnexion.setLayoutY(900);
-        if (stars != null)
-            stars.stop();
-        etoiles = generer(3000);
-        if (stars == null || stars.getStatus() == Timeline.Status.STOPPED)
+        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5);
+        if (Gui.getStars() != null)
+            Gui.getStars().stop();
+        if (Gui.getEtoiles().isEmpty())
+            Gui.setEtoiles(Gui.generer(200));
+        if (Gui.getStars() == null || Gui.getStars().getStatus() == Timeline.Status.STOPPED)
         {
-            stars = new Timeline(new KeyFrame(Duration.millis(20), e ->
+            Gui.setStars(new Timeline(new KeyFrame(Duration.millis(16), e ->
             {
-                draw(root, List.of(button1, button2, button3, button4, text1, text2, button5, pseudoText, elo, deconnexion));
-                if (etoiles.size() < 8000) {
-                    List<Etoile> newEtoiles = generer(100);
-                    etoiles.addAll(newEtoiles);
+                Gui.draw(root, nodes);
+                if (Gui.getEtoiles().size() < 8000) {
+                    List<Etoile> newEtoiles = Gui.generer(100);
+                    Gui.getEtoiles().addAll(newEtoiles);
                 }
-            }));
-            stars.setCycleCount(Timeline.INDEFINITE);
-            stars.play();
+            })));
+            Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+            Gui.getStars().play();
         }
       if (pseudo.length() >= 3)
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion);
@@ -205,7 +161,7 @@ public class GuiScene {
 
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
-        Spinner<Integer> nbVertices = new Spinner<>(5,20,20);
+        Spinner<Integer> nbVertices = new Spinner<>(5,40,20);
         Text code = UtilsGui.createText("");
         Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
         Text textCreate = UtilsGui.createText(" ");
@@ -232,24 +188,24 @@ public class GuiScene {
                         nbSommets = nbVertices.getValue();
                     }
                     catch (NumberFormatException e) {
-                        //nbVertices.setText("20");
                         nbSommets = 20;
                     }
                     WebSocketClient client = null;
+                    AtomicReference<WebSocketClient> finalClient = new AtomicReference<>(client);
                     try {
-                        client = new WebSocketClient(nbSommets, turn);
-                    } catch (IOException | URISyntaxException e) {
-                        log.error("Erreur lors de la création de la partie", e);
-                        return;
-                    }
-                    catch (InterruptedException e) {
-                        log.error("Erreur lors de la création de la partie", e);
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                    Optional<Long> gameCode = Optional.of(client.getId());
-                    code.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
-                    createField.call(client);
+                        int finalNbSommets = nbSommets;
+                        new Thread(() -> {
+                            try {
+                                finalClient.set(new WebSocketClient(finalNbSommets, turn));
+                                Optional<Long> gameCode = Optional.of(finalClient.get().getId());
+                                code.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
+                                createField.call(finalClient.get());
+                            } catch (IOException | URISyntaxException | InterruptedException e) {
+                                log.error("Erreur lors de la création de la partie", e);
+                            }
+                        }).start();
+
+                    } catch (Exception e) {}
                 });
         if (pseudo.length() >= 3)
         {
@@ -267,13 +223,14 @@ public class GuiScene {
         root.add(code, 1, 5);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
-        stars.stop();
+        Gui.getStars().stop();
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVPO, handleButtonClick), text1, root);
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(scene, List.of(text1, buttonJoin, textJoin, textCreate, buttonCreate, textTurn, choixTurn, TextNbVertices, nbVertices));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        List<Node> items = List.of(text1, textJoin, buttonJoin, textCreate, buttonCreate, textTurn, choixTurn, TextNbVertices, nbVertices, code);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(scene, items);
+        })));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -295,7 +252,7 @@ public class GuiScene {
         choixIA2.getItems().addAll("EASY", "MEDIUM", "HARD");
         choixIA2.getSelectionModel().select(1);
         choixIA1.getSelectionModel().select(1);
-        Spinner<Integer> spinner = new Spinner<>(5, 20, 20);
+        Spinner<Integer> spinner = new Spinner<>(5, 40, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
         Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
@@ -341,13 +298,14 @@ public class GuiScene {
         root.add(spinner, 2, 3);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
-        stars.stop();
+        Gui.getStars().stop();
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(scene, List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, TextNbVertices, spinner));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        List<Node> items = List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, TextNbVertices, spinner);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(scene, items);
+        })));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
 
 
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -368,12 +326,13 @@ public class GuiScene {
         shortbut.setLayoutY(300);
         cutbut.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - cutbut.getPrefWidth()/2);
         cutbut.setLayoutY(400);
-        stars.stop();
+        Gui.getStars().stop();
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut);
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e ->
-                draw(root, List.of(title, text1, shortbut, cutbut))));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        List<Node> items = List.of(title, text1, shortbut, cutbut);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
+                Gui.draw(root, items))));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -395,13 +354,14 @@ public class GuiScene {
         normal.setLayoutY(400);
         difficile.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - difficile.getPrefWidth()/2);
         difficile.setLayoutY(500);
-        stars.stop();
+        Gui.getStars().stop();
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile);
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(root, List.of(title, text1, facile, normal, difficile));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        List<Node> items = List.of(title, text1, facile, normal, difficile);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(root, items);
+        })));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -409,7 +369,7 @@ public class GuiScene {
     public Scene nbVertices(HandleClick handleButtonClick, boolean IA) {
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe",true);
-        Spinner<Integer> spinner = new Spinner<>(5, 50, 20);
+        Spinner<Integer> spinner = new Spinner<>(5, 40, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
         Button enter = UtilsGui.createButton("Confirmer",e -> {
@@ -428,14 +388,15 @@ public class GuiScene {
         spinner.setLayoutY(200);
         enter.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - enter.getPrefWidth()/2);
         enter.setLayoutY(300);
-        stars.stop();
+        Gui.getStars().stop();
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(root, List.of(title, spinner, enter));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        List<Node> items = List.of(title, spinner, enter);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(root, items);
+        })));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -483,12 +444,13 @@ public class GuiScene {
         response.setFill(Color.RED);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
                 response, cutText, cut, shortText, shorts, onlineText, online);
-        stars.stop();
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(root, List.of(title, response, cutText, cut, shortText, shorts, onlineText, online));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        Gui.getStars().stop();
+        List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(root, items);
+        })));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -500,13 +462,14 @@ public class GuiScene {
         button1.setLayoutY(300);
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
         button2.setLayoutY(400);
-        stars.stop();
+        Gui.getStars().stop();
+        List<Node> items = List.of(button1, button2);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(root, List.of(button1, button2));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(root, items);
+        })));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -549,12 +512,13 @@ public class GuiScene {
         login.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - login.getPrefWidth()/2);
         login.setLayoutY(300);
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root, title, username, password, login);
-        stars.stop();
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(scene, List.of(title, username, password, login));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        Gui.getStars().stop();
+        List<Node> items = List.of(title, username, password, login);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(scene, items);
+        })));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -571,6 +535,13 @@ public class GuiScene {
         PasswordField passwordRepeat = new PasswordField();
         AtomicReference<Text> error = new AtomicReference<>(UtilsGui.createText("", false));
         Button register = UtilsGui.createButton("S'inscrire", event -> {
+            if (username.getText().contains(" ") || password.getText().contains(" ") || passwordRepeat.getText().contains(" ")) {
+                error.get().setText("");
+                error.set(UtilsGui.createText("Les espaces ne sont pas autorisés", false));
+                error.get().setFill(Color.RED);
+                root.add(error.get(), 6, 16);
+                return;
+            }
             var response = HttpsClient.register(username.getText(), password.getText(), passwordRepeat.getText());
             if (response.getKey()) {
                 WebSocketClient.setPseudoCUT(username.getText());
@@ -605,12 +576,13 @@ public class GuiScene {
         register.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - register.getPrefWidth()/2);
         register.setLayoutY(350);
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root, title, username, password, passwordRepeat, register);
-        stars.stop();
-        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            draw(scene, List.of(title, username, password, passwordRepeat, register));
-        }));
-        stars.setCycleCount(Timeline.INDEFINITE);
-        stars.play();
+        Gui.getStars().stop();
+        List<Node> items = List.of(title, username, password, passwordRepeat, register);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(scene, items);
+        })));
+        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 }

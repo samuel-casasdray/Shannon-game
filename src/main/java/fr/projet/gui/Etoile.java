@@ -10,14 +10,10 @@ public class Etoile {
     private float X;
     private float Y;
     private float Z;
-    private double Puissance;
-    private double Temperature;
     public void randomize(Random random) {
         X = (float) (random.nextDouble() * 100000.0 - 50000.0);
         Y = (float) (random.nextDouble() * 100000.0 - 50000.0);
         Z = (float) (random.nextDouble() * 1000);
-        Puissance = random.nextDouble() * 10 + 1;
-        Temperature = random.nextDouble()*10000 + 2000;
     }
 
     public Color pixelColor() {

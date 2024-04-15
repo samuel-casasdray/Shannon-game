@@ -216,7 +216,7 @@ public class WebSocketClient {
     }
 
     @OnMessage
-    public void onMessage(String message) throws IOException {
+    public void onMessage(String message) {
         response = message;
         log.info("Received message: " + message);
         try {
@@ -236,7 +236,12 @@ public class WebSocketClient {
         if (!message.equals("Pong"))
         {
             if (game != null)
-                game.play1vs1(message);
+                try {
+                    game.play1vs1(message);
+                }
+                catch (IOException e) {
+                    log.error("Erreur lors de la réception du message");
+                }
             else
                 waiting = message;
         }

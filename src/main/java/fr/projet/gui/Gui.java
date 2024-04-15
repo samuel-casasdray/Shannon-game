@@ -1,6 +1,5 @@
 package fr.projet.gui;
 
-import fr.projet.Main;
 import fr.projet.server.WebSocketClient;
 import fr.projet.game.Game;
 import fr.projet.game.Level;
@@ -10,9 +9,7 @@ import fr.projet.graph.Vertex;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
@@ -29,15 +26,14 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.*;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
-import jdk.jshell.execution.Util;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import javafx.scene.media.*;
 import java.io.IOException;
 import java.net.SocketException;
@@ -45,7 +41,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class Gui extends Application {
@@ -75,13 +70,18 @@ public class Gui extends Application {
     private Thread gameThread;
     @Getter
     private static Pane pane;
-    private Random random = new Random();
+    private static Random random = new Random();
     @Setter
     private static IntegerProperty victoryAchievedProperty= new SimpleIntegerProperty();
-
     private List<Line> posTransport = new ArrayList<>();
-
-
+    @Getter
+    @Setter
+    private static List<Etoile> etoiles = new ArrayList<>();
+    private static int planZ = 10;
+    @Getter
+    @Setter
+    private static Timeline stars;
+    List<Node> items = new ArrayList<>();
 
     Timeline timer = new Timeline(new KeyFrame(Duration.millis(20), event -> {
             for(Line line: posTransport) {
@@ -104,8 +104,48 @@ public class Gui extends Application {
                 line.setTranslateX(i*Ux);
                 line.setTranslateY(i*Uy);
             }
+            draw(pane, items);
+            if (etoiles.size() < 4000) {
+                etoiles.addAll(generer(100));
+            }
     }));
 
+    public static List<Etoile> generer(int nb) {
+        List<Etoile> lst = new ArrayList<>();
+        for (int i = 0; i < nb; i++)
+        {
+            Etoile e = new Etoile();
+            e.randomize(random);
+            lst.add(e);
+        }
+        return lst;
+    }
+
+    public static void draw(Pane root, List<Node> nodes) {
+        float width = (float) UtilsGui.WINDOW_WIDTH;
+        float height = (float) UtilsGui.WINDOW_HEIGHT;
+        for (Etoile e : etoiles) {
+            e.setZ(e.getZ() - 1);
+            if (e.getZ() <= 0) {
+                e.setZ(e.getZ()+1000);
+            }
+        }
+        root.getChildren().removeIf(Rectangle.class::isInstance);
+        etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed());
+        for (Etoile etoile : etoiles.stream().filter(e -> e.getZ() >= planZ).toList()) {
+            float x = planZ * etoile.getX() / etoile.getZ() + width/2;
+            float y = planZ * etoile.getY() / etoile.getZ() + height/2;
+            if (x >= 0 && x <= width && y >= 0 && y <= height) {
+                Rectangle pixel;
+                Color color = etoile.pixelColor();
+                pixel = new Rectangle(x, y, 2,2);
+                pixel.setFill(color);
+                if (nodes.stream().noneMatch(node -> pixel.intersects(node.getBoundsInParent()))) {
+                    root.getChildren().add(pixel);
+                }
+            }
+        }
+    }
 
     @Override
     public void start(Stage stage) {
@@ -122,7 +162,7 @@ public class Gui extends Application {
             stage.getIcons().add(icon);
         }
         stage.show();
-        mainTheme ();
+        mainTheme();
     }
     public void handleButtonClick(ButtonClickType buttonClickType) {
         switch (buttonClickType) {
@@ -164,7 +204,7 @@ public class Gui extends Application {
                 this.level = Level.HARD;
                 stage.setScene(GuiScene.joueur(this::handleButtonClick));
             }
-            case JEU -> popupMessage();
+            case JEU -> Platform.runLater(this::popupMessage);
             case VERTICES -> {
                 this.nbVertices=GuiScene.getNbVertices();
                 try {
@@ -207,6 +247,8 @@ public class Gui extends Application {
     }
 
     private void leaveGame() {
+        Platform.runLater(() -> etoiles = generer(200));
+        timer.stop();
         stage.setScene(GuiScene.home(this::handleButtonClick));
         if (game.isPvpOnline()) {
             try {
@@ -214,7 +256,11 @@ public class Gui extends Application {
             } catch (IOException ignored) {}
         }
         if (gameThread != null)
-            gameThread.interrupt();
+        {
+            game.setInterrupted(true);
+            if (gameThread.isAlive() && !game.cutWon() && !game.shortWon())
+                gameThread.interrupt();
+        }
     }
     public void popupMessage(){
         if (game.getCutWon() || game.getShortWon()) {
@@ -228,7 +274,6 @@ public class Gui extends Application {
         ButtonType buttonAccept = new ButtonType("Accepter");
         ButtonType buttonCancel = new ButtonType("Annuler");
         alert.getButtonTypes().setAll(buttonAccept,buttonCancel);
-
         alert.showAndWait().ifPresent(response ->{
             if (response==buttonAccept){
                 leaveGame();
@@ -261,8 +306,8 @@ public class Gui extends Application {
 
         // Création du Pane pour afficher le graphique
         pane = new Pane();
-        //pane.setBackground(Background.fill(Color.BLACK));
-        GuiScene.setEtoiles(GuiScene.generer(1000));
+        stars.stop();
+        etoiles = generer(200);
         pane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
@@ -287,6 +332,7 @@ public class Gui extends Application {
 //                pane.getChildren().add(line);
 //            }
 //        }
+        Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick);
         edges.clear();
         showGraph();
         if (game.isPvpOnline()) {
@@ -301,26 +347,13 @@ public class Gui extends Application {
                 turn = Turn.CUT;
             Text text = UtilsGui.createText("Vous jouez : " + turn);
             root.add(text, 1, 1);
-            pane.getChildren().addAll(root, UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+            pane.getChildren().addAll(root, returnButton);
         }
         else
-            pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+            pane.getChildren().add(returnButton);
+        items = pane.getChildren().stream().filter(ImageView.class::isInstance).toList();
         borderPane.setCenter(pane);
-
-        //Set<Line> pairs = pane.getChildren().stream().filter(x -> x.getProperties().containsKey("pair")).map(x -> (Line) x).collect(Collectors.toSet());
-//        Timeline t = new Timeline(new KeyFrame(Duration.millis(20), e -> {
-//            GuiScene.draw(pane, pane.getChildren().stream().filter(x -> x instanceof ImageView).toList());
-//            pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
-//        }));
-//        t.setCycleCount(Timeline.INDEFINITE);
-//        t.play();
-        GuiScene.getStars().stop();
-        GuiScene.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            GuiScene.draw(pane, pane.getChildren().stream().filter(x -> x instanceof ImageView).toList());
-            pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
-        })));
-        GuiScene.getStars().setCycleCount(Timeline.INDEFINITE);
-        GuiScene.getStars().play();
+        pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
 
