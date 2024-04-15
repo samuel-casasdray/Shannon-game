@@ -1,5 +1,6 @@
 package fr.projet.graph;
 
+import fr.projet.gui.Gui;
 import fr.projet.gui.UtilsGui;
 import javafx.util.Pair;
 import lombok.Data;
@@ -144,7 +145,7 @@ public class Graph {
             // Coord aléatoire
             Pair<Integer, Integer> coord = new Pair<>(
                     random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_WIDTH - UtilsGui.WINDOW_MARGE),
-                    random.nextInt(UtilsGui.WINDOW_MARGE+15, (int) UtilsGui.WINDOW_HEIGHT - UtilsGui.WINDOW_MARGE));
+                    random.nextInt(UtilsGui.WINDOW_MARGE, (int) UtilsGui.WINDOW_HEIGHT - UtilsGui.WINDOW_MARGE));
             Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
             // Ce if est dans le cas où on place le premier sommet
             if (getVertices().isEmpty()) {
