@@ -504,14 +504,15 @@ private void animationTexte (Text text){
             pane.getChildren().addAll(vertex, imageView);
         }
         pane.setOnMouseClicked(handler);
+        timer.setCycleCount(Animation.INDEFINITE);
+        timer.play();
     }
 
     public void create(WebSocketClient client) {
-        timer.setCycleCount(Animation.INDEFINITE);
-        timer.play();
-        game.playSound("fight",1);
+        if (game != null)
+            game.playSound("fight",1);
         try {
-            if (game != null)
+            if (game != null && game.getClient() != null)
                 game.getClient().close();
         }
         catch (IOException | NullPointerException e) {

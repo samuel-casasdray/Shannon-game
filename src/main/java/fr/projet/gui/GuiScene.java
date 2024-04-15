@@ -110,6 +110,7 @@ public class GuiScene {
         Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA));
         Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED));
         Button statsButton = new Button("?");
+        statsButton.setTextFill(Color.RED);
         Button deconnexion = new Button("Déconnexion");
         deconnexion.setOnAction(event -> {
             WebSocketClient.setPseudoCUT("A");
@@ -117,9 +118,9 @@ public class GuiScene {
             handleButtonClick.call(ButtonClickType.HOME);
         });
         statsButton.setOnAction(event -> handleButtonClick.call(ButtonClickType.STATS));
-        statsButton.setStyle("-fx-background-color: LIGHTGREY;");
+        statsButton.setStyle("-fx-background-color: transparent;");
         statsButton.setAlignment(Pos.TOP_RIGHT);
-        root.setSpacing(root.getSpacing()/1.5);
+        //root.setSpacing(root.getSpacing()/1.5);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         text2.setX(UtilsGui.WINDOW_WIDTH/2 - text2.getLayoutBounds().getWidth()/2);
@@ -134,6 +135,12 @@ public class GuiScene {
         button4.setLayoutY(600);
         button5.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
         button5.setLayoutY(700);
+        pseudoText.setX(UtilsGui.WINDOW_WIDTH/2 - pseudoText.getLayoutBounds().getWidth()/2);
+        pseudoText.setY(800);
+        elo.setX(UtilsGui.WINDOW_WIDTH/2 - elo.getLayoutBounds().getWidth()/2);
+        elo.setY(850);
+        deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - deconnexion.getPrefWidth()/2);
+        deconnexion.setLayoutY(900);
         if (stars != null)
             stars.stop();
         etoiles = generer(3000);
@@ -141,7 +148,7 @@ public class GuiScene {
         {
             stars = new Timeline(new KeyFrame(Duration.millis(20), e ->
             {
-                draw(root, List.of(button1, button2, button3, button4, text1, text2));
+                draw(root, List.of(button1, button2, button3, button4, text1, text2, button5, pseudoText, elo, deconnexion));
                 if (etoiles.size() < 8000) {
                     List<Etoile> newEtoiles = generer(100);
                     etoiles.addAll(newEtoiles);
@@ -197,8 +204,6 @@ public class GuiScene {
         Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin));
 
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
-        TextField nbVertices = new TextField();
-        Text code = UtilsGui.createText("");
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         Spinner<Integer> nbVertices = new Spinner<>(5,20,20);
         Text code = UtilsGui.createText("");
@@ -436,7 +441,7 @@ public class GuiScene {
     }
 
     public Scene stats(HandleClick handleButtonClick) {
-        VBox root = getBasicScene();
+        Pane root = getBasicScene();
         Text title = UtilsGui.createText("Nombre de parties faites :",false);
         Text cutText = UtilsGui.createText("Nombre de parties gagnées par cut :",false);
         Text shortText = UtilsGui.createText("Nombre de parties gagnées par short :",false);
@@ -450,27 +455,63 @@ public class GuiScene {
         if (statsList.isEmpty()) {
             Text erreurText = UtilsGui.createText("Vérifiez votre connexion internet");
             root.getChildren().addAll(erreurText, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-            return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+            return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         }
         response.setText(statsList.getFirst().getAsString());
         cut.setText(statsList.get(1).getAsString());
         shorts.setText(statsList.get(2).getAsString());
+        shorts.setFill(Color.RED);
         online.setText(statsList.get(3).getAsString());
+        response.setX(UtilsGui.WINDOW_WIDTH/2 - response.getLayoutBounds().getWidth()/2);
+        response.setY(150);
+        title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
+        title.setY(100);
+        cutText.setX(UtilsGui.WINDOW_WIDTH/2 - cutText.getLayoutBounds().getWidth()/2);
+        cutText.setY(200);
+        cut.setFill(Color.RED);
+        cut.setX(UtilsGui.WINDOW_WIDTH/2 - cut.getLayoutBounds().getWidth()/2);
+        cut.setY(250);
+        shortText.setX(UtilsGui.WINDOW_WIDTH/2 - shortText.getLayoutBounds().getWidth()/2);
+        shortText.setY(300);
+        shorts.setX(UtilsGui.WINDOW_WIDTH/2 - shorts.getLayoutBounds().getWidth()/2);
+        shorts.setY(350);
+        onlineText.setX(UtilsGui.WINDOW_WIDTH/2 - onlineText.getLayoutBounds().getWidth()/2);
+        onlineText.setY(400);
+        online.setX(UtilsGui.WINDOW_WIDTH/2 - online.getLayoutBounds().getWidth()/2);
+        online.setY(450);
+        online.setFill(Color.RED);
+        response.setFill(Color.RED);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
                 response, cutText, cut, shortText, shorts, onlineText, online);
-        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        stars.stop();
+        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            draw(root, List.of(title, response, cutText, cut, shortText, shorts, onlineText, online));
+        }));
+        stars.setCycleCount(Timeline.INDEFINITE);
+        stars.play();
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
     public Scene ranked(HandleClick handleButtonClick) {
-        VBox root = getBasicScene();
+        Pane root = getBasicScene();
         Button button1 = UtilsGui.createButton("Se connecter", event -> handleButtonClick.call(ButtonClickType.LOGIN));
         Button button2 = UtilsGui.createButton("S'inscrire", event -> handleButtonClick.call(ButtonClickType.REGISTER));
+        button1.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button1.getPrefWidth()/2);
+        button1.setLayoutY(300);
+        button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
+        button2.setLayoutY(400);
+        stars.stop();
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
-        return new Scene(root, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            draw(root, List.of(button1, button2));
+        }));
+        stars.setCycleCount(Timeline.INDEFINITE);
+        stars.play();
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
     public Scene login(HandleClick handleButtonClick) {
-        VBox scene = getBasicScene();
+        Pane scene = getBasicScene();
         GridPane root = new GridPane();
         root.setAlignment(Pos.CENTER);
         root.setHgap(90);
@@ -488,27 +529,37 @@ public class GuiScene {
             else {
                 Text error = UtilsGui.createText("Pseudo ou mot de passe incorrect",false);
                 error.setFill(Color.RED);
-                root.add(error, 0, 4);
+                root.add(error, 6, 16);
                 password.clear();
             }
         });
-        root.setOnKeyPressed(event ->
+        scene.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
                 login.fire();
         });
         username.setPromptText("Pseudo");
         password.setPromptText("Mot de passe");
-        root.add(title, 0, 0);
-        root.add(username, 0, 1);
-        root.add(password, 0, 2);
-        root.add(login, 0, 3);
-        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root);
-        return new Scene(scene, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
+        title.setY(100);
+        username.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - username.getPrefWidth()/2);
+        username.setLayoutY(200);
+        password.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - password.getPrefWidth()/2);
+        password.setLayoutY(250);
+        login.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - login.getPrefWidth()/2);
+        login.setLayoutY(300);
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root, title, username, password, login);
+        stars.stop();
+        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            draw(scene, List.of(title, username, password, login));
+        }));
+        stars.setCycleCount(Timeline.INDEFINITE);
+        stars.play();
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
     public Scene register(HandleClick handleButtonClick) {
-        VBox scene = getBasicScene();
+        Pane scene = getBasicScene();
         GridPane root = new GridPane();
         root.setAlignment(Pos.CENTER);
         root.setHgap(90);
@@ -530,12 +581,12 @@ public class GuiScene {
                 error.get().setText("");
                 error.set(UtilsGui.createText(response.getValue(), false));
                 error.get().setFill(Color.RED);
-                root.add(error.get(), 0, 5);
+                root.add(error.get(), 6, 16);
                 password.clear();
                 passwordRepeat.clear();
             }
         });
-        root.setOnKeyPressed(event ->
+        scene.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
                 register.fire();
@@ -543,12 +594,23 @@ public class GuiScene {
         username.setPromptText("Pseudo");
         password.setPromptText("Mot de passe");
         passwordRepeat.setPromptText("Répétez le mot de passe");
-        root.add(title, 0, 0);
-        root.add(username, 0, 1);
-        root.add(password, 0, 2);
-        root.add(passwordRepeat, 0, 3);
-        root.add(register, 0, 4);
-        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root);
-        return new Scene(scene, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
+        title.setY(100);
+        username.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - username.getPrefWidth()/2);
+        username.setLayoutY(200);
+        password.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - password.getPrefWidth()/2);
+        password.setLayoutY(250);
+        passwordRepeat.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - passwordRepeat.getPrefWidth()/2);
+        passwordRepeat.setLayoutY(300);
+        register.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - register.getPrefWidth()/2);
+        register.setLayoutY(350);
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root, title, username, password, passwordRepeat, register);
+        stars.stop();
+        stars = new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            draw(scene, List.of(title, username, password, passwordRepeat, register));
+        }));
+        stars.setCycleCount(Timeline.INDEFINITE);
+        stars.play();
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 }
