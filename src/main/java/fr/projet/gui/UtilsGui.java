@@ -124,7 +124,6 @@ public class UtilsGui {
         shadow.setOffsetY(5.0);
         shadow.setColor(Color.GRAY);
         returnButton.setEffect(shadow);
-        GuiScene.getStars().stop();
         return returnButton;
     }
 
