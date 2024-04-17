@@ -82,33 +82,42 @@ public class Gui extends Application {
     @Setter
     private static Timeline stars;
     List<Node> items = new ArrayList<>();
+    @Getter
+    @Setter
+    private static Timeline timer = new Timeline();
 
-    Timeline timer = new Timeline(new KeyFrame(Duration.millis(20), event -> {
-            for(Line line: posTransport) {
-                ObservableMap<Object, Object> properties = line.getProperties();
-                int i = (int) properties.get("i");
-                double Ux = (double) properties.get("Ux");
-                double Uy = (double) properties.get("Uy");
-                int Ax = (int) properties.get("Ax");
-                int Ay = (int) properties.get("Ay");
-                int Bx = (int) properties.get("Bx");
-                int By = (int) properties.get("By");
-                i++;
-                properties.put("i", i);
-                double posX = i * Ux + Ax;
-                double posY = i * Uy + Ay;
-                if ((Ax < Bx && posX > Bx) || (Ax > Bx && posX < Bx) || (Ay < By && posY > By) || (Ay > By && posY < By)) {
-                    i = 0;
+    public void createAnim() {
+        new Thread(() -> {
+            Gui.setTimer(new Timeline(new KeyFrame(Duration.millis(20), event -> {
+                for(Line line: posTransport) {
+                    ObservableMap<Object, Object> properties = line.getProperties();
+                    int i = (int) properties.get("i");
+                    double Ux = (double) properties.get("Ux");
+                    double Uy = (double) properties.get("Uy");
+                    int Ax = (int) properties.get("Ax");
+                    int Ay = (int) properties.get("Ay");
+                    int Bx = (int) properties.get("Bx");
+                    int By = (int) properties.get("By");
+                    i++;
                     properties.put("i", i);
+                    double posX = i * Ux + Ax;
+                    double posY = i * Uy + Ay;
+                    if ((Ax < Bx && posX > Bx) || (Ax > Bx && posX < Bx) || (Ay < By && posY > By) || (Ay > By && posY < By)) {
+                        i = 0;
+                        properties.put("i", i);
+                    }
+                    line.setTranslateX(i*Ux);
+                    line.setTranslateY(i*Uy);
                 }
-                line.setTranslateX(i*Ux);
-                line.setTranslateY(i*Uy);
-            }
-            draw(pane, items);
-            if (etoiles.size() < 4000) {
-                etoiles.addAll(generer(100));
-            }
-    }));
+                draw(pane, items);
+                if (etoiles.size() < 4000) {
+                    etoiles.addAll(generer(100));
+                }
+            })));
+            timer.setCycleCount(Animation.INDEFINITE);
+            timer.play();
+        }).start();
+    }
 
     public static List<Etoile> generer(int nb) {
         List<Etoile> lst = new ArrayList<>();
@@ -351,7 +360,6 @@ public class Gui extends Application {
         }
         else
             pane.getChildren().add(returnButton);
-        items = pane.getChildren().stream().filter(ImageView.class::isInstance).toList();
         borderPane.setCenter(pane);
         pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -510,40 +518,41 @@ private void animationTexte (Text text){
             pane.getChildren().addAll(line, line2);
             edges.add(new Pair<>(pair, line));
             posTransport.add(line2);
-
         }
         // Ajout des sommets sur l'affichage
         for (int i = 0; i < this.game.getGraph().getNbVertices(); i++) {
             Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i).getCoords();
             // Un cercle pour représenter le sommet
-            colorPlanarGraph(game.getGraph());
-            Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.rgb(0, 0, 0, 0));
+            //colorPlanarGraph(game.getGraph());
+           // Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.rgb(0, 0, 0, 0));
 
             String name = "planet" + i % 14 + ".gif";
             URL ressource = this.getClass().getClassLoader().getResource(name);
             if(Objects.isNull(ressource)) {
                 log.error("Impossible de recupérer la ressource : " + name);
-                vertex.relocate(coord.getKey(), coord.getValue());
-                pane.getChildren().addAll(vertex);
+                //vertex.relocate(coord.getKey(), coord.getValue());
+                //pane.getChildren().addAll(vertex);
                 continue;
             }
             Image image = new Image(ressource.toExternalForm());
             ImageView imageView = new ImageView(image);
             double width = image.getWidth();
             double height = image.getHeight();
-            vertex.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
+            //vertex.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
             imageView.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
             // On ajoute les 2 élements sur l'affichage
-            pane.getChildren().addAll(vertex, imageView);
+            pane.getChildren().addAll(imageView);
         }
         pane.setOnMouseClicked(handler);
-        timer.setCycleCount(Animation.INDEFINITE);
-        timer.play();
+        items = pane.getChildren().stream().filter(ImageView.class::isInstance).toList();
+//        timer.setCycleCount(Animation.INDEFINITE);
+//        timer.play();
+        createAnim();
     }
 
     public void create(WebSocketClient client) {
         if (game != null)
-            game.playSound("fight",1);
+            game.playSound("fight", 0.5F);
         try {
             if (game != null && game.getClient() != null)
                 game.getClient().close();

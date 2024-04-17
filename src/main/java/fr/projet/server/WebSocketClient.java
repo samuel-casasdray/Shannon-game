@@ -33,7 +33,7 @@ public class WebSocketClient {
     @Setter
     private Callback callback;
     @Getter
-    private static Timer timer;
+    private Timer timer;
     private static final String SERVER_HOSTNAME = "wss://cryp.tf/";
     private static final String SERVER_URI = SERVER_HOSTNAME +"ws/";
     private static final String CREATE_GAME_URI = SERVER_HOSTNAME +"create_game/"; // Le nom de domaine de mon serveur
@@ -72,11 +72,13 @@ public class WebSocketClient {
     }
 
     public static void sendStatistics(int typeGame, int winner, long seed) {
-        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        try {
-            container.connectToServer(new WebSocketClient(), new URI(SERVER_HOSTNAME+"game_stat/"+typeGame+"/"+winner+"/"+seed));
-        }
-        catch (DeploymentException | URISyntaxException | IOException ignored) {} // Rien à faire, la game sera perdue à jamais
+        new Thread(() -> {
+            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+            try {
+                container.connectToServer(new WebSocketClient(), new URI(SERVER_HOSTNAME+"game_stat/"+typeGame+"/"+winner+"/"+seed));
+            }
+            catch (DeploymentException | URISyntaxException | IOException ignored) {} // Rien à faire, la game sera perdue à jamais
+        }).start();
     }
 
     private boolean doServerRespond() throws InterruptedException {
@@ -109,7 +111,7 @@ public class WebSocketClient {
             @Override
             public void run(){
                 if (game != null && (game.getCutWon() || game.getShortWon())) // Si la game est finie, on cancel le timer
-                    WebSocketClient.getTimer().cancel();
+                    getTimer().cancel();
                 if (session != null && session.isOpen())
                     sendMessage("Ping");
             }

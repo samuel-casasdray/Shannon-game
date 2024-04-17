@@ -7,6 +7,7 @@ import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -69,12 +70,14 @@ public class GuiScene {
         deconnexion.setOnAction(event -> {
             WebSocketClient.setPseudoCUT("A");
             WebSocketClient.setPseudoSHORT("B");
-            handleButtonClick.call(ButtonClickType.HOME);
+            Platform.runLater(() -> {
+                root.getChildren().removeAll(deconnexion, pseudoText, elo);
+                root.getChildren().add(button5);
+            });
         });
         statsButton.setOnAction(event -> handleButtonClick.call(ButtonClickType.STATS));
         statsButton.setStyle("-fx-background-color: transparent;");
         statsButton.setAlignment(Pos.TOP_RIGHT);
-        //root.setSpacing(root.getSpacing()/1.5);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         text2.setX(UtilsGui.WINDOW_WIDTH/2 - text2.getLayoutBounds().getWidth()/2);
@@ -90,34 +93,42 @@ public class GuiScene {
         button5.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
         button5.setLayoutY(700);
         pseudoText.setX(UtilsGui.WINDOW_WIDTH/2 - pseudoText.getLayoutBounds().getWidth()/2);
-        pseudoText.setY(800);
+        pseudoText.setY(700);
         elo.setX(UtilsGui.WINDOW_WIDTH/2 - elo.getLayoutBounds().getWidth()/2);
-        elo.setY(850);
+        elo.setY(750);
         deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - deconnexion.getPrefWidth()/2);
-        deconnexion.setLayoutY(900);
-        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5);
+        deconnexion.setLayoutY(800);
+        if (pseudo.length() >= 3)
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion);
+        else
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5);
+        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion);
         if (Gui.getStars() != null)
             Gui.getStars().stop();
         if (Gui.getEtoiles().isEmpty())
             Gui.setEtoiles(Gui.generer(200));
-        if (Gui.getStars() == null || Gui.getStars().getStatus() == Timeline.Status.STOPPED)
-        {
+        new Thread(() -> {
             Gui.setStars(new Timeline(new KeyFrame(Duration.millis(16), e ->
             {
                 Gui.draw(root, nodes);
                 if (Gui.getEtoiles().size() < 8000) {
-                    List<Etoile> newEtoiles = Gui.generer(100);
-                    Gui.getEtoiles().addAll(newEtoiles);
+                    Gui.getEtoiles().addAll(Gui.generer(100));
                 }
             })));
             Gui.getStars().setCycleCount(Timeline.INDEFINITE);
             Gui.getStars().play();
-        }
-      if (pseudo.length() >= 3)
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion);
-        else
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5);
+        }).start();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+    }
+
+    public void createTimeLineThread(Pane root, List<Node> items) {
+        new Thread(() -> {
+            Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+                Gui.draw(root, items);
+            })));
+            Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+            Gui.getStars().play();
+        }).start();
     }
 
     public Pane getBasicScene() {
@@ -224,13 +235,9 @@ public class GuiScene {
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         Gui.getStars().stop();
-        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVPO, handleButtonClick), text1, root);
+        scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
         List<Node> items = List.of(text1, textJoin, buttonJoin, textCreate, buttonCreate, textTurn, choixTurn, TextNbVertices, nbVertices, code);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(scene, items);
-        })));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-        Gui.getStars().play();
+        createTimeLineThread(scene, items);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -299,17 +306,10 @@ public class GuiScene {
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         Gui.getStars().stop();
-        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text1, root);
+        scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
         List<Node> items = List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, TextNbVertices, spinner);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(scene, items);
-        })));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-        Gui.getStars().play();
-
-
+        createTimeLineThread(scene, items);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
-
     }
 
     public Scene joueur(HandleClick handleButtonClick) {
@@ -357,11 +357,7 @@ public class GuiScene {
         Gui.getStars().stop();
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile);
         List<Node> items = List.of(title, text1, facile, normal, difficile);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(root, items);
-        })));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-        Gui.getStars().play();
+        createTimeLineThread(root, items);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -392,11 +388,7 @@ public class GuiScene {
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
         List<Node> items = List.of(title, spinner, enter);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(root, items);
-        })));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-        Gui.getStars().play();
+        createTimeLineThread(root, items);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -446,11 +438,7 @@ public class GuiScene {
                 response, cutText, cut, shortText, shorts, onlineText, online);
         Gui.getStars().stop();
         List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(root, items);
-        })));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-        Gui.getStars().play();
+        createTimeLineThread(root, items);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -463,13 +451,9 @@ public class GuiScene {
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
         button2.setLayoutY(400);
         Gui.getStars().stop();
-        List<Node> items = List.of(button1, button2);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(root, items);
-        })));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-        Gui.getStars().play();
+        List<Node> items = List.of(button1, button2);
+        createTimeLineThread(root, items);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -484,17 +468,21 @@ public class GuiScene {
         TextField username = new TextField();
         PasswordField password = new PasswordField();
         Button login = UtilsGui.createButton("Se connecter", event -> {
-            if (HttpsClient.login(username.getText(), password.getText()).getKey()) {
-                WebSocketClient.setPseudoCUT(username.getText());
-                WebSocketClient.setPseudoSHORT(username.getText());
-                handleButtonClick.call(ButtonClickType.HOME);
-            }
-            else {
-                Text error = UtilsGui.createText("Pseudo ou mot de passe incorrect",false);
-                error.setFill(Color.RED);
-                root.add(error, 6, 16);
-                password.clear();
-            }
+            new Thread(() -> {
+                if (HttpsClient.login(username.getText(), password.getText()).getKey()) {
+                    WebSocketClient.setPseudoCUT(username.getText());
+                    WebSocketClient.setPseudoSHORT(username.getText());
+                    Platform.runLater(() -> handleButtonClick.call(ButtonClickType.HOME));
+                }
+                else {
+                    Platform.runLater(() -> {
+                        Text error = UtilsGui.createText("Pseudo ou mot de passe incorrect",false);
+                        error.setFill(Color.RED);
+                        root.add(error, 6, 16);
+                        password.clear();
+                    });
+                }
+            }).start();
         });
         scene.setOnKeyPressed(event ->
         {
@@ -514,11 +502,7 @@ public class GuiScene {
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root, title, username, password, login);
         Gui.getStars().stop();
         List<Node> items = List.of(title, username, password, login);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(scene, items);
-        })));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-        Gui.getStars().play();
+        createTimeLineThread(scene, items);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -535,27 +519,31 @@ public class GuiScene {
         PasswordField passwordRepeat = new PasswordField();
         AtomicReference<Text> error = new AtomicReference<>(UtilsGui.createText("", false));
         Button register = UtilsGui.createButton("S'inscrire", event -> {
-            if (username.getText().contains(" ") || password.getText().contains(" ") || passwordRepeat.getText().contains(" ")) {
-                error.get().setText("");
-                error.set(UtilsGui.createText("Les espaces ne sont pas autorisés", false));
-                error.get().setFill(Color.RED);
-                root.add(error.get(), 6, 16);
-                return;
-            }
-            var response = HttpsClient.register(username.getText(), password.getText(), passwordRepeat.getText());
-            if (response.getKey()) {
-                WebSocketClient.setPseudoCUT(username.getText());
-                WebSocketClient.setPseudoSHORT(username.getText());
-                handleButtonClick.call(ButtonClickType.HOME);
-            }
-            else {
-                error.get().setText("");
-                error.set(UtilsGui.createText(response.getValue(), false));
-                error.get().setFill(Color.RED);
-                root.add(error.get(), 6, 16);
-                password.clear();
-                passwordRepeat.clear();
-            }
+            new Thread(() -> {
+                if (username.getText().contains(" ") || password.getText().contains(" ") || passwordRepeat.getText().contains(" ")) {
+                    error.get().setText("");
+                    error.set(UtilsGui.createText("Les espaces ne sont pas autorisés", false));
+                    error.get().setFill(Color.RED);
+                    root.add(error.get(), 6, 16);
+                    return;
+                }
+                var response = HttpsClient.register(username.getText(), password.getText(), passwordRepeat.getText());
+                if (response.getKey()) {
+                    WebSocketClient.setPseudoCUT(username.getText());
+                    WebSocketClient.setPseudoSHORT(username.getText());
+                    Platform.runLater(() -> handleButtonClick.call(ButtonClickType.HOME));
+                }
+                else {
+                    Platform.runLater(() -> {
+                        error.get().setText("");
+                        error.set(UtilsGui.createText(response.getValue(), false));
+                        error.get().setFill(Color.RED);
+                        root.add(error.get(), 6, 16);
+                        password.clear();
+                        passwordRepeat.clear();
+                    });
+                }
+            }).start();
         });
         scene.setOnKeyPressed(event ->
         {
@@ -578,11 +566,7 @@ public class GuiScene {
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root, title, username, password, passwordRepeat, register);
         Gui.getStars().stop();
         List<Node> items = List.of(title, username, password, passwordRepeat, register);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(scene, items);
-        })));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-        Gui.getStars().play();
+        createTimeLineThread(scene, items);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 }

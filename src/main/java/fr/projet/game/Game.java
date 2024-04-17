@@ -57,7 +57,7 @@ public class Game {
     private String serverUri;
     private long id;
     private Turn creatorTurn;
-    private static boolean pending = false;
+    private boolean pending = false;
     @Setter
     @Getter
     private boolean interrupted = false;
@@ -238,7 +238,7 @@ public class Game {
         }
         else if (shortWon()) {
             //if (ia2 == null)
-                Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
+            Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();
             thereAreAWinner = true;
@@ -568,7 +568,7 @@ public void deleteCuttedEdge() {
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
         //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        mediaPlayer.setVolume(2);
+        mediaPlayer.setVolume(0.5);
         Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
         mediaPlayer.play();
     }
@@ -585,7 +585,7 @@ public void deleteCuttedEdge() {
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(1);
+        mediaPlayer.setVolume(0.5);
         Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
         mediaPlayer.play();
 
