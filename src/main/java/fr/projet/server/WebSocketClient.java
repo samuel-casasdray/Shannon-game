@@ -19,6 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
 @ClientEndpoint
@@ -71,16 +72,6 @@ public class WebSocketClient {
         createConnection();
     }
 
-    public static void sendStatistics(int typeGame, int winner, long seed) {
-        new Thread(() -> {
-            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            try {
-                container.connectToServer(new WebSocketClient(), new URI(SERVER_HOSTNAME+"game_stat/"+typeGame+"/"+winner+"/"+seed));
-            }
-            catch (DeploymentException | URISyntaxException | IOException ignored) {} // Rien à faire, la game sera perdue à jamais
-        }).start();
-    }
-
     private boolean doServerRespond() throws InterruptedException {
         int count = 0;
         while(response == null) {
@@ -94,7 +85,7 @@ public class WebSocketClient {
     }
 
     private void createConnection() throws InterruptedException, IOException {
-        if (!doServerRespond()) return;
+        if (!doServerRespond()) throw new IOException();
         if (response.equals("Not found")) {
             Platform.runLater(() -> Gui.popupMessage("Le code rentré est incorrect", "Aucune partie trouvée."));
             throw new IOException();
@@ -140,30 +131,6 @@ public class WebSocketClient {
         }
     }
 
-    public JsonArray getStats() {
-        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        try {
-            container.connectToServer(this, new URI(SERVER_HOSTNAME+"games"));
-        }
-        catch (DeploymentException | URISyntaxException | IOException handshakeError) {
-            return new JsonArray();
-        }
-        try {
-            if(!doServerRespond()) return new JsonArray();
-        }
-        catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
-        }
-        try {
-            JsonElement jsonElement = JsonParser.parseString(response);
-            JsonElement stats = jsonElement.getAsJsonObject().get("stats");
-            return stats.getAsJsonArray();
-        }
-        catch (JsonSyntaxException e) {
-            return new JsonArray();
-        }
-    }
-
     public void connectServer(String serverUri) throws URISyntaxException, IOException {
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         try {
@@ -172,6 +139,10 @@ public class WebSocketClient {
         catch (DeploymentException handshakeError) {
             closed = true;
             return;
+        }
+        catch (Exception e) {
+            closed = true;
+            throw new IOException();
         }
         closed = false;
     }
@@ -197,6 +168,8 @@ public class WebSocketClient {
             log.error(e.getMessage());
         }
     }
+
+
     public void setGame(Game game) {
         if (this.game == null)
             this.game = game;

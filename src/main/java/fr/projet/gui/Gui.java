@@ -66,7 +66,8 @@ public class Gui extends Application {
     @Setter
     private int nbVertices = 20;
     @Getter
-    private Optional<Long> gameCode = Optional.empty();
+    @Setter
+    private static Optional<Long> gameCode = Optional.empty();
     private Thread gameThread;
     @Getter
     private static Pane pane;

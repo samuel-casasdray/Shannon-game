@@ -1,6 +1,7 @@
 package fr.projet.gui;
 
 import javafx.animation.ScaleTransition;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
@@ -112,7 +113,8 @@ public class UtilsGui {
             imageView.setPreserveRatio(true);
         }
 
-        Button returnButton = UtilsGui.createButton(imageView == null ? "<-" : "", event -> handleButtonClick.call(nomscene));
+        Button returnButton = UtilsGui.createButton(imageView == null ? "<-" : "", event ->
+                new Thread(() -> Platform.runLater(() -> handleButtonClick.call(nomscene))).start());
         returnButton.setStyle("-fx-background-color: transparent;");
         returnButton.setLayoutX(10);
         returnButton.setLayoutY(0);

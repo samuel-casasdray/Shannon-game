@@ -326,54 +326,33 @@ fn get_current_indice(games: &MutexGuard<'_, Games>, game_id: i64) -> i32 {
     current_game_indice // On renvoie -1 si aucune game n'est trouvée
 }
 
-async fn add_stat_handler(State(my_coll): State<Collection<serde_json::Value>>, Path(game): Path<(u32, u8, i64)>) -> impl IntoResponse {
-    add_stat(my_coll, game).await;
-}
-
-async fn add_stat(my_coll: Collection<serde_json::Value>, (type_game, winner, seed): (u32, u8, i64)) {
-    let doc = json!({"type_game": type_game, "winner": winner, "seed": seed});
+async fn add_stat_handler(State(my_coll): State<Collection<serde_json::Value>>, Path((type_game, winner, seed)): Path<(u32, u8, i64)>) {
+	let doc = json!({"type_game": type_game, "winner": winner, "seed": seed});
     my_coll.insert_one(doc, None).await.unwrap();
 }
 
-async fn get_games_handler(State(my_coll): State<Collection<serde_json::Value>>, ws: WebSocketUpgrade) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| get_games(socket, my_coll))
+async fn get_games_handler(State(my_coll): State<Collection<serde_json::Value>>) -> Result<String, (StatusCode, String)> {
+	match get_games(my_coll).await {
+		Ok(games) => Ok(games),
+		Err(e) => Err((StatusCode::BAD_REQUEST, e.to_string()))
+	}
 }
 
-async fn get_games(socket: WebSocket, my_coll: Collection<serde_json::Value>) {
-    let (mut sender, _receiver) = socket.split();
+async fn get_games(my_coll: Collection<serde_json::Value>) -> Result<String, mongodb::error::Error> {
     let number_total_games = my_coll.count_documents(None, None).await.unwrap();
     let number_cut_games = my_coll
         .count_documents(doc! { "winner": 0}, None)
-        .await
-        .unwrap();
+        .await?;
     let number_short_games = my_coll
         .count_documents(doc! { "winner": 1}, None)
-        .await
-        .unwrap();
+        .await?;
     let number_online_games = my_coll
         .count_documents(doc! {"type_game": 2}, None)
-        .await
-        .unwrap();
-    let tx: broadcast::Sender<serde_json::Value> = broadcast::channel(1).0;
-    let mut rx = tx.subscribe();
-    if let Err(e) = tx.send(json!({
+        .await?;
+    let games = json!({
         "stats": vec![number_total_games, number_cut_games, number_short_games, number_online_games]
-    })) {
-        println!("{:?}", e);
-    }
-    let _send_task = tokio::spawn(async move {
-        let response = rx.recv().await;
-        match response {
-            Ok(msg) => {
-                if let Err(e) = sender.send(Message::Text(msg.to_string())).await {
-                    println!("Erreur : {}", e);
-                }
-            }
-            Err(e) => {
-                println!("Erreur get_games {:?}", e);
-            }
-        }
     });
+    Ok(games.to_string())
 }
 
 async fn insert_player_handler(State(my_coll): State<Collection<Player>>, Json(player): Json<CreatePlayer>) -> Result<String, (StatusCode, String)> {

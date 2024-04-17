@@ -7,6 +7,7 @@ import fr.projet.gui.UtilsGui;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.InterfaceIA;
 import fr.projet.ia.Minimax;
+import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
 import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
@@ -229,7 +230,6 @@ public class Game {
         else
             typeGame = 3; // IA vs IA
         if (cutWon()) {
-            //if (ia2 == null)
             Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
                 System.out.println("Cutwon");
             if (!pvpOnline || !client.isClosed())
@@ -237,7 +237,6 @@ public class Game {
             thereAreAWinner = true;
         }
         else if (shortWon()) {
-            //if (ia2 == null)
             Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();
@@ -246,10 +245,10 @@ public class Game {
         if (thereAreAWinner) {
             if (pvpOnline) {
                 if (!joiner)
-                    WebSocketClient.sendStatistics(typeGame, cutWon ? 0 : 1, seed); // Permet d'envoyer qu'une fois la game
+                    HttpsClient.sendStatistics(typeGame, cutWon ? 0 : 1, seed); // Permet d'envoyer qu'une fois la game
             }
             else
-                WebSocketClient.sendStatistics(typeGame, cutWon ? 0 : 1, seed);
+                HttpsClient.sendStatistics(typeGame, cutWon ? 0 : 1, seed);
         }
     }
 

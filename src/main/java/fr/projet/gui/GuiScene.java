@@ -54,7 +54,14 @@ public class GuiScene {
         Pane root = getBasicScene();
         String pseudo = WebSocketClient.getPseudoCUT();
         Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
-        Text elo = UtilsGui.createText("Elo : " + HttpsClient.getElo(WebSocketClient.getPseudoCUT()));
+        int eloPlayer = -1;
+        if (pseudo.length() >= 3) {
+            eloPlayer = HttpsClient.getElo(WebSocketClient.getPseudoCUT());
+            if (eloPlayer < 0) {
+                pseudo = WebSocketClient.getPseudoCUT();
+            }
+        }
+        Text elo = UtilsGui.createText("Elo : " + eloPlayer);
         Text text1 = UtilsGui.createText("SHANNON GAME", true);
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
 
@@ -163,7 +170,14 @@ public class GuiScene {
         root.setPadding(new Insets(300, 5, 5, 500));
         String pseudo = WebSocketClient.getPseudoCUT();
         Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
-        Text elo = UtilsGui.createText("Elo : " + HttpsClient.getElo(WebSocketClient.getPseudoCUT()));
+        int eloPlayer = -1;
+        if (pseudo.length() >= 3) {
+            eloPlayer = HttpsClient.getElo(WebSocketClient.getPseudoCUT());
+            if (eloPlayer < 0) {
+                return new Scene(new Pane(), UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+            }
+        }
+        Text elo = UtilsGui.createText("Elo : " + eloPlayer);
         Text text1 = UtilsGui.createText("Joueur vs Joueur", true);
 
         TextField textJoin = new TextField();
@@ -209,9 +223,15 @@ public class GuiScene {
                             try {
                                 finalClient.set(new WebSocketClient(finalNbSommets, turn));
                                 Optional<Long> gameCode = Optional.of(finalClient.get().getId());
+                                Gui.setGameCode(gameCode);
                                 code.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
+                                code.setFill(Color.WHITE);
                                 createField.call(finalClient.get());
-                            } catch (IOException | URISyntaxException | InterruptedException e) {
+                            } catch (IOException e) {
+                                code.setText("Vérifiez votre connexion internet");
+                                code.setFill(Color.RED);
+                            }
+                            catch (URISyntaxException | InterruptedException e) {
                                 log.error("Erreur lors de la création de la partie", e);
                             }
                         }).start();
@@ -399,15 +419,20 @@ public class GuiScene {
         Text cutText = UtilsGui.createText("Nombre de parties gagnées par cut :",false);
         Text shortText = UtilsGui.createText("Nombre de parties gagnées par short :",false);
         Text onlineText = UtilsGui.createText("Nombre de parties en ligne :", false);
-        WebSocketClient ws = new WebSocketClient();
         Text response = new Text();
         Text cut = new Text();
         Text shorts = new Text();
         Text online = new Text();
-        List<JsonElement> statsList = ws.getStats().asList();
+        List<JsonElement> statsList = HttpsClient.getStats().asList();
         if (statsList.isEmpty()) {
             Text erreurText = UtilsGui.createText("Vérifiez votre connexion internet");
+            erreurText.setFill(Color.RED);
+            erreurText.setX(UtilsGui.WINDOW_WIDTH/2 - erreurText.getLayoutBounds().getWidth()/2);
+            erreurText.setY(150);
             root.getChildren().addAll(erreurText, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
+            Gui.getStars().stop();
+            List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
+            createTimeLineThread(root, items);
             return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         }
         response.setText(statsList.getFirst().getAsString());
@@ -467,18 +492,21 @@ public class GuiScene {
         Text title = UtilsGui.createText("Login",true);
         TextField username = new TextField();
         PasswordField password = new PasswordField();
+        AtomicReference<Text> error = new AtomicReference<>(UtilsGui.createText("", false));
         Button login = UtilsGui.createButton("Se connecter", event -> {
             new Thread(() -> {
-                if (HttpsClient.login(username.getText(), password.getText()).getKey()) {
+                var response = HttpsClient.login(username.getText(), password.getText());
+                if (response.getKey()) {
                     WebSocketClient.setPseudoCUT(username.getText());
                     WebSocketClient.setPseudoSHORT(username.getText());
                     Platform.runLater(() -> handleButtonClick.call(ButtonClickType.HOME));
                 }
                 else {
                     Platform.runLater(() -> {
-                        Text error = UtilsGui.createText("Pseudo ou mot de passe incorrect",false);
-                        error.setFill(Color.RED);
-                        root.add(error, 6, 16);
+                        error.get().setText("");
+                        error.set(UtilsGui.createText(response.getValue(), false));
+                        error.get().setFill(Color.RED);
+                        root.add(error.get(), 6, 16);
                         password.clear();
                     });
                 }
@@ -499,7 +527,7 @@ public class GuiScene {
         password.setLayoutY(250);
         login.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - login.getPrefWidth()/2);
         login.setLayoutY(300);
-        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root, title, username, password, login);
+        scene.getChildren().addAll(root, title, username, password, login, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
         Gui.getStars().stop();
         List<Node> items = List.of(title, username, password, login);
         createTimeLineThread(scene, items);
@@ -563,7 +591,7 @@ public class GuiScene {
         passwordRepeat.setLayoutY(300);
         register.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - register.getPrefWidth()/2);
         register.setLayoutY(350);
-        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), root, title, username, password, passwordRepeat, register);
+        scene.getChildren().addAll(root, title, username, password, passwordRepeat, register, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
         Gui.getStars().stop();
         List<Node> items = List.of(title, username, password, passwordRepeat, register);
         createTimeLineThread(scene, items);
