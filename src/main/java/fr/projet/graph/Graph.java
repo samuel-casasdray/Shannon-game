@@ -46,9 +46,11 @@ public class Graph {
     public Graph(Collection<Vertex> vertices, Map<Vertex, List<Vertex>> adjVertices) {
         for (Vertex v : vertices) {
             addVertex(v);
-            if (adjVertices.get(v) != null)
-                for (Vertex neighbor: adjVertices.get(v))
-                    addNeighbor(new Pair<>(v, neighbor));
+        }
+        for (Map.Entry<Vertex, List<Vertex>> entry : adjVertices.entrySet()) {
+            for (Vertex v : entry.getValue()) {
+                addNeighbor(new Pair<>(entry.getKey(), v));
+            }
         }
     }
 
@@ -281,6 +283,7 @@ public class Graph {
 
     public void removeNeighbor(Pair<Vertex, Vertex> edge) {
         neighbors.remove(edge);
+        neighbors.remove(new Pair<>(edge.getValue(), edge.getKey()));
         if (adjVertices.containsKey(edge.getKey()))
             adjVertices.get(edge.getKey()).remove(edge.getValue());
         if (adjVertices.containsKey(edge.getValue()))

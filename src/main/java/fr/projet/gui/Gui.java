@@ -44,7 +44,6 @@ import java.util.concurrent.TimeoutException;
 
 @Slf4j
 public class Gui extends Application {
-
     @Getter
     @Setter
     private static EventHandler<MouseEvent> handler;
@@ -86,6 +85,8 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static Timeline timer = new Timeline();
+    private List<ImageView> images = new ArrayList<>();
+    private static CheckBox planetes = new CheckBox("Afficher Planètes");
 
     public void createAnim() {
         new Thread(() -> {
@@ -150,7 +151,9 @@ public class Gui extends Application {
                 Color color = etoile.pixelColor();
                 pixel = new Rectangle(x, y, 2,2);
                 pixel.setFill(color);
-                if (nodes.stream().noneMatch(node -> pixel.intersects(node.getBoundsInParent()))) {
+                if (nodes.stream().noneMatch(node -> pixel.intersects(node.getBoundsInParent()))
+                        && (!pixel.intersects(planetes.getBoundsInParent())))
+                {
                     root.getChildren().add(pixel);
                 }
             }
@@ -319,6 +322,16 @@ public class Gui extends Application {
         stars.stop();
         etoiles = generer(200);
         pane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        planetes.setSelected(true);
+        pane.getChildren().removeAll(images);
+        images.clear();
+        planetes.setOnAction(event -> {
+            if (planetes.isSelected()) {
+                pane.getChildren().addAll(images);
+            } else {
+                pane.getChildren().removeAll(images);
+            }
+        });
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //        if (!result.isEmpty()) {
@@ -344,6 +357,9 @@ public class Gui extends Application {
 //        }
         Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick);
         edges.clear();
+        planetes.setLayoutX(500);
+        planetes.setLayoutY(0);
+        planetes.setTextFill(Color.WHITE);
         showGraph();
         if (game.isPvpOnline()) {
             GridPane root = new GridPane();
@@ -357,10 +373,10 @@ public class Gui extends Application {
                 turn = Turn.CUT;
             Text text = UtilsGui.createText("Vous jouez : " + turn);
             root.add(text, 1, 1);
-            pane.getChildren().addAll(root, returnButton);
+            pane.getChildren().addAll(root, returnButton, planetes);
         }
         else
-            pane.getChildren().add(returnButton);
+            pane.getChildren().addAll(returnButton, planetes);
         borderPane.setCenter(pane);
         pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -456,34 +472,32 @@ private void animationTexte (Text text){
             }
         }
     }
-    private static List<String> colors = List.of("1", "2", "3", "4", "5", "6");
-    private void colorPlanarGraph(Graph graph) {
+    private static List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
+    public void colorPlanarGraph(Graph graph) {
         if (graph.getNbVertices() <= 6) {
             for (int i = 0; i < graph.getVertices().size(); i++) {
                 graph.getVertices().get(i).setColor(i);
             }
+            return;
         }
-        Vertex v = new Vertex(0, 0);
+        Vertex v = null;
         for (Vertex vertex : graph.getVertices()) {
-            if (graph.getAdjVertices().containsKey(vertex) && graph.getAdjVertices().get(vertex).size() <= 5) {
+            if (graph.degree(vertex) <= 5) {
                 v = vertex;
                 break;
             }
         }
-        if (!graph.getAdjVertices().containsKey(v)) return;
-
         Graph g2 = new Graph(graph.getVertices(), graph.getAdjVertices());
         g2.removeVertex(v);
-        if (g2.getNbVertices() >= 1)
-            colorPlanarGraph(g2);
-        List<Boolean> boolColors = new ArrayList<>(List.of(true, true, true, true, true, true));
-        for (Vertex u : graph.getAdjVertices().get(v)) {
-            boolColors.set(u.getColor(), false);
+        colorPlanarGraph(g2);
+        Set<Integer> colorsNeighbor = new HashSet<>();
+        for (Vertex v2 : graph.getAdjVertices().get(v)) {
+            colorsNeighbor.add(v2.getColor());
         }
-        for (int i = 0; i < boolColors.size(); i++) {
-            if (boolColors.get(i)) {
+        for (int i = 0; i < 6; i++) {
+            if (!colorsNeighbor.contains(i)) {
                 v.setColor(i);
-                break;
+                return;
             }
         }
     }
@@ -520,34 +534,30 @@ private void animationTexte (Text text){
             edges.add(new Pair<>(pair, line));
             posTransport.add(line2);
         }
-        // Ajout des sommets sur l'affichage
+        colorPlanarGraph(game.getGraph());
         for (int i = 0; i < this.game.getGraph().getNbVertices(); i++) {
             Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i).getCoords();
             // Un cercle pour représenter le sommet
-            //colorPlanarGraph(game.getGraph());
-           // Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.rgb(0, 0, 0, 0));
+           Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.web(colors.get(this.game.getGraph().getVertices().get(i).getColor())));
 
             String name = "planet" + i % 14 + ".gif";
             URL ressource = this.getClass().getClassLoader().getResource(name);
             if(Objects.isNull(ressource)) {
                 log.error("Impossible de recupérer la ressource : " + name);
-                //vertex.relocate(coord.getKey(), coord.getValue());
-                //pane.getChildren().addAll(vertex);
+                vertex.relocate(coord.getKey()-UtilsGui.CIRCLE_SIZE, coord.getValue()-UtilsGui.CIRCLE_SIZE);
                 continue;
             }
             Image image = new Image(ressource.toExternalForm());
             ImageView imageView = new ImageView(image);
             double width = image.getWidth();
             double height = image.getHeight();
-            //vertex.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
+            vertex.relocate(coord.getKey()-UtilsGui.CIRCLE_SIZE, coord.getValue()-UtilsGui.CIRCLE_SIZE);
             imageView.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
             // On ajoute les 2 élements sur l'affichage
-            pane.getChildren().addAll(imageView);
+            images.add(imageView);
+            pane.getChildren().addAll(vertex, imageView);
         }
         pane.setOnMouseClicked(handler);
-        items = pane.getChildren().stream().filter(ImageView.class::isInstance).toList();
-//        timer.setCycleCount(Animation.INDEFINITE);
-//        timer.play();
         createAnim();
     }
 

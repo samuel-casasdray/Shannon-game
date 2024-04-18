@@ -26,7 +26,6 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiPredicate;
 import javafx.scene.media.*;
 
 @Getter
@@ -166,20 +165,19 @@ public class Game {
                         played = new Pair<>(key, value);
                         cutEdge(played);
                         cutLine(neighbors.getValue());
-                        //detectWinner();
-
                     } else {
                         played = new Pair<>(key, value);
                         secureEdge(played);
                         paintLine(neighbors.getValue());
-                        //detectWinner();
                     }
                     if (!pvpOnline) {
                         turn = turn.flip();
                         showWinner();
                         if (cutWon || shortWon) return;
                     }
-                    if (againstAI) new Thread(() -> AIPlay(ia, ia, typeIA)).start();
+                    Platform.runLater(() -> {
+                        if (againstAI) new Thread(() -> AIPlay(ia, ia, typeIA)).start();
+                    });
                 }
             }
         }
@@ -231,7 +229,6 @@ public class Game {
             typeGame = 3; // IA vs IA
         if (cutWon()) {
             Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
-                System.out.println("Cutwon");
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
             thereAreAWinner = true;
@@ -354,12 +351,11 @@ public void deleteCuttedEdge() {
                 log.error(e.getMessage());
             }
         } else {
-            play(move.getKey(), move.getValue());
+            if (move != null) {
+                play(move.getKey(), move.getValue());
+            }
         }
     }
-
-
-
 
     public void cutEdge(Pair<Vertex, Vertex> edge) {
         edge.getKey().cut(edge.getValue());
@@ -374,36 +370,18 @@ public void deleteCuttedEdge() {
     public boolean shortWon() {
         if (shortWon) return true;
         Graph redGraph = new Graph(getSecured());
-        shortWon = redGraph.getNbVertices() == graph.getNbVertices() &&
-            graphWithoutSomeNeighborsIsConnected(redGraph, (x, v) -> x.isPainted(v) || v.isPainted(x));
+        shortWon = redGraph.getNbVertices() == graph.getNbVertices() && redGraph.estConnexe();
         return shortWon;
     }
 
     public boolean cutWon() {
         if (cutWon) return true;
-        cutWon = !graphWithoutSomeNeighborsIsConnected(graph, (x, v) -> !x.isCut(v));
+        Graph notCuttedGraph = new Graph(getGraph().getNeighbors());
+        for (Pair<Vertex, Vertex> edge : getCutted()) {
+            notCuttedGraph.removeNeighbor(edge);
+        }
+        cutWon = !notCuttedGraph.estConnexe();
         return cutWon;
-    }
-
-    private boolean graphWithoutSomeNeighborsIsConnected(Graph graph, BiPredicate<Vertex, Vertex> predicate) {
-        if (graph.getVertices().isEmpty()) {
-            return true;
-        }
-        HashSet<Vertex> marked = new HashSet<>();
-        Deque<Vertex> pile = new ArrayDeque<>();
-        pile.push(graph.getVertices().getFirst());
-        while (!pile.isEmpty()) {
-            Vertex v = pile.pop();
-            if (!marked.contains(v)) {
-                marked.add(v);
-                graph.getAdjVertices().get(v).stream().filter(x -> predicate.test(x, v)).forEach(t -> {
-                    if (!marked.contains(t)) {
-                        pile.push(t);
-                    }
-                });
-            }
-        }
-        return marked.size() == graph.getVertices().size();
     }
 
     public void sendMove(Pair<Vertex, Vertex> move) throws IOException {
