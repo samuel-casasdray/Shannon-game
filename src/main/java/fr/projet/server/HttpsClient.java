@@ -94,8 +94,8 @@ public class HttpsClient {
     }
 
     public static void sendStatistics(int typeGame, int winner, long seed) {
-        try {
-            new Thread(() -> {
+        new Thread(() -> {
+            try {
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create("https://cryp.tf/game_stat/"+typeGame+"/"+winner+"/"+seed))
                         .header("Content-Type", "application/json")
@@ -104,8 +104,8 @@ public class HttpsClient {
                         .build();
                 CompletableFuture<HttpResponse<String>> futureResponse = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
                 futureResponse.join();
-            }).start();
-        }
-        catch (Exception e) {}
+            }
+            catch (Exception e) {}
+        }).start();
     }
 }

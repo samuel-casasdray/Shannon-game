@@ -38,7 +38,7 @@ public class Game {
     private final ArrayList<Pair<Line, Turn>> lastsLinesPaint = new ArrayList<>();
     private final int nbVertices;
     private final int minDeg = 3;
-    private final int maxDeg = 8;
+    private final int maxDeg = 7;
     private final int AIDelay = 700;
     private Graph graph;
     @Setter
@@ -428,16 +428,15 @@ public void deleteCuttedEdge() {
             if (joiner) turnValue = creatorTurn == Turn.CUT ? Turn.SHORT: Turn.CUT;
             else turnValue = creatorTurn == Turn.CUT ? Turn.CUT: Turn.SHORT;
             if (cutWon || shortWon) return;
-            if (!getClient().isClosed())
-                client.sendMessage(turn.toString());
             if (turnValue == Turn.CUT) {
                 cutWon = true;
             } else {
                 shortWon = true;
             }
             if (!getClient().isClosed()) {
-                getClient().close();
                 showWinner();
+                client.sendMessage(turn.toString()); // On envoie le gagnant au serveur pour qu'il puisse update les elo
+                getClient().close();
             }
             return;
         }
@@ -521,7 +520,7 @@ public void deleteCuttedEdge() {
     }
 
     public boolean graphIsNotOkay() {
-        return graph.getVertices().size() != nbVertices || graph.minDeg() < minDeg || graph.maxDeg() >= maxDeg || !graph.estConnexe();
+        return graph.getVertices().size() != nbVertices || graph.minDeg() < minDeg || graph.maxDeg() > maxDeg || !graph.estConnexe();
     }
 
     public boolean getCutWon() {

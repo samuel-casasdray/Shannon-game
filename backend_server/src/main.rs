@@ -251,13 +251,11 @@ async fn handle_socket(
             if move_message == *"CUT" || move_message == *"SHORT"  {
                 // Un des deux joueurs s'est déconnecté, et celui qui est resté a répondu
                 // "je suis SHORT" ou "je suis CUT", on lui attribue la victoire
-                if !games.games[current_game_indice].ended {
-	               	if move_message == *"CUT" {
-						update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
-					} else {
-						update_players(&my_coll, short_player, cut_player, Turn::Short).await;
-					}
-                }
+               	if move_message == *"CUT" {
+					update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
+				} else {
+					update_players(&my_coll, short_player, cut_player, Turn::Short).await;
+				}
 				games.games[current_game_indice].ended = true;
 				let _ = tx.send(move_message + " a gagné"); 
                 return;
@@ -378,6 +376,9 @@ async fn insert_player(pseudo: &str, password_hash: String, my_coll: Collection<
     else if pseudo.len() > 20 {
     	return Err((StatusCode::BAD_REQUEST, "Pseudo trop long".to_string()));
     }
+    else if pseudo.contains(char::is_whitespace) {
+		return Err((StatusCode::BAD_REQUEST, "Le pseudo ne doit pas contenir d'espaces".to_string()));
+    }
     else if my_coll.find_one(doc! {"pseudo": pseudo}, None).await.unwrap().is_some() {
     	return Err((StatusCode::CONFLICT, "Pseudo déjà pris".to_string()));
     }
@@ -448,7 +449,14 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 				}
 				// Calcul du nouvel elo
 				let short_elo = short_player.as_ref().unwrap().elo as f64;
-				let new_elo = elo+k_cut*(w_cut-p(elo-short_elo));
+				let mut d = elo-short_elo;
+				if d > 400.0 {
+					d = 400.0;
+				}
+				else if d < -400.0 {
+					d = -400.0;
+				}
+				let new_elo = elo+k_cut*(w_cut-p(d));
 				set_elo(my_coll, player, new_elo as u32).await;
 				increase_nb_games(my_coll, player).await;
 			}
@@ -471,7 +479,14 @@ async fn update_players(my_coll: &Collection<Player>, player_cut: &str, player_s
 				if elo > 2400.0 && player.nb_games >= 30 {
 				    k_short = 10.0;
 				}
-				let new_elo = elo+k_short*(w_short-p(elo-cut_elo));
+				let mut d = elo-cut_elo;
+				if d > 400.0 {
+					d = 400.0;
+				}
+				else if d < -400.0 {
+					d = -400.0;
+				}
+				let new_elo = elo+k_short*(w_short-p(d));
 				set_elo(my_coll, player, new_elo as u32).await;
 				increase_nb_games(my_coll, player).await;
 			}

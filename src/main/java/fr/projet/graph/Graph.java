@@ -93,20 +93,17 @@ public class Graph {
     }
   
     private void generateGraphPlanaire(int maxDeg, int minDeg) {
-        // Instantiation des N (nbVextex) sommets et de leur coordonnées.
-        double minDist = 100;
-        int maxSize = 1000;
-        double radius = UtilsGui.CIRCLE_SIZE*2.5;
-        int maxIter = nbVertices*1000;
+        double minDist = 100; // distance minimale entre deux sommets
+        int maxSize = 1000; // taille de la fenêtre sur laquelle on place les sommets (fenêtre virtuelle qui ne dépend pas des écrans)
+        double radius = UtilsGui.CIRCLE_SIZE*3; // rayon d'un sommet que l'on considère pour les collisions
+        int maxIter = nbVertices*100; // nombre d'itérations max pour placer les sommets
         int iterCount = 0;
         List<Pair<Vertex, Vertex>> edges = new ArrayList<>();
         while (getNbVertices() < nbVertices) {
             iterCount++;
             // Coord aléatoire
-            Pair<Integer, Integer> coord = new Pair<>(
-                    random.nextInt(UtilsGui.WINDOW_MARGE, maxSize),
-                    random.nextInt(UtilsGui.WINDOW_MARGE, maxSize));
-            Vertex newVertex = new Vertex(coord.getKey(), coord.getValue());
+            Vertex newVertex = new Vertex(random.nextInt(UtilsGui.WINDOW_MARGE, maxSize-UtilsGui.WINDOW_MARGE),
+                                          random.nextInt(UtilsGui.WINDOW_MARGE, maxSize-UtilsGui.WINDOW_MARGE));
             boolean distanceOk = true;
             for (Vertex v1: getVertices()) {
                 // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
@@ -124,7 +121,7 @@ public class Graph {
             Vertex v = getVertices().get(i);
             for (int j = 0; j < i; j++) {
                 Vertex v2 = getVertices().get(j);
-                if (getAdjVertices().get(v).contains(v2)) continue;
+                if (getAdjVertices().get(v).contains(v2)) continue; // Si les sommets sont déjà reliés, on passe
                 boolean intersect = false;
                 for (Pair<Vertex, Vertex> neighbor : getNeighbors()) {
                     if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
@@ -146,13 +143,14 @@ public class Graph {
             if (p > proba && degree(edge.getKey()) > minDeg && degree(edge.getValue()) > minDeg)
                 removeNeighbor(edge);
         }
-
+        // On converti les coordonnées des sommets pour les afficher sur l'écran
         for (Vertex v : getVertices()) {
             v.setCoords(new Pair<>((int) toScreenSize(v.getX(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_WIDTH-UtilsGui.WINDOW_MARGE),
                     (int) toScreenSize(v.getY(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_HEIGHT-UtilsGui.WINDOW_MARGE)));
         }
     }
 
+    // Fonction qui permet de convertir les coordonnées des sommets pour les afficher sur l'écran
     private double toScreenSize(double x, double a, double b, double c, double d) {
         return (x-a)*(d-c)/(b-a)+c;
     }
@@ -201,6 +199,7 @@ public class Graph {
 
 
     private boolean thereAreACircleCollision(double radius, Vertex v1, Vertex v2) {
+        // On simplifie en faisant une croix dans le cercle et on vérifie l'intersection avec les deux segments
         for (Vertex vertex: getVertices()) {
             if (!vertex.equals(v1) && !vertex.equals(v2)) {
                 int xLeft = (int) (vertex.getX()-radius);
