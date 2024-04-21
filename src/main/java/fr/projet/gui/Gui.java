@@ -6,31 +6,35 @@ import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextBoundsType;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.*;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-
+import javafx.scene.media.*;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
@@ -40,7 +44,6 @@ import java.util.concurrent.TimeoutException;
 
 @Slf4j
 public class Gui extends Application {
-
     @Getter
     @Setter
     private static EventHandler<MouseEvent> handler;
@@ -53,17 +56,109 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static List<Pair<Pair<Vertex, Vertex>, Line>> edges = new ArrayList<>();
-    private Stage stage;
+    @Getter
+    private static Stage stage;
     private Level level;
+    @Setter
     private Turn turn;
     private Boolean withIA;
     @Setter
     private int nbVertices = 20;
     @Getter
-    private Optional<Long> gameCode = Optional.empty();
+    @Setter
+    private static Optional<Long> gameCode = Optional.empty();
     private Thread gameThread;
     @Getter
-    private Pane pane;
+    private static Pane pane;
+    private static Random random = new Random();
+    @Setter
+    private static IntegerProperty victoryAchievedProperty= new SimpleIntegerProperty();
+    private List<Line> posTransport = new ArrayList<>();
+    @Getter
+    @Setter
+    private static List<Etoile> etoiles = new ArrayList<>();
+    private static int planZ = 10;
+    @Getter
+    @Setter
+    private static Timeline stars;
+    List<Node> items = new ArrayList<>();
+    @Getter
+    @Setter
+    private static Timeline timer = new Timeline();
+    private List<ImageView> images = new ArrayList<>();
+    private static CheckBox planetes = new CheckBox("Afficher Planètes");
+
+    public void createAnim() {
+        new Thread(() -> {
+            Gui.setTimer(new Timeline(new KeyFrame(Duration.millis(20), event -> {
+                for(Line line: posTransport) {
+                    ObservableMap<Object, Object> properties = line.getProperties();
+                    int i = (int) properties.get("i");
+                    double Ux = (double) properties.get("Ux");
+                    double Uy = (double) properties.get("Uy");
+                    int Ax = (int) properties.get("Ax");
+                    int Ay = (int) properties.get("Ay");
+                    int Bx = (int) properties.get("Bx");
+                    int By = (int) properties.get("By");
+                    i++;
+                    properties.put("i", i);
+                    double posX = i * Ux + Ax;
+                    double posY = i * Uy + Ay;
+                    if ((Ax < Bx && posX > Bx) || (Ax > Bx && posX < Bx) || (Ay < By && posY > By) || (Ay > By && posY < By)) {
+                        i = 0;
+                        properties.put("i", i);
+                    }
+                    line.setTranslateX(i*Ux);
+                    line.setTranslateY(i*Uy);
+                }
+                draw(pane, items);
+                if (etoiles.size() < 4000) {
+                    etoiles.addAll(generer(100));
+                }
+            })));
+            timer.setCycleCount(Animation.INDEFINITE);
+            timer.play();
+        }).start();
+    }
+
+    public static List<Etoile> generer(int nb) {
+        List<Etoile> lst = new ArrayList<>();
+        for (int i = 0; i < nb; i++)
+        {
+            Etoile e = new Etoile();
+            e.randomize(random);
+            lst.add(e);
+        }
+        return lst;
+    }
+
+    public static void draw(Pane root, List<Node> nodes) {
+        float width = (float) UtilsGui.WINDOW_WIDTH;
+        float height = (float) UtilsGui.WINDOW_HEIGHT;
+        for (Etoile e : etoiles) {
+            e.setZ(e.getZ() - 1);
+            if (e.getZ() <= 0) {
+                e.setZ(e.getZ()+1000);
+            }
+        }
+        root.getChildren().removeIf(Rectangle.class::isInstance);
+        etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed());
+        for (Etoile etoile : etoiles.stream().filter(e -> e.getZ() >= planZ).toList()) {
+            float x = planZ * etoile.getX() / etoile.getZ() + width/2;
+            float y = planZ * etoile.getY() / etoile.getZ() + height/2;
+            if (x >= 0 && x <= width && y >= 0 && y <= height) {
+                Rectangle pixel;
+                Color color = etoile.pixelColor();
+                pixel = new Rectangle(x, y, 2,2);
+                pixel.setFill(color);
+                if (nodes.stream().noneMatch(node -> pixel.intersects(node.getBoundsInParent()))
+                        && (!pixel.intersects(planetes.getBoundsInParent())))
+                {
+                    root.getChildren().add(pixel);
+                }
+            }
+        }
+    }
 
     @Override
     public void start(Stage stage) {
@@ -80,6 +175,7 @@ public class Gui extends Application {
             stage.getIcons().add(icon);
         }
         stage.show();
+        mainTheme();
     }
     public void handleButtonClick(ButtonClickType buttonClickType) {
         switch (buttonClickType) {
@@ -96,13 +192,11 @@ public class Gui extends Application {
             case HOME_PVPO -> stage.setScene(
                 GuiScene.pvp(
                     this::handleButtonClick,
-                    (textField, turn, nbVertices) -> join((TextField) textField),
-                    (textField, turn, nbVertices) -> create((Text) textField, turn, nbVertices)
+                    textField -> join((TextField) textField),
+                    client -> create((WebSocketClient) client)
                 )
             );
-            case HOME_IAVIA -> {
-                stage.setScene(GuiScene.aivsai(this::handleButtonClick));
-            }
+            case HOME_IAVIA -> stage.setScene(GuiScene.aivsai(this::handleButtonClick));
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
                 stage.setScene(GuiScene.nbVertices(this::handleButtonClick,withIA));
@@ -123,7 +217,7 @@ public class Gui extends Application {
                 this.level = Level.HARD;
                 stage.setScene(GuiScene.joueur(this::handleButtonClick));
             }
-            case JEU -> popupMessage();
+            case JEU -> Platform.runLater(this::popupMessage);
             case VERTICES -> {
                 this.nbVertices=GuiScene.getNbVertices();
                 try {
@@ -158,13 +252,16 @@ public class Gui extends Application {
                 gameThread.setDaemon(true);
                 gameThread.start();
             }
-            case STATS -> {
-                stage.setScene(GuiScene.stats(this::handleButtonClick));
-            }
+            case STATS -> stage.setScene(GuiScene.stats(this::handleButtonClick));
+            case RANKED -> stage.setScene(GuiScene.ranked(this::handleButtonClick));
+            case LOGIN -> stage.setScene(GuiScene.login(this::handleButtonClick));
+            case REGISTER -> stage.setScene(GuiScene.register(this::handleButtonClick));
         }
     }
 
     private void leaveGame() {
+        Platform.runLater(() -> etoiles = generer(200));
+        timer.stop();
         stage.setScene(GuiScene.home(this::handleButtonClick));
         if (game.isPvpOnline()) {
             try {
@@ -172,7 +269,11 @@ public class Gui extends Application {
             } catch (IOException ignored) {}
         }
         if (gameThread != null)
-            gameThread.interrupt();
+        {
+            game.setInterrupted(true);
+            if (gameThread.isAlive() && !game.cutWon() && !game.shortWon())
+                gameThread.interrupt();
+        }
     }
     public void popupMessage(){
         if (game.getCutWon() || game.getShortWon()) {
@@ -186,7 +287,6 @@ public class Gui extends Application {
         ButtonType buttonAccept = new ButtonType("Accepter");
         ButtonType buttonCancel = new ButtonType("Annuler");
         alert.getButtonTypes().setAll(buttonAccept,buttonCancel);
-
         alert.showAndWait().ifPresent(response ->{
             if (response==buttonAccept){
                 leaveGame();
@@ -195,13 +295,14 @@ public class Gui extends Application {
     }
 
     public static void popupMessage(Turn turn){
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Fin de la partie");
         if (turn==Turn.CUT){
-            alert.setHeaderText("CUT a gagné !");
+            victoryAchievedProperty.set(0);
+            victoryAchievedProperty.set(1);
         }
-        else alert.setHeaderText("SHORT a gagné !");
-        alert.show();
+        else {
+            victoryAchievedProperty.set(0);
+            victoryAchievedProperty.set(2);
+        }
     }
 
     public static void popupMessage(String title, String message){
@@ -214,11 +315,23 @@ public class Gui extends Application {
     public Scene run() {
         // Création d'un BorderPane pour centrer le contenu
         BorderPane borderPane = new BorderPane();
-        borderPane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        borderPane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
         // Création du Pane pour afficher le graphique
         pane = new Pane();
-        pane.setPrefSize(UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        stars.stop();
+        etoiles = generer(200);
+        pane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        planetes.setSelected(true);
+        pane.getChildren().removeAll(images);
+        images.clear();
+        planetes.setOnAction(event -> {
+            if (planetes.isSelected()) {
+                pane.getChildren().addAll(images);
+            } else {
+                pane.getChildren().removeAll(images);
+            }
+        });
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //        if (!result.isEmpty()) {
@@ -242,7 +355,11 @@ public class Gui extends Application {
 //                pane.getChildren().add(line);
 //            }
 //        }
+        Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick);
         edges.clear();
+        planetes.setLayoutX(500);
+        planetes.setLayoutY(0);
+        planetes.setTextFill(Color.WHITE);
         showGraph();
         if (game.isPvpOnline()) {
             GridPane root = new GridPane();
@@ -256,12 +373,39 @@ public class Gui extends Application {
                 turn = Turn.CUT;
             Text text = UtilsGui.createText("Vous jouez : " + turn);
             root.add(text, 1, 1);
-            pane.getChildren().addAll(root, UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+            pane.getChildren().addAll(root, returnButton, planetes);
         }
         else
-            pane.getChildren().add(UtilsGui.getReturnButton(ButtonClickType.JEU, this::handleButtonClick));
+            pane.getChildren().addAll(returnButton, planetes);
         borderPane.setCenter(pane);
-        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_SIZE, UtilsGui.WINDOW_SIZE);
+        pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+
+
+        //Ecouteur pour afficher message de victoire
+        victoryAchievedProperty.addListener((observableValue, oldValue, newValue) -> {
+            Platform.runLater(() -> {
+               if(newValue.equals(1)){
+                   //text1.setVisible(true);
+                   Text text1 = UtilsGui.createText("CUT a gagné !",true);
+                   text1.setFont(UtilsGui.FONT4);
+                   text1.setX((scene.getWidth() - text1.getLayoutBounds().getWidth()) / 2);
+                   text1.setY((scene.getHeight() - text1.getLayoutBounds().getHeight()) / 2);
+                   text1.setTextAlignment(TextAlignment.CENTER);
+                   animationTexte(text1);
+                   pane.getChildren().add(text1);
+               } else if (newValue.equals(2)) {
+                   Text text2 = UtilsGui.createText("SHORT a gagné !",true);
+                   text2.setFont(UtilsGui.FONT4);
+                   text2.setX((scene.getWidth() - text2.getLayoutBounds().getWidth()) / 2);
+                   text2.setY((scene.getHeight() - text2.getLayoutBounds().getHeight()) / 2);
+                   text2.setTextAlignment(TextAlignment.CENTER);
+                   animationTexte(text2);
+                   pane.getChildren().add(text2);
+               }
+            });
+        });
+
 
         // Ajout d'un écouteur pour détecter les changements de taille de la fenêtre
         scene.widthProperty().addListener((observableValue, oldWidth, newWidth) -> {
@@ -281,14 +425,23 @@ public class Gui extends Application {
         return scene;
 }
 
+private void animationTexte (Text text){
+    TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(2), text);
+    translateTransition.setToY(40); // Déplacement de 50 pixels vers le bas
+    translateTransition.setCycleCount(Animation.INDEFINITE); // Répéter indéfiniment
+    translateTransition.setAutoReverse(true); // Revenir en arrière après chaque itération
+
+    // Démarrer la translation
+    translateTransition.play();
+}
+
 //fonction qui recalcule les position des aretes et sommets lors d'un redimensionnement
     private void updateGraphLayout(Pane pane) {
-        double xOffset = (pane.getWidth() - UtilsGui.WINDOW_SIZE) / 2;
-        double yOffset = (pane.getHeight() - UtilsGui.WINDOW_SIZE) / 2;
+        double xOffset = (pane.getWidth() - UtilsGui.WINDOW_WIDTH) / 2;
+        double yOffset = (pane.getHeight() - UtilsGui.WINDOW_HEIGHT) / 2;
 
         // Mise à jour des positions des arêtes
         for (Pair<Pair<Vertex, Vertex>, Line> edge : edges) {
-            //System.out.println("aretes");
             Line line = edge.getValue();
             Pair<Vertex, Vertex> pair = edge.getKey();
             line.setStartX(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE + xOffset);
@@ -297,16 +450,17 @@ public class Gui extends Application {
             line.setEndY(pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE + yOffset);
         }
 
-        int nodeIndex=0;
+//        int nodeIndex=0;
         // Mise à jour des positions des sommets et des textes
+//        List<Node> nodes = pane.getChildren();
+//        for (int i = 0; i < nodes.size(); i++) {
+//            Node node = nodes.get(i);
+//        }
         for (Node node : pane.getChildren()) {
-            if (node instanceof Circle vertex) {
-                //System.out.println("cercle");
-                Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(nodeIndex).getCoords();
-                vertex.relocate(coord.getKey()+ xOffset,coord.getValue() + yOffset);
-                nodeIndex++;
+            if (node instanceof Circle || node instanceof ImageView) {
+                node.setTranslateX(xOffset + UtilsGui.CIRCLE_SIZE);
+                node.setTranslateY(yOffset + UtilsGui.CIRCLE_SIZE);
             } else if (node instanceof Text text) {
-                //System.out.println("texte");
                 int i = Integer.parseInt(text.getText());
                 Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i-1).getCoords();
                 // Centrage du texte
@@ -319,33 +473,31 @@ public class Gui extends Application {
         }
     }
     private static List<String> colors = List.of("#00ccff", "#ff0000", "#00ff99", "#ffff66", "#9933ff", "#ff6600");
-    private void colorPlanarGraph(Graph graph) {
+    public void colorPlanarGraph(Graph graph) {
         if (graph.getNbVertices() <= 6) {
             for (int i = 0; i < graph.getVertices().size(); i++) {
                 graph.getVertices().get(i).setColor(i);
             }
+            return;
         }
-        Vertex v = new Vertex(0, 0);
+        Vertex v = null;
         for (Vertex vertex : graph.getVertices()) {
-            if (graph.getAdjVertices().containsKey(vertex) && graph.getAdjVertices().get(vertex).size() <= 5) {
+            if (graph.degree(vertex) <= 5) {
                 v = vertex;
                 break;
             }
         }
-        if (!graph.getAdjVertices().containsKey(v)) return;
-
         Graph g2 = new Graph(graph.getVertices(), graph.getAdjVertices());
         g2.removeVertex(v);
-        if (g2.getNbVertices() >= 1)
-            colorPlanarGraph(g2);
-        List<Boolean> boolColors = new ArrayList<>(List.of(true, true, true, true, true, true));
-        for (Vertex u : graph.getAdjVertices().get(v)) {
-            boolColors.set(u.getColor(), false);
+        colorPlanarGraph(g2);
+        Set<Integer> colorsNeighbor = new HashSet<>();
+        for (Vertex v2 : graph.getAdjVertices().get(v)) {
+            colorsNeighbor.add(v2.getColor());
         }
-        for (int i = 0; i < boolColors.size(); i++) {
-            if (boolColors.get(i)) {
+        for (int i = 0; i < 6; i++) {
+            if (!colorsNeighbor.contains(i)) {
                 v.setColor(i);
-                break;
+                return;
             }
         }
     }
@@ -354,70 +506,84 @@ public class Gui extends Application {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
         for (Pair<Vertex, Vertex> pair : this.game.getGraph().getNeighbors()) {
-            Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                    pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+            int Ax = pair.getKey().getCoords().getKey();
+            int Ay = pair.getKey().getCoords().getValue();
+            int Bx = pair.getValue().getCoords().getKey();
+            int By = pair.getValue().getCoords().getValue();
+            double pas = random.nextDouble() / 200 + 0.0025;
+            double Ux = (Bx-Ax) * pas;
+            double Uy = (By-Ay) * pas;
+            Line line = new Line(Ax, Ay, Bx, By);
+            line.setStroke(Paint.valueOf("#a2d2ff"));
+            Line line2 = new Line(Ax, Ay, Ax+Ux, Ay+Uy);
             line.setStrokeWidth(5);
+            line2.setStrokeWidth(7);
+            line2.setStroke(Paint.valueOf("#a2d2ff"));
+            line.setOnMouseClicked(handler);
+            line2.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
+            line2.getProperties().put("Ux", Ux);
+            line2.getProperties().put("Uy", Uy);
+            line2.getProperties().put("Ax", Ax);
+            line2.getProperties().put("Ay", Ay);
+            line2.getProperties().put("Bx", Bx);
+            line2.getProperties().put("By", By);
+            line2.getProperties().put("i", 0);
             // Ajout de la ligne sur sur l'affichage
-            pane.getChildren().add(line);
+            pane.getChildren().addAll(line, line2);
             edges.add(new Pair<>(pair, line));
+            posTransport.add(line2);
         }
-        // Ajout des sommets sur l'affichage
+        colorPlanarGraph(game.getGraph());
         for (int i = 0; i < this.game.getGraph().getNbVertices(); i++) {
             Pair<Integer, Integer> coord = this.game.getGraph().getVertices().get(i).getCoords();
-            // On crée un texte pour le numéro du sommet
-            Text text = new Text(String.valueOf(i + 1));
-            text.setBoundsType(TextBoundsType.VISUAL);
-            text.setFont(Font.font(UtilsGui.FONT, FontWeight.BOLD,15));
-            // Centrage du texte
-            if (i >= 9) {
-                text.relocate(coord.getKey() + 13.50, coord.getValue() + 15.50);
-            }
-            else {
-                text.relocate(coord.getKey() + 16.50, coord.getValue() + 15.50);
-            }
             // Un cercle pour représenter le sommet
-            colorPlanarGraph(game.getGraph());
-            Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.web(colors.get(game.getGraph().getVertices().get(i).getColor())));
-            vertex.relocate(coord.getKey(), coord.getValue());
+           Circle vertex = new Circle(UtilsGui.CIRCLE_SIZE, Color.web(colors.get(this.game.getGraph().getVertices().get(i).getColor())));
+
+            String name = "planet" + i % 14 + ".gif";
+            URL ressource = this.getClass().getClassLoader().getResource(name);
+            if(Objects.isNull(ressource)) {
+                log.error("Impossible de recupérer la ressource : " + name);
+                vertex.relocate(coord.getKey()-UtilsGui.CIRCLE_SIZE, coord.getValue()-UtilsGui.CIRCLE_SIZE);
+                continue;
+            }
+            Image image = new Image(ressource.toExternalForm());
+            ImageView imageView = new ImageView(image);
+            double width = image.getWidth();
+            double height = image.getHeight();
+            vertex.relocate(coord.getKey()-UtilsGui.CIRCLE_SIZE, coord.getValue()-UtilsGui.CIRCLE_SIZE);
+            imageView.relocate(coord.getKey() - width / 2, coord.getValue() - height / 2);
             // On ajoute les 2 élements sur l'affichage
-            pane.getChildren().addAll(vertex, text);
+            images.add(imageView);
+            pane.getChildren().addAll(vertex, imageView);
         }
         pane.setOnMouseClicked(handler);
+        createAnim();
     }
 
-    public void create(Text textField, Turn turn, int nbVertices) {
+    public void create(WebSocketClient client) {
+        if (game != null)
+            game.playSound("fight", 0.5F);
         try {
-            if (game != null)
+            if (game != null && game.getClient() != null)
                 game.getClient().close();
         }
         catch (IOException | NullPointerException e) {
             log.info(e.getMessage());
+            return;
         }
         try {
-            WebSocketClient client = new WebSocketClient(nbVertices, turn);
-            gameCode = Optional.of(client.getId());
-            textField.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
-            try {
-                this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
-            }
-            catch (TimeoutException e) {
-                textField.setText("");
-                Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
-                        " de réduire le nombre de sommets"));
-            }
-        } catch (SocketException se) {
-            textField.setText("");
+            this.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+        }
+        catch (TimeoutException e) {
+            Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
+                    " de réduire le nombre de sommets"));
+        }
+        catch (SocketException se) {
             Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
         }
-        catch (IOException | URISyntaxException e) {
+        catch (IOException e) {
             log.error(e.getMessage());
-        }
-        catch (InterruptedException e) {
-            log.error(e.getMessage());
-            Thread.currentThread().interrupt();
         }
     }
 
@@ -443,5 +609,55 @@ public class Gui extends Application {
             Thread.currentThread().interrupt();
         }
     }
+
+
+//    public static void destroy (Vertex v) {
+//        System.out.println("odjdoajdz");
+//        String name = "boom.gif";
+//        URL ressource = Gui.stage.getClass().getClassLoader().getResource(name);
+//        Image image = new Image(ressource.toExternalForm());
+//        ImageView imageView = new ImageView(image);
+//        double initialWidth = image.getWidth();
+//        double initialHeight = image.getHeight();
+//        imageView.setFitWidth(initialWidth / 2);
+//        imageView.setFitHeight(initialHeight / 2);
+//        double newX = v.getX() - (imageView.getFitWidth() / 2);
+//        double newY = v.getY() - (imageView.getFitHeight() / 2);
+//        imageView.setLayoutX(newX);
+//        imageView.setLayoutY(newY);
+//        double width = image.getWidth();
+//        double height = image.getHeight();
+//        Gui.pane.getChildren().addAll(imageView);
+//    }
+
+
+    public void mainTheme () {
+        String audioS = "Sounds/testMusic.mp3";
+        System.out.println("Audio "+audioS);
+        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        System.out.println("Lool "+audioUrl);
+        assert audioUrl != null;
+        String audioFile = audioUrl.toExternalForm();
+        Media sound = new Media(audioFile);
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(1.7);
+        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+        stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
+        mediaPlayer.play();
+//        new Thread(() -> {
+//            mediaPlayer.play();
+//        }).start();
+        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
+        //long time = (long) (sound.getDuration().toMillis() + 1000);
+        //mediaPlayer.play();
+    }
+
+    private void stopMediaPlayer(MediaPlayer mp) {
+        if (mp != null) {
+            mp.stop();
+        }
+    }
+
+
 }
 

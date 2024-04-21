@@ -2,14 +2,10 @@ package fr.projet.ia;
 
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
-import fr.projet.gui.Gui;
-import javafx.scene.shape.Line;
 import javafx.util.Pair;
 import fr.projet.game.Game;
 import fr.projet.game.Turn;
-
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class BasicAI extends InterfaceIA {
@@ -39,7 +35,7 @@ public class BasicAI extends InterfaceIA {
 
     @Override
     public Pair<Vertex, Vertex> playSHORT() {
-        return playCUT(); // Move de génie
+        return playCUT();
     }
 
 }

@@ -19,6 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
 @ClientEndpoint
@@ -33,7 +34,7 @@ public class WebSocketClient {
     @Setter
     private Callback callback;
     @Getter
-    private static Timer timer;
+    private Timer timer;
     private static final String SERVER_HOSTNAME = "wss://cryp.tf/";
     private static final String SERVER_URI = SERVER_HOSTNAME +"ws/";
     private static final String CREATE_GAME_URI = SERVER_HOSTNAME +"create_game/"; // Le nom de domaine de mon serveur
@@ -47,12 +48,19 @@ public class WebSocketClient {
     @Getter
     @Setter
     private String waiting;
+    @Getter
+    @Setter
+    private static String pseudoCUT = "A";
+    @Getter
+    @Setter
+    private static String pseudoSHORT = "B";
+
     public WebSocketClient(int nbVertices, Turn turn) throws IOException, URISyntaxException, InterruptedException {
         this.joiner = false;
         int creatorTurn = turn == Turn.CUT ? 0 : 1;
         if (!this.isClosed())
             this.close();
-        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices);
+        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices+"/"+pseudoCUT);
         createConnection();
     }
 
@@ -60,16 +68,8 @@ public class WebSocketClient {
         this.joiner = true;
         if (!this.isClosed())
             this.close();
-        this.connectServer(JOIN_GAME_URI + id);
+        this.connectServer(JOIN_GAME_URI + id + "/"+pseudoSHORT);
         createConnection();
-    }
-
-    public static void sendStatistics(int typeGame, int winner, long seed) {
-        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        try {
-            container.connectToServer(new WebSocketClient(), new URI(SERVER_HOSTNAME+"game_stat/"+typeGame+"/"+winner+"/"+seed));
-        }
-        catch (DeploymentException | URISyntaxException | IOException ignored) {} // Rien à faire, la game sera perdue à jamais
     }
 
     private boolean doServerRespond() throws InterruptedException {
@@ -85,7 +85,7 @@ public class WebSocketClient {
     }
 
     private void createConnection() throws InterruptedException, IOException {
-        if (!doServerRespond()) return;
+        if (!doServerRespond()) throw new IOException();
         if (response.equals("Not found")) {
             Platform.runLater(() -> Gui.popupMessage("Le code rentré est incorrect", "Aucune partie trouvée."));
             throw new IOException();
@@ -102,7 +102,7 @@ public class WebSocketClient {
             @Override
             public void run(){
                 if (game != null && (game.getCutWon() || game.getShortWon())) // Si la game est finie, on cancel le timer
-                    WebSocketClient.getTimer().cancel();
+                    getTimer().cancel();
                 if (session != null && session.isOpen())
                     sendMessage("Ping");
             }
@@ -131,30 +131,6 @@ public class WebSocketClient {
         }
     }
 
-    public JsonArray getStats() {
-        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        try {
-            container.connectToServer(this, new URI(SERVER_HOSTNAME+"games"));
-        }
-        catch (DeploymentException | URISyntaxException | IOException handshakeError) {
-            return new JsonArray();
-        }
-        try {
-            if(!doServerRespond()) return new JsonArray();
-        }
-        catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
-        }
-        try {
-            JsonElement jsonElement = JsonParser.parseString(response);
-            JsonElement stats = jsonElement.getAsJsonObject().get("stats");
-            return stats.getAsJsonArray();
-        }
-        catch (JsonSyntaxException e) {
-            return new JsonArray();
-        }
-    }
-
     public void connectServer(String serverUri) throws URISyntaxException, IOException {
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         try {
@@ -163,6 +139,10 @@ public class WebSocketClient {
         catch (DeploymentException handshakeError) {
             closed = true;
             return;
+        }
+        catch (Exception e) {
+            closed = true;
+            throw new IOException();
         }
         closed = false;
     }
@@ -188,6 +168,8 @@ public class WebSocketClient {
             log.error(e.getMessage());
         }
     }
+
+
     public void setGame(Game game) {
         if (this.game == null)
             this.game = game;
@@ -197,6 +179,7 @@ public class WebSocketClient {
         if (session != null && session.isOpen())
         {
             session.close();
+            closed = true;
             if (timer != null) timer.cancel();
         }
     }
@@ -209,7 +192,8 @@ public class WebSocketClient {
     }
 
     @OnMessage
-    public void onMessage(String message) throws IOException {
+    public void onMessage(String message) {
+        if (closed) return;
         response = message;
         log.info("Received message: " + message);
         try {
@@ -229,7 +213,12 @@ public class WebSocketClient {
         if (!message.equals("Pong"))
         {
             if (game != null)
-                game.play1vs1(message);
+                try {
+                    game.play1vs1(message);
+                }
+                catch (IOException e) {
+                    log.error("Erreur lors de la réception du message");
+                }
             else
                 waiting = message;
         }
