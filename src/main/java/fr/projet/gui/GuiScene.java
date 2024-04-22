@@ -13,14 +13,16 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lombok.Getter;
@@ -30,12 +32,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.net.URL;
-import java.util.*;
 
 @Slf4j
 @UtilityClass
@@ -71,6 +73,7 @@ public class GuiScene {
         Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL));
         Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA));
         Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED));
+        Button button6 = UtilsGui.createButton("Histoire", event -> handleButtonClick.call(ButtonClickType.HISTOIRE));
         Button statsButton = new Button("?");
         statsButton.setTextFill(Color.RED);
         Button deconnexion = new Button("Déconnexion");
@@ -99,6 +102,8 @@ public class GuiScene {
         button4.setLayoutY(600);
         button5.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
         button5.setLayoutY(700);
+        button6.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
+        button6.setLayoutY(800);
         pseudoText.setX(UtilsGui.WINDOW_WIDTH/2 - pseudoText.getLayoutBounds().getWidth()/2);
         pseudoText.setY(700);
         elo.setX(UtilsGui.WINDOW_WIDTH/2 - elo.getLayoutBounds().getWidth()/2);
@@ -108,8 +113,8 @@ public class GuiScene {
         if (pseudo.length() >= 3)
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion);
         else
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5);
-        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, button6);
+        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, button6, pseudoText, elo, deconnexion);
         if (Gui.getStars() != null)
             Gui.getStars().stop();
         if (Gui.getEtoiles().isEmpty())
@@ -138,6 +143,30 @@ public class GuiScene {
         }).start();
     }
 
+    public void createTextAnim(Pane root, Label label, String text) {
+        new Thread(() -> {
+            AtomicInteger i = new AtomicInteger();
+            Gui.setTimerText(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+                label.setText(text.substring(0, i.getAndIncrement()));
+                if(i.get() > text.length()) {
+                    URL url = GuiScene.class.getResource("/down-arrow.png");
+                    if(url == null) {
+                        log.error("Pas de fleche");
+                    } else {
+                        Image image = new Image(url.toExternalForm());
+                        ImageView imageView = new ImageView(image);
+                        imageView.relocate(UtilsGui.WINDOW_WIDTH - 380, UtilsGui.WINDOW_HEIGHT - 200);
+                        root.getChildren().add(imageView);
+                        UtilsGui.animationTexte(imageView, 20, 1);
+                    }
+                    Gui.getTimerText().stop();
+                }
+            })));
+            Gui.getTimerText().setCycleCount(Timeline.INDEFINITE);
+            Gui.getTimerText().play();
+        }).start();
+    }
+
     public Pane getBasicScene() {
         //VBox root = new VBox(50); // Espacement vertical entre les éléments
         Pane root = new Pane();
@@ -149,16 +178,6 @@ public class GuiScene {
         return root;
     }
 
-    public Background getBackground() {
-        String name = "bg.jpg";
-        URL ressource = GuiScene.class.getClassLoader().getResource(name);
-        if(Objects.isNull(ressource)) {
-            log.error("Impossible de recupérer la ressource : " + name);
-            return null;
-        }
-        Image image = new Image(ressource.toExternalForm());
-        return new Background(new BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false)));
-    }
     public Scene pvp(HandleClick handleButtonClick, JoinCreateField joinField, JoinCreateField createField) {
 
         Pane scene = getBasicScene();
@@ -597,6 +616,31 @@ public class GuiScene {
         List<Node> items = List.of(title, username, password, passwordRepeat, register);
         Gui.getStars().stop();
         createTimeLineThread(scene, items);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+    }
+
+    public Scene histoire(HandleClick handleButtonClick) {
+        Pane scene = getBasicScene();
+        Label text = UtilsGui.createLabel("");
+        text.setWrapText(true);
+        text.prefWidthProperty().bind(scene.widthProperty().subtract(200));
+        text.relocate(400, UtilsGui.WINDOW_HEIGHT - 350);
+        URL url = GuiScene.class.getResource("/diag.png");
+        if(url == null) {
+            log.error("Pas de dialogue box");
+        } else {
+            Image image = new Image(url.toExternalForm());
+            ImageView imageView = new ImageView(image);
+            imageView.relocate(300, UtilsGui.WINDOW_HEIGHT - 400);
+            imageView.setFitWidth(UtilsGui.WINDOW_WIDTH - 600);
+            imageView.setFitHeight(300);
+            scene.getChildren().add(imageView);
+        }
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text);
+        List<Node> items = List.of();
+        Gui.getStars().stop();
+        createTimeLineThread(scene, items);
+        createTextAnim(scene, text, "..........................................................................");
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 }

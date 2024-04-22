@@ -22,8 +22,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
+import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -85,6 +84,9 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static Timeline timer = new Timeline();
+    @Getter
+    @Setter
+    private static Timeline timerText = new Timeline();
     private List<ImageView> images = new ArrayList<>();
     private static CheckBox planetes = new CheckBox("Afficher Planètes");
 
@@ -256,6 +258,7 @@ public class Gui extends Application {
             case RANKED -> stage.setScene(GuiScene.ranked(this::handleButtonClick));
             case LOGIN -> stage.setScene(GuiScene.login(this::handleButtonClick));
             case REGISTER -> stage.setScene(GuiScene.register(this::handleButtonClick));
+            case HISTOIRE -> stage.setScene(GuiScene.histoire(this::handleButtonClick));
         }
     }
 
@@ -392,7 +395,7 @@ public class Gui extends Application {
                    text1.setX((scene.getWidth() - text1.getLayoutBounds().getWidth()) / 2);
                    text1.setY((scene.getHeight() - text1.getLayoutBounds().getHeight()) / 2);
                    text1.setTextAlignment(TextAlignment.CENTER);
-                   animationTexte(text1);
+                   UtilsGui.animationTexte(text1);
                    pane.getChildren().add(text1);
                } else if (newValue.equals(2)) {
                    Text text2 = UtilsGui.createText("SHORT a gagné !",true);
@@ -400,7 +403,7 @@ public class Gui extends Application {
                    text2.setX((scene.getWidth() - text2.getLayoutBounds().getWidth()) / 2);
                    text2.setY((scene.getHeight() - text2.getLayoutBounds().getHeight()) / 2);
                    text2.setTextAlignment(TextAlignment.CENTER);
-                   animationTexte(text2);
+                   UtilsGui.animationTexte(text2);
                    pane.getChildren().add(text2);
                }
             });
@@ -425,17 +428,7 @@ public class Gui extends Application {
         return scene;
 }
 
-private void animationTexte (Text text){
-    TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(2), text);
-    translateTransition.setToY(40); // Déplacement de 50 pixels vers le bas
-    translateTransition.setCycleCount(Animation.INDEFINITE); // Répéter indéfiniment
-    translateTransition.setAutoReverse(true); // Revenir en arrière après chaque itération
-
-    // Démarrer la translation
-    translateTransition.play();
-}
-
-//fonction qui recalcule les position des aretes et sommets lors d'un redimensionnement
+    //fonction qui recalcule les position des aretes et sommets lors d'un redimensionnement
     private void updateGraphLayout(Pane pane) {
         double xOffset = (pane.getWidth() - UtilsGui.WINDOW_WIDTH) / 2;
         double yOffset = (pane.getHeight() - UtilsGui.WINDOW_HEIGHT) / 2;
@@ -511,28 +504,24 @@ private void animationTexte (Text text){
             int Bx = pair.getValue().getCoords().getKey();
             int By = pair.getValue().getCoords().getValue();
             double pas = random.nextDouble() / 200 + 0.0025;
-            double Ux = (Bx-Ax) * pas;
-            double Uy = (By-Ay) * pas;
             Line line = new Line(Ax, Ay, Bx, By);
-            line.setStroke(Paint.valueOf("#a2d2ff"));
-            Line line2 = new Line(Ax, Ay, Ax+Ux, Ay+Uy);
+            LinearGradient gradient = new LinearGradient(
+                Ax,
+                Bx,
+                Ay,
+                By,
+                false,
+                CycleMethod.NO_CYCLE,
+                new Stop(0, Color.valueOf("ff99c8")),
+                new Stop(1, Color.valueOf("fff"))
+            );
+            line.setStroke(gradient);
             line.setStrokeWidth(5);
-            line2.setStrokeWidth(7);
-            line2.setStroke(Paint.valueOf("#a2d2ff"));
             line.setOnMouseClicked(handler);
-            line2.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
-            line2.getProperties().put("Ux", Ux);
-            line2.getProperties().put("Uy", Uy);
-            line2.getProperties().put("Ax", Ax);
-            line2.getProperties().put("Ay", Ay);
-            line2.getProperties().put("Bx", Bx);
-            line2.getProperties().put("By", By);
-            line2.getProperties().put("i", 0);
             // Ajout de la ligne sur sur l'affichage
-            pane.getChildren().addAll(line, line2);
+            pane.getChildren().add(line);
             edges.add(new Pair<>(pair, line));
-            posTransport.add(line2);
         }
         colorPlanarGraph(game.getGraph());
         for (int i = 0; i < this.game.getGraph().getNbVertices(); i++) {
@@ -633,9 +622,9 @@ private void animationTexte (Text text){
 
     public void mainTheme () {
         String audioS = "Sounds/testMusic.mp3";
-        System.out.println("Audio "+audioS);
+        log.info("Audio "+audioS);
         URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        System.out.println("Lool "+audioUrl);
+        log.info("Lool "+audioUrl);
         assert audioUrl != null;
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
