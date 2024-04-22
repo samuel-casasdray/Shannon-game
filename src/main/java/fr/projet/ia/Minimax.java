@@ -7,10 +7,8 @@ import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.util.Pair;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
 
 import static java.util.Collections.max;
 import static java.util.Collections.min;
@@ -33,29 +31,60 @@ public class Minimax extends InterfaceIA {
         return 0;
     }
 
-    public int evaluate2(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
-        int res = this.graph.getVertices().size();
-        HashSet<Pair<Vertex, Vertex>> toTest = new HashSet<>(this.graph.getNeighbors());
-        toTest.removeAll(cutted);
-        toTest.removeAll(secured);
+
+    public int evaluateDegree (HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
+        HashMap<Vertex,Integer> tab = new HashMap<>();
         for (Vertex v : this.graph.getVertices()) {
-            int nbNeib = 0;
-            boolean notSec = true;
-            for (Pair<Vertex, Vertex> s : secured) {
-                if (s.getValue() == v || s.getKey() == v) {
-                    notSec = false;
-                }
-            }
-            for (Pair<Vertex, Vertex> edge : toTest) {
-                if (edge.getValue() == v || edge.getKey() == v) {
-                    nbNeib += 1;
-                }
-            }
-            if (nbNeib < res) res = nbNeib;
+            tab.put(v,0);
         }
-        //System.out.println(-res);
-        return -res;
+        for (Pair<Vertex,Vertex> e : this.graph.getNeighbors()) {
+            if (secured.contains(e)) {
+                tab.put(e.getKey(),1000);
+                tab.put(e.getValue(),1000);
+            }
+            if (!cutted.contains(e)) {
+                tab.put(e.getKey(), tab.get(e.getKey()) + 1);
+                tab.put(e.getValue(), tab.get(e.getValue()) + 1);
+            }
+        }
+        int minNombre=1000;
+        Vertex v = graph.getVertices().getFirst();
+        for (Map.Entry<Vertex, Integer> entry : tab.entrySet()) {
+            if (entry.getValue() < minNombre) {
+                v = entry.getKey();
+                minNombre = entry.getValue();
+            }
+        }
+        System.out.println(v+" "+minNombre);
+        return -minNombre*10;
     }
+
+
+
+
+//    public int evaluate2(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
+//        int res = this.graph.getVertices().size();
+//        HashSet<Pair<Vertex, Vertex>> toTest = new HashSet<>(this.graph.getNeighbors());
+//        toTest.removeAll(cutted);
+//        toTest.removeAll(secured);
+//        for (Vertex v : this.graph.getVertices()) {
+//            int nbNeib = 0;
+//            boolean notSec = true;
+//            for (Pair<Vertex, Vertex> s : secured) {
+//                if (s.getValue() == v || s.getKey() == v) {
+//                    notSec = false;
+//                }
+//            }
+//            for (Pair<Vertex, Vertex> edge : toTest) {
+//                if (edge.getValue() == v || edge.getKey() == v) {
+//                    nbNeib += 1;
+//                }
+//            }
+//            if (nbNeib < res) res = nbNeib;
+//        }
+//        //System.out.println(-res);
+//        return -res;
+//    }
 
 
 
@@ -78,6 +107,7 @@ public class Minimax extends InterfaceIA {
         int d=this.depth-1;
         Pair<Vertex, Vertex> solution = null;
         int res = -100000;
+        int eval2 = evaluateDegree(securedInit,cuttedInit);
         //System.out.println("--------------------------------------------------------");
         for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
             if (!securedInit.contains(edge) && !cuttedInit.contains(edge)) {
