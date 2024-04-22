@@ -34,28 +34,50 @@ public class Minimax extends InterfaceIA {
 
     public int evaluateDegree (HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
         HashMap<Vertex,Integer> tab = new HashMap<>();
+        HashMap<Vertex,Integer> link = new HashMap<>();
+        int i=0;
         for (Vertex v : this.graph.getVertices()) {
             tab.put(v,0);
+            link.put(v,i);
+            i++;
         }
         for (Pair<Vertex,Vertex> e : this.graph.getNeighbors()) {
             if (secured.contains(e)) {
-                tab.put(e.getKey(),1000);
-                tab.put(e.getValue(),1000);
+                int val = link.get(e.getKey());
+                int toChange = link.get(e.getValue());
+                for (Map.Entry<Vertex, Integer> entry : link.entrySet()) {
+                    if (entry.getValue()==toChange) {
+                        link.put(entry.getKey(),val);
+                    }
+                }
             }
-            if (!cutted.contains(e)) {
+            if (!cutted.contains(e) && !secured.contains(e)) {
                 tab.put(e.getKey(), tab.get(e.getKey()) + 1);
                 tab.put(e.getValue(), tab.get(e.getValue()) + 1);
             }
         }
+        HashMap<Integer,Integer> scoreTot = new HashMap<>();
+        for (Map.Entry<Vertex, Integer> entry : link.entrySet()) {
+            if (!scoreTot.containsKey(entry.getValue())) {
+                scoreTot.put(entry.getValue(),0);
+                for (Map.Entry<Vertex, Integer> entry2 : link.entrySet()) {
+                    if (entry2.getValue()==entry.getValue()) {
+                        scoreTot.put(entry.getValue(),scoreTot.get(entry.getValue())+tab.get(entry2.getKey()));
+                    }
+                }
+            }
+        }
+        //System.out.println(scoreTot);
+        //System.out.println(link);
+        //System.out.println(tab);
         int minNombre=1000;
-        Vertex v = graph.getVertices().getFirst();
-        for (Map.Entry<Vertex, Integer> entry : tab.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : scoreTot.entrySet()) {
             if (entry.getValue() < minNombre) {
-                v = entry.getKey();
                 minNombre = entry.getValue();
             }
         }
-        System.out.println(v+" "+minNombre);
+        //System.out.println(minNombre);
+        //System.out.println(v+" "+minNombre);
         return -minNombre*10;
     }
 
@@ -107,7 +129,6 @@ public class Minimax extends InterfaceIA {
         int d=this.depth-1;
         Pair<Vertex, Vertex> solution = null;
         long res = -1000000000;
-        int eval2 = evaluateDegree(securedInit,cuttedInit);
         //System.out.println("--------------------------------------------------------");
         for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
             if (!securedInit.contains(edge) && !cuttedInit.contains(edge)) {
@@ -123,6 +144,7 @@ public class Minimax extends InterfaceIA {
             }
         }
         //System.out.println("--------------------------------------------------------\n"+solution);
+        evaluateDegree(game.getSecured(),game.getCutted());
         return solution;
     }
 
@@ -194,9 +216,10 @@ public class Minimax extends InterfaceIA {
 
     public int alpha_beta (HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player, int alpha, int beta) { //1 pour CUT 0 pour SHORT
         int eval = evaluateDegree(secured, cutted);
-        int eval2 = evaluateDegree(secured, cutted);
+        //int eval2 = evaluateDegree(secured, cutted);
         if (d == 0 || eval != 0) {
-            return (int) (eval*Math.pow(2,(d+1)))*100+eval2;
+            return eval;
+            //return (int) (eval*Math.pow(2,(d+1)))+eval2;
             //return (int) (eval*Math.pow(2,(d+1)))+eval2;
         }
         int val = 0;
