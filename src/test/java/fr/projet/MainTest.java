@@ -69,4 +69,20 @@ class MainTest {
         assertEquals(g.getNbVertices(), k);
         assertEquals(g.getTwoDistinctSpanningTrees().size(), 2);
     }
+
+    @Test
+    void testKruskalGrapheComplet() {
+        Graph g = new Graph();
+        int k = 6;
+        // Création graphe complet à k sommets
+        for (int i = 0; i < k; i++) {
+            Vertex v = new Vertex(0, 0);
+            g.addVertex(v);
+            for (int j = 0; j < i; j++)
+                g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
+        }
+        Graph kruskal = g.kruskal();
+        assertTrue(kruskal.getNbVertices() == g.getNbVertices() &&
+                kruskal.getNeighbors().size() < g.getNeighbors().size() && kruskal.estConnexe());
+    }
 }

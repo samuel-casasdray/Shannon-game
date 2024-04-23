@@ -142,7 +142,8 @@ public class Gui extends Application {
             }
         }
         root.getChildren().removeIf(Rectangle.class::isInstance);
-        etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed());
+        List<Node> circles = root.getChildren().stream().filter(Circle.class::isInstance).toList();
+        //etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed());
         for (Etoile etoile : etoiles.stream().filter(e -> e.getZ() >= planZ).toList()) {
             float x = planZ * etoile.getX() / etoile.getZ() + width/2;
             float y = planZ * etoile.getY() / etoile.getZ() + height/2;
@@ -154,7 +155,12 @@ public class Gui extends Application {
                 if (nodes.stream().noneMatch(node -> pixel.intersects(node.getBoundsInParent()))
                         && (!pixel.intersects(planetes.getBoundsInParent())))
                 {
-                    root.getChildren().add(pixel);
+                    boolean intersect = false;
+                    for (Node node : circles) {
+                        if (pixel.intersects(node.getBoundsInParent())) intersect = true;
+                    }
+                    if (!intersect)
+                        root.getChildren().add(pixel);
                 }
             }
         }
