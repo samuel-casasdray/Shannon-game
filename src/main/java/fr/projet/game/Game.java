@@ -413,7 +413,7 @@ public void deleteCuttedEdge() {
                     Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
                     HttpsClient.sendStatistics(2, 1, seed);
                 }
-                client.sendMessage(turn.toString()); // On envoie le gagnant au serveur pour qu'il puisse update les elo
+                client.sendMessage(turnValue.toString()); // On envoie le gagnant au serveur pour qu'il puisse update les elo
                 getClient().close();
             }
             return;

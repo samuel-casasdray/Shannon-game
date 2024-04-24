@@ -49,6 +49,7 @@ public class GuiScene {
     @Setter
     private Level level2;
     private static final Random random = new Random();
+    private static int NB_STARS = 4000; // TODO : Faire un glider pour pouvoir augmenter/diminuer le nombre d'étoiles
 
     public Scene home(HandleClick handleButtonClick) {
         Pane root = getBasicScene();
@@ -118,7 +119,7 @@ public class GuiScene {
             Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
             {
                 Gui.draw(root, nodes);
-                if (Gui.getEtoiles().size() < 8000) {
+                if (Gui.getEtoiles().size() < NB_STARS) {
                     Gui.getEtoiles().addAll(Gui.generer(100));
                 }
             })));
