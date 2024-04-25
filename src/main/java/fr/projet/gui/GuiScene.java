@@ -49,9 +49,16 @@ public class GuiScene {
     @Setter
     private Level level2;
     private static final Random random = new Random();
+    @Getter
+    @Setter
     private int NB_STARS = 4000;
+    @Getter
     private int MIN_STARS = 1000;
+    @Getter
     private int MAX_STARS = 8000;
+    @Getter
+    @Setter
+    private Slider slider = new Slider(0, 1, 0.5);
 
     public Scene home(HandleClick handleButtonClick) {
         Pane root = getBasicScene();
@@ -67,7 +74,6 @@ public class GuiScene {
         Text elo = UtilsGui.createText("Elo : " + eloPlayer);
         Text text1 = UtilsGui.createText("SHANNON GAME", true);
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
-        Slider slider = new Slider(0, 1, 0.5);
         slider.setLayoutX(100);
         slider.setLayoutY(0);
         //création des boutons d'option de jeu
@@ -116,8 +122,8 @@ public class GuiScene {
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, slider);
         List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion, slider);
         slider.valueProperty().addListener(event -> {
-            double t = slider.getValue();
-            NB_STARS = (int) ((1-t)*MIN_STARS+MAX_STARS*t);
+            double sliderValue = slider.getValue();
+            NB_STARS = (int) ((1-sliderValue)*MIN_STARS+MAX_STARS*sliderValue);
             if (Gui.getEtoiles().size() < NB_STARS) {
                 while (Gui.getEtoiles().size() < NB_STARS) {
                     Gui.getEtoiles().addAll(Gui.generer(100));

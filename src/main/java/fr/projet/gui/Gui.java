@@ -87,6 +87,10 @@ public class Gui extends Application {
     private static Timeline timer = new Timeline();
     private List<ImageView> images = new ArrayList<>();
     private static CheckBox planetes = new CheckBox("Afficher Planètes");
+    private static Slider slider = new Slider(0, 1, GuiScene.getSlider().getValue());
+    private int NB_STARS = GuiScene.getNB_STARS();
+    private int MIN_STARS = GuiScene.getMIN_STARS();
+    private int MAX_STARS = GuiScene.getMAX_STARS();
 
     public void createAnim() {
         new Thread(() -> {
@@ -112,7 +116,7 @@ public class Gui extends Application {
                     line.setTranslateY(i*Uy);
                 }
                 draw(pane, items);
-                if (etoiles.size() < 4000) {
+                if (etoiles.size() < NB_STARS) {
                     etoiles.addAll(generer(100));
                 }
             })));
@@ -153,7 +157,7 @@ public class Gui extends Application {
                 pixel = new Rectangle(x, y, 2,2);
                 pixel.setFill(color);
                 if (nodes.stream().noneMatch(node -> pixel.intersects(node.getBoundsInParent()))
-                        && (!pixel.intersects(planetes.getBoundsInParent())))
+                        && (!pixel.intersects(planetes.getBoundsInParent())) && (!pixel.intersects(slider.getBoundsInParent())))
                 {
                     boolean intersect = false;
                     for (Node node : circles) {
@@ -319,6 +323,8 @@ public class Gui extends Application {
     }
 
     public Scene run() {
+        slider.setValue(GuiScene.getSlider().getValue());
+        NB_STARS = GuiScene.getNB_STARS();
         // Création d'un BorderPane pour centrer le contenu
         BorderPane borderPane = new BorderPane();
         borderPane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -366,6 +372,8 @@ public class Gui extends Application {
         planetes.setLayoutX(500);
         planetes.setLayoutY(0);
         planetes.setTextFill(Color.WHITE);
+        slider.setLayoutX(700);
+        slider.setLayoutY(0);
         showGraph();
         if (game.isPvpOnline()) {
             GridPane root = new GridPane();
@@ -379,10 +387,27 @@ public class Gui extends Application {
                 turn = Turn.CUT;
             Text text = UtilsGui.createText("Vous jouez : " + turn);
             root.add(text, 1, 1);
-            pane.getChildren().addAll(root, returnButton, planetes);
+            pane.getChildren().addAll(root, returnButton, planetes, slider);
         }
         else
-            pane.getChildren().addAll(returnButton, planetes);
+            pane.getChildren().addAll(returnButton, planetes, slider);
+
+        slider.valueProperty().addListener(event -> {
+            double t = slider.getValue();
+            NB_STARS = (int) ((1-t)*MIN_STARS+MAX_STARS*t);
+            GuiScene.getSlider().setValue(t);
+            GuiScene.setNB_STARS(NB_STARS);
+            if (Gui.getEtoiles().size() < NB_STARS) {
+                while (Gui.getEtoiles().size() < NB_STARS) {
+                    Gui.getEtoiles().addAll(Gui.generer(100));
+                }
+            }
+            else {
+                while (Gui.getEtoiles().size() > NB_STARS) {
+                    Gui.getEtoiles().remove(Gui.getEtoiles().getFirst());
+                }
+            }
+        });
         borderPane.setCenter(pane);
         pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
