@@ -26,8 +26,8 @@ public class Minimax extends InterfaceIA {
     public int evaluate(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
         //if (this.graph.difference(cutted)) System.out.println("OOFEJOZEJIOEIOZ");
         Graph testSecured = new Graph(secured);
-        if (this.graph.difference(cutted)) return 100;
-        if (this.graph.estCouvrant(testSecured)) return -100;
+        if (this.graph.difference(cutted)) return 10000;
+        if (this.graph.estCouvrant(testSecured)) return -10000;
         return 0;
     }
 
@@ -137,6 +137,12 @@ public class Minimax extends InterfaceIA {
                 //int call = minMax(securedInit, cuttedModif, d, 0);
                 int call = alpha_beta(securedInit, cuttedModif, d, 0,-10000,10000);
                 //System.out.println(call+" - "+edge+"--------    "+res);
+
+                int call2 = evaluate(securedInit,cuttedModif);
+                if (call2>0) {
+                    call=call2;
+                }
+
                 if (call>res) {
                     res=call;
                     solution=edge;
@@ -215,10 +221,11 @@ public class Minimax extends InterfaceIA {
 
 
     public int alpha_beta (HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player, int alpha, int beta) { //1 pour CUT 0 pour SHORT
-        int eval = evaluateDegree(secured, cutted);
+        //int eval = evaluateDegree(secured, cutted);
+        int eval2 = evaluateDegree(secured, cutted);
         //int eval2 = evaluateDegree(secured, cutted);
-        if (d == 0 || eval != 0) {
-            return eval;
+        if (d == 0 || eval2 != 0) {
+            return eval2;// + eval2*10*(d+1);
             //return (int) (eval*Math.pow(2,(d+1)))+eval2;
             //return (int) (eval*Math.pow(2,(d+1)))+eval2;
         }
