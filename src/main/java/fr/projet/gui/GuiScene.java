@@ -49,7 +49,9 @@ public class GuiScene {
     @Setter
     private Level level2;
     private static final Random random = new Random();
-    private static int NB_STARS = 4000; // TODO : Faire un glider pour pouvoir augmenter/diminuer le nombre d'étoiles
+    private int NB_STARS = 4000;
+    private int MIN_STARS = 1000;
+    private int MAX_STARS = 8000;
 
     public Scene home(HandleClick handleButtonClick) {
         Pane root = getBasicScene();
@@ -65,7 +67,9 @@ public class GuiScene {
         Text elo = UtilsGui.createText("Elo : " + eloPlayer);
         Text text1 = UtilsGui.createText("SHANNON GAME", true);
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
-
+        Slider slider = new Slider(0, 1, 0.5);
+        slider.setLayoutX(100);
+        slider.setLayoutY(0);
         //création des boutons d'option de jeu
         Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA));
         Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO));
@@ -107,10 +111,24 @@ public class GuiScene {
         deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - deconnexion.getPrefWidth()/2);
         deconnexion.setLayoutY(800);
         if (pseudo.length() >= 3)
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider);
         else
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5);
-        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, slider);
+        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion, slider);
+        slider.valueProperty().addListener(event -> {
+            double t = slider.getValue();
+            NB_STARS = (int) ((1-t)*MIN_STARS+MAX_STARS*t);
+            if (Gui.getEtoiles().size() < NB_STARS) {
+                while (Gui.getEtoiles().size() < NB_STARS) {
+                    Gui.getEtoiles().addAll(Gui.generer(100));
+                }
+            }
+            else {
+                while (Gui.getEtoiles().size() > NB_STARS) {
+                    Gui.getEtoiles().remove(Gui.getEtoiles().getFirst());
+                }
+            }
+        });
         if (Gui.getStars() != null)
             Gui.getStars().stop();
         if (Gui.getEtoiles().isEmpty())
