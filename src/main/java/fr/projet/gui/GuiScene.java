@@ -5,6 +5,7 @@ import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
+import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -124,16 +125,7 @@ public class GuiScene {
         slider.valueProperty().addListener(event -> {
             double sliderValue = slider.getValue();
             NB_STARS = (int) ((1-sliderValue)*MIN_STARS+MAX_STARS*sliderValue);
-            if (Gui.getEtoiles().size() < NB_STARS) {
-                while (Gui.getEtoiles().size() < NB_STARS) {
-                    Gui.getEtoiles().addAll(Gui.generer(100));
-                }
-            }
-            else {
-                while (Gui.getEtoiles().size() > NB_STARS) {
-                    Gui.getEtoiles().remove(Gui.getEtoiles().getFirst());
-                }
-            }
+            Gui.createRemoveStars(NB_STARS);
         });
         if (Gui.getStars() != null)
             Gui.getStars().stop();
@@ -147,7 +139,7 @@ public class GuiScene {
                     Gui.getEtoiles().addAll(Gui.generer(100));
                 }
             })));
-            Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+            Gui.getStars().setCycleCount(Animation.INDEFINITE);
             Gui.getStars().play();
         }).start();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -158,7 +150,7 @@ public class GuiScene {
             Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
                 Gui.draw(root, items);
             })));
-            Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+            Gui.getStars().setCycleCount(Animation.INDEFINITE);
             Gui.getStars().play();
         }).start();
     }
@@ -213,7 +205,7 @@ public class GuiScene {
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         Spinner<Integer> nbVertices = new Spinner<>(5,40,20);
         Text code = UtilsGui.createText("");
-        Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
+        Text textNbVertices = UtilsGui.createText("Nombre de sommets");
         Text textCreate = UtilsGui.createText(" ");
         //textCreate.setFont(Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font3.ttf"),30));
 
@@ -261,7 +253,7 @@ public class GuiScene {
                             }
                         }).start();
 
-                    } catch (Exception e) {}
+                    } catch (Exception ignored) {}
                 });
         if (pseudo.length() >= 3)
         {
@@ -274,13 +266,13 @@ public class GuiScene {
         root.add(buttonCreate, 1, 0);
         root.add(textTurn, 1, 3);
         root.add(choixTurn, 1, 4);
-        root.add(TextNbVertices, 1, 1);
+        root.add(textNbVertices, 1, 1);
         root.add(nbVertices, 1, 2);
         root.add(code, 1, 5);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-        List<Node> items = List.of(text1, textJoin, buttonJoin, textCreate, buttonCreate, textTurn, choixTurn, TextNbVertices, nbVertices, code);
+        List<Node> items = List.of(text1, textJoin, buttonJoin, textCreate, buttonCreate, textTurn, choixTurn, textNbVertices, nbVertices, code);
         Gui.getStars().stop();
         createTimeLineThread(scene, items);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -307,7 +299,7 @@ public class GuiScene {
         Spinner<Integer> spinner = new Spinner<>(5, 40, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
-        Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
+        Text textNbVertices = UtilsGui.createText("Nombre de sommets");
         Button buttonCreate = UtilsGui.createButton(
                 "Lancer",
                 event -> {
@@ -346,12 +338,12 @@ public class GuiScene {
         root.add(choixIA1, 1, 1);
         root.add(choixIA2, 2, 1);
         root.add(buttonCreate, 1, 3);
-        root.add(TextNbVertices, 2, 2);
+        root.add(textNbVertices, 2, 2);
         root.add(spinner, 2, 3);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-        List<Node> items = List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, TextNbVertices, spinner);
+        List<Node> items = List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, textNbVertices, spinner);
         Gui.getStars().stop();
         createTimeLineThread(scene, items);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -376,7 +368,7 @@ public class GuiScene {
         List<Node> items = List.of(title, text1, shortbut, cutbut);
         Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
                 Gui.draw(root, items))));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+        Gui.getStars().setCycleCount(Animation.INDEFINITE);
         Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
