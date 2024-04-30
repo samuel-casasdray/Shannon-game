@@ -81,7 +81,7 @@ class MainTest {
             for (int j = 0; j < i; j++)
                 g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
         }
-        Graph kruskal = g.kruskal();
+        Graph kruskal = g.getSpanningTree();
         assertTrue(kruskal.getNbVertices() == g.getNbVertices() &&
                 kruskal.getNeighbors().size() < g.getNeighbors().size() && kruskal.estConnexe());
     }

@@ -91,7 +91,6 @@ public class Gui extends Application {
     private static int NB_STARS = GuiScene.getNB_STARS();
     private static int MIN_STARS = GuiScene.getMIN_STARS();
     private static int MAX_STARS = GuiScene.getMAX_STARS();
-
     public static void createAnim() {
         new Thread(() -> {
             Gui.setTimer(new Timeline(new KeyFrame(Duration.millis(20), event -> {
@@ -345,7 +344,7 @@ public class Gui extends Application {
             }
         });
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
-//        new Thread(() -> {
+//        Thread arbres = new Thread(() -> {
 //            List<Graph> result = graph.getTwoDistinctSpanningTrees();
 //            if (!result.isEmpty()) {
 //                for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
@@ -367,7 +366,7 @@ public class Gui extends Application {
 //                            pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
 //                    Platform.runLater(() -> {
 //                        line.setStroke(Color.RED);
-//                        line.setStrokeWidth(10);
+//                        line.setStrokeWidth(15);
 //                        pane.getChildren().add(line);
 //                    });
 //                }
@@ -375,7 +374,9 @@ public class Gui extends Application {
 //            else {
 //                System.out.println("Il n'y a pas deux arbres couvrants disjoints");
 //            }
-//        }).start();
+//        });
+//        arbres.setDaemon(true);
+//        arbres.start();
         Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, Gui::handleButtonClick);
         edges.clear();
         planetes.setLayoutX(500);
@@ -504,15 +505,6 @@ public class Gui extends Application {
             if (node instanceof Circle || node instanceof ImageView) {
                 node.setTranslateX(xOffset + UtilsGui.CIRCLE_SIZE);
                 node.setTranslateY(yOffset + UtilsGui.CIRCLE_SIZE);
-            } else if (node instanceof Text text) {
-                int i = Integer.parseInt(text.getText());
-                Pair<Integer, Integer> coord = Gui.game.getGraph().getVertices().get(i-1).getCoords();
-                // Centrage du texte
-                if (i >= 9) {
-                    text.relocate(coord.getKey() + 13.50 + xOffset, coord.getValue() + 15.50 + yOffset);
-                } else {
-                    text.relocate(coord.getKey() + 16.50 + xOffset, coord.getValue() + 15.50 + yOffset);
-                }
             }
         }
     }
