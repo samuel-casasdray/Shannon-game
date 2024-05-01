@@ -134,7 +134,7 @@ public class GuiScene {
         new Thread(() -> {
             Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
             {
-                Gui.draw(root, nodes);
+                Gui.draw(root);
                 if (Gui.getEtoiles().size() < NB_STARS) {
                     Gui.getEtoiles().addAll(Gui.generer(100));
                 }
@@ -145,10 +145,10 @@ public class GuiScene {
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
-    public void createTimeLineThread(Pane root, List<Node> items) {
+    public void createTimeLineThread(Pane root) {
         new Thread(() -> {
             Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-                Gui.draw(root, items);
+                Gui.draw(root);
             })));
             Gui.getStars().setCycleCount(Animation.INDEFINITE);
             Gui.getStars().play();
@@ -272,9 +272,8 @@ public class GuiScene {
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-        List<Node> items = List.of(text1, textJoin, buttonJoin, textCreate, buttonCreate, textTurn, choixTurn, textNbVertices, nbVertices, code);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -343,9 +342,8 @@ public class GuiScene {
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-        List<Node> items = List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, textNbVertices, spinner);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -365,9 +363,8 @@ public class GuiScene {
         cutbut.setLayoutY(400);
         Gui.getStars().stop();
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut);
-        List<Node> items = List.of(title, text1, shortbut, cutbut);
         Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
-                Gui.draw(root, items))));
+                Gui.draw(root))));
         Gui.getStars().setCycleCount(Animation.INDEFINITE);
         Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -392,9 +389,8 @@ public class GuiScene {
         difficile.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - difficile.getPrefWidth()/2);
         difficile.setLayoutY(500);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile);
-        List<Node> items = List.of(title, text1, facile, normal, difficile);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -423,9 +419,8 @@ public class GuiScene {
         enter.setLayoutY(300);
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
-        List<Node> items = List.of(title, spinner, enter);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -448,8 +443,7 @@ public class GuiScene {
             erreurText.setY(150);
             root.getChildren().addAll(erreurText, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
             Gui.getStars().stop();
-            List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
-            createTimeLineThread(root, items);
+            createTimeLineThread(root);
             return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         }
         response.setText(statsList.getFirst().getAsString());
@@ -478,9 +472,8 @@ public class GuiScene {
         response.setFill(Color.RED);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
                 response, cutText, cut, shortText, shorts, onlineText, online);
-        List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -493,9 +486,8 @@ public class GuiScene {
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
         button2.setLayoutY(400);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
-        List<Node> items = List.of(button1, button2);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -545,9 +537,8 @@ public class GuiScene {
         login.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - login.getPrefWidth()/2);
         login.setLayoutY(300);
         scene.getChildren().addAll(root, title, username, password, login, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
-        List<Node> items = List.of(title, username, password, login);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -611,9 +602,8 @@ public class GuiScene {
         register.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - register.getPrefWidth()/2);
         register.setLayoutY(350);
         scene.getChildren().addAll(root, title, username, password, passwordRepeat, register, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
-        List<Node> items = List.of(title, username, password, passwordRepeat, register);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 }
