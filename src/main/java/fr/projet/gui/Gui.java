@@ -667,10 +667,10 @@ public class Gui extends Application {
 //    }
 
 
-    public void mainTheme () {
+    public static void mainTheme () {
         String audioS = "Sounds/testMusic.mp3";
         System.out.println("Audio "+audioS);
-        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
+        URL audioUrl = Gui.class.getClassLoader().getResource(audioS);
         System.out.println("Lool "+audioUrl);
         assert audioUrl != null;
         String audioFile = audioUrl.toExternalForm();
@@ -688,7 +688,7 @@ public class Gui extends Application {
         //mediaPlayer.play();
     }
 
-    private void stopMediaPlayer(MediaPlayer mp) {
+    private static void stopMediaPlayer(MediaPlayer mp) {
         if (mp != null) {
             mp.stop();
         }
