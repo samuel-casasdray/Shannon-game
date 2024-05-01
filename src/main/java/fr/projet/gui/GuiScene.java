@@ -5,6 +5,7 @@ import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
+import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -49,6 +50,16 @@ public class GuiScene {
     @Setter
     private Level level2;
     private static final Random random = new Random();
+    @Getter
+    @Setter
+    private int NB_STARS = 4000;
+    @Getter
+    private int MIN_STARS = 1000;
+    @Getter
+    private int MAX_STARS = 8000;
+    @Getter
+    @Setter
+    private Slider slider = new Slider(0, 1, 0.5);
 
     public Scene home(HandleClick handleButtonClick) {
         Pane root = getBasicScene();
@@ -64,7 +75,8 @@ public class GuiScene {
         Text elo = UtilsGui.createText("Elo : " + eloPlayer);
         Text text1 = UtilsGui.createText("SHANNON GAME", true);
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
-
+        slider.setLayoutX(100);
+        slider.setLayoutY(0);
         //création des boutons d'option de jeu
         Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA));
         Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO));
@@ -106,10 +118,15 @@ public class GuiScene {
         deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - deconnexion.getPrefWidth()/2);
         deconnexion.setLayoutY(800);
         if (pseudo.length() >= 3)
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider);
         else
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5);
-        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, slider);
+        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion, slider);
+        slider.valueProperty().addListener(event -> {
+            double sliderValue = slider.getValue();
+            NB_STARS = (int) ((1-sliderValue)*MIN_STARS+MAX_STARS*sliderValue);
+            Gui.createRemoveStars(NB_STARS);
+        });
         if (Gui.getStars() != null)
             Gui.getStars().stop();
         if (Gui.getEtoiles().isEmpty())
@@ -117,23 +134,23 @@ public class GuiScene {
         new Thread(() -> {
             Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
             {
-                Gui.draw(root, nodes);
-                if (Gui.getEtoiles().size() < 8000) {
+                Gui.draw(root);
+                if (Gui.getEtoiles().size() < NB_STARS) {
                     Gui.getEtoiles().addAll(Gui.generer(100));
                 }
             })));
-            Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+            Gui.getStars().setCycleCount(Animation.INDEFINITE);
             Gui.getStars().play();
         }).start();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
-    public void createTimeLineThread(Pane root, List<Node> items) {
+    public void createTimeLineThread(Pane root) {
         new Thread(() -> {
             Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-                Gui.draw(root, items);
+                Gui.draw(root);
             })));
-            Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+            Gui.getStars().setCycleCount(Animation.INDEFINITE);
             Gui.getStars().play();
         }).start();
     }
@@ -188,7 +205,7 @@ public class GuiScene {
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         Spinner<Integer> nbVertices = new Spinner<>(5,40,20);
         Text code = UtilsGui.createText("");
-        Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
+        Text textNbVertices = UtilsGui.createText("Nombre de sommets");
         Text textCreate = UtilsGui.createText(" ");
         //textCreate.setFont(Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font3.ttf"),30));
 
@@ -236,7 +253,7 @@ public class GuiScene {
                             }
                         }).start();
 
-                    } catch (Exception e) {}
+                    } catch (Exception ignored) {}
                 });
         if (pseudo.length() >= 3)
         {
@@ -249,15 +266,14 @@ public class GuiScene {
         root.add(buttonCreate, 1, 0);
         root.add(textTurn, 1, 3);
         root.add(choixTurn, 1, 4);
-        root.add(TextNbVertices, 1, 1);
+        root.add(textNbVertices, 1, 1);
         root.add(nbVertices, 1, 2);
         root.add(code, 1, 5);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-        List<Node> items = List.of(text1, textJoin, buttonJoin, textCreate, buttonCreate, textTurn, choixTurn, TextNbVertices, nbVertices, code);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -282,7 +298,7 @@ public class GuiScene {
         Spinner<Integer> spinner = new Spinner<>(5, 40, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
-        Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
+        Text textNbVertices = UtilsGui.createText("Nombre de sommets");
         Button buttonCreate = UtilsGui.createButton(
                 "Lancer",
                 event -> {
@@ -321,14 +337,13 @@ public class GuiScene {
         root.add(choixIA1, 1, 1);
         root.add(choixIA2, 2, 1);
         root.add(buttonCreate, 1, 3);
-        root.add(TextNbVertices, 2, 2);
+        root.add(textNbVertices, 2, 2);
         root.add(spinner, 2, 3);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-        List<Node> items = List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, TextNbVertices, spinner);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -348,10 +363,9 @@ public class GuiScene {
         cutbut.setLayoutY(400);
         Gui.getStars().stop();
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut);
-        List<Node> items = List.of(title, text1, shortbut, cutbut);
         Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
-                Gui.draw(root, items))));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+                Gui.draw(root))));
+        Gui.getStars().setCycleCount(Animation.INDEFINITE);
         Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
@@ -375,9 +389,8 @@ public class GuiScene {
         difficile.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - difficile.getPrefWidth()/2);
         difficile.setLayoutY(500);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile);
-        List<Node> items = List.of(title, text1, facile, normal, difficile);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -406,9 +419,8 @@ public class GuiScene {
         enter.setLayoutY(300);
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
-        List<Node> items = List.of(title, spinner, enter);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -431,8 +443,7 @@ public class GuiScene {
             erreurText.setY(150);
             root.getChildren().addAll(erreurText, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
             Gui.getStars().stop();
-            List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
-            createTimeLineThread(root, items);
+            createTimeLineThread(root);
             return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         }
         response.setText(statsList.getFirst().getAsString());
@@ -461,9 +472,8 @@ public class GuiScene {
         response.setFill(Color.RED);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
                 response, cutText, cut, shortText, shorts, onlineText, online);
-        List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -476,9 +486,8 @@ public class GuiScene {
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
         button2.setLayoutY(400);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
-        List<Node> items = List.of(button1, button2);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -528,9 +537,8 @@ public class GuiScene {
         login.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - login.getPrefWidth()/2);
         login.setLayoutY(300);
         scene.getChildren().addAll(root, title, username, password, login, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
-        List<Node> items = List.of(title, username, password, login);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -594,9 +602,8 @@ public class GuiScene {
         register.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - register.getPrefWidth()/2);
         register.setLayoutY(350);
         scene.getChildren().addAll(root, title, username, password, passwordRepeat, register, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
-        List<Node> items = List.of(title, username, password, passwordRepeat, register);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 }

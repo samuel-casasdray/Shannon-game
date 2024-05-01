@@ -190,7 +190,7 @@ public class Graph {
         // Instantiation des N (nbVextex) sommets et de leur coordonnées.
         int compteur=0;
         generateGraphPlanaire(7, 3);
-        Graph tree = kruskal();
+        Graph tree = getSpanningTree();
         if (difference((HashSet<Pair<Vertex, Vertex>>) tree.getNeighbors())) {
             graphForSHORT();
         }
@@ -316,14 +316,14 @@ public class Graph {
         return G.getNbVertices() == nbVertices && G.estConnexe();
     }
 
-    public boolean difference (HashSet<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
-        HashSet<Pair<Vertex, Vertex>> VerticeNew = new HashSet<>();
+    public boolean difference (Set<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
+        Set<Pair<Vertex, Vertex>> verticeNew = new HashSet<>();
         for (Pair<Vertex, Vertex> edge : neighbors) {
             if (!cutted.contains(edge)) {
-                VerticeNew.add(edge);
+                verticeNew.add(edge);
             }
         }
-        Graph toTest = new Graph(VerticeNew);
+        Graph toTest = new Graph(verticeNew);
         HashSet<Vertex> hVertices = new HashSet<>(toTest.getVertices());
         for (Vertex v : this.getVertices()) {
             if (!hVertices.contains(v)) return true;
@@ -332,23 +332,6 @@ public class Graph {
         return !toTest.estConnexe();
     }
 
-
-
-private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Integer, Pair<Integer, Integer>> edgNum) {
-        List<Pair<Integer, Integer>> edges1 = new ArrayList<>();
-        List<Pair<Integer, Integer>> edges2 = new ArrayList<>();
-
-        for (Integer edge : tree1) {
-            edges1.add(edgNum.get(edge));
-        }
-
-        for (Integer edge : tree2) {
-            edges2.add(edgNum.get(edge));
-        }
-
-        edges1.retainAll(edges2);
-        return edges1.isEmpty();
-    }
     private List<List<Integer>> cartesianProduct(List<List<Integer>> lists) {
         List<List<Integer>> resultLists = new ArrayList<>();
         if (lists.isEmpty()) {
@@ -359,7 +342,7 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
             List<List<Integer>> remainingLists = cartesianProduct(lists.subList(1, lists.size()));
             for (Integer condition : firstList) {
                 for (List<Integer> remainingList : remainingLists) {
-                    ArrayList<Integer> resultList = new ArrayList<>();
+                    List<Integer> resultList = new ArrayList<>();
                     resultList.add(condition);
                     resultList.addAll(remainingList);
                     resultLists.add(resultList);
@@ -368,35 +351,13 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
         }
         return resultLists;
     }
-    private List<Graph> spanTrees(List<List<Integer>> trs, List<List<List<Integer>>> edg, List<List<Integer>> all_span_trees, int k, Map<Integer, Pair<Integer, Integer>> edgNum) {
+    private List<Graph> spanTrees(List<List<Integer>> trs, List<List<List<Integer>>> edg, int k, Map<Integer, Pair<Integer, Integer>> edgNum) {
         if (k == 0) {
             List<List<Integer>> productResult = cartesianProduct(trs);
             // Code pour renvoyer deux arbres couvrants par énumération
-//            if (all_span_trees.size() >= 100)
-//            {
-//                for (List<Integer> tree : productResult) {
-//                    for (List<Integer> existingTree : all_span_trees) {
-//                        if (areDisjoint(tree, existingTree, edgNum)) {
-//                            List<Graph> result = new ArrayList<>(2);
-//                            for (List<Integer> element : Arrays.asList(tree, existingTree)) {
-//                                Graph gr = new Graph();
-//                                for (Integer t : element) {
-//                                    Pair<Integer, Integer> edgeIndices = edgNum.get(t);
-//                                    Vertex v1 = getVertices().get(edgeIndices.getKey());
-//                                    Vertex v2 = getVertices().get(edgeIndices.getValue());
-//                                    gr.addNeighbor(new Pair<>(v1, v2));
-//                                }
-//                                result.add(gr);
-//                            }
-//                            return result;
-//                        }
-//                    }
-//                }
-//            }
-            // On regarde si le graphe moins l'arbre couvrant est connexe (=diff),
-            // si oui on prend un arbre couvrant grâce à Kruskal, s'il est couvrant du graphe de base
-            // nous avons nos deux arbres couvrants disjoints
-            //System.out.println(all_span_trees.size());
+            // On prend le graphe moins l'arbre couvrant (=diff)
+            // On prend un arbre couvrant de diff
+            // Si cet arbre est couvrant du graphe de base alors on a trouvé deux arbres couvrants disjoints
             for (List<Integer> tree : productResult) {
                 Graph spanningTree = new Graph();
                 for (Integer t : tree) {
@@ -405,52 +366,26 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
                     Vertex v2 = getVertices().get(edgeIndices.getValue());
                     spanningTree.addNeighbor(new Pair<>(v1, v2));
                 }
+                boolean isNotPossibleToGetASecondSpanningTree = false;
+                for (Vertex v : spanningTree.getVertices()) {
+                    if (spanningTree.getAdjVertices().get(v).size() == getAdjVertices().get(v).size())
+                    {
+                        isNotPossibleToGetASecondSpanningTree = true; // Si un sommet d'un arbre couvrant a le même degré que le graphe de base,
+                        break;  // cela veut dire qu'il ne peut pas y avoir de second arbre couvrant disjoint de celui-ci
+                    }   // car le graphe complémentaire ne contiendrait pas ce sommet
+                }
+                if (isNotPossibleToGetASecondSpanningTree) continue;
                 Graph diff = new Graph();
                 for (Pair<Vertex, Vertex> edge : getNeighbors()) {
                     if (!spanningTree.getNeighbors().contains(edge) && !spanningTree.getNeighbors().contains(new Pair<>(edge.getValue(), edge.getKey()))) {
                         diff.addNeighbor(edge);
                     }
                 }
-                //if (!diff.estConnexe()) {
-                    // Second spanning tree ?
-                    Graph kruskal = diff.kruskal();
-//                    if (!kruskal.estConnexe()) {
-//                        System.out.println("Kruskal non connexe");
-//                        List<Pair<Vertex, Vertex>> edges = new ArrayList<>(spanningTree.getNeighbors());
-//                        for (Pair<Vertex, Vertex> edge : edges) {
-//                            spanningTree.removeNeighbor(edge);
-//                            if (spanningTree.getNbVertices() != getNbVertices()) {
-//                                spanningTree.addNeighbor(edge);
-//                            } else {
-//                                kruskal.addNeighbor(edge);
-//                                System.out.println((getVertices().indexOf(edge.getKey()) + 1) + " -- " + (getVertices().indexOf(edge.getValue()) + 1));
-//                                for (Pair<Vertex, Vertex> edge2 : getNeighbors()) {
-//                                    Pair<Vertex, Vertex> edge3 = new Pair<>(edge2.getValue(), edge2.getKey());
-//                                    if (!kruskal.getNeighbors().contains(edge2) && !kruskal.getNeighbors().contains(edge3) &&
-//                                    !spanningTree.getNeighbors().contains(edge2) && !spanningTree.getNeighbors().contains(edge3)) {
-//                                        spanningTree.addNeighbor(edge2);
-//                                        if (spanningTree.getNbVertices() == getNbVertices() && kruskal.estConnexe() && spanningTree.estConnexe()) {
-//
-//                                            if (kruskal.getNbVertices() == getNbVertices()) // yes
-//                                            {
-//                                                System.out.println("Ok");
-//                                                return Arrays.asList(spanningTree, kruskal);
-//                                            }
-//                                            else
-//                                                spanningTree.removeNeighbor(edge2);
-//                                        }
-//                                    }
-//                                }
-//                                spanningTree.addNeighbor(edge);
-//                                kruskal.removeNeighbor(edge);
-//                            }
-//                        }
-//                    }
-                    if (kruskal.getNbVertices() == getNbVertices() && kruskal.estConnexe()) // yes
-                        return Arrays.asList(spanningTree, kruskal);
-                //}
+                // Second spanning tree ?
+                Graph kruskal = diff.getSpanningTree();
+                if (kruskal.getNbVertices() == getNbVertices() && kruskal.estConnexe()) // yes
+                    return Arrays.asList(spanningTree, kruskal);
             }
-            //all_span_trees.addAll(productResult);
         }
             for (int i = 0; i < k; i++) {
                 if (edg.get(k).get(i).isEmpty()) continue;
@@ -463,7 +398,7 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
                     concat.add(tempList);
                 }
                 edg.set(i, concat);
-                List<Graph> spanningTrees = spanTrees(trs, edg, all_span_trees, k - 1, edgNum);
+                List<Graph> spanningTrees = spanTrees(trs, edg, k - 1, edgNum);
                 if (!spanningTrees.isEmpty()) return spanningTrees;
                 trs.removeLast();
                 for (int j = 0; j < i; j++) {
@@ -498,51 +433,29 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
             edgNum.put(mx, new Pair<>(i, j));
             mx--;
         }
-        return spanTrees(new ArrayList<>(), edg, new ArrayList<>(), n-1, edgNum);
+        return spanTrees(new ArrayList<>(), edg, n-1, edgNum);
     }
 
-    private int find(List<Integer> parent, int i) {
-        if (parent.get(i) == i) return i;
-        return find(parent, parent.get(i));
+    public Graph getSpanningTree() {
+        List<Vertex> file = new ArrayList<>();
+        Set<Vertex> marques = new HashSet<>();
+        Set<Pair<Vertex, Vertex>> edges = new HashSet<>();
+        file.add(getVertices().getFirst());
+        while (!file.isEmpty()) {
+            Vertex s = file.getFirst();
+            file.removeFirst();
+            for (Vertex t : getAdjVertices().get(s)) {
+                if (!marques.contains(t)) {
+                    file.add(t);
+                    edges.add(new Pair<>(s, t));
+                    marques.add(t);
+                }
+            }
+        }
+
+        return new Graph(edges);
     }
 
-    private void union(List<Integer> parent, List<Integer> rank, int x, int y) {
-        int xroot = find(parent, x);
-        int yroot = find(parent, y);
-        if (rank.get(xroot) < rank.get(yroot))
-            parent.set(xroot, yroot);
-        else if (rank.get(xroot) > rank.get(yroot))
-            parent.set(yroot, xroot);
-        else {
-            parent.set(yroot, xroot);
-            rank.set(xroot, rank.get(xroot)+1);
-        }
-    }
-
-    public Graph kruskal() {
-        List<Pair<Vertex, Vertex>> neighbors = new ArrayList<>(getNeighbors());
-        List<Pair<Vertex, Vertex>> result = new ArrayList<>();
-        int i = 0;
-        int e = 0;
-        List<Integer> parent = new ArrayList<>();
-        List<Integer> rank = new ArrayList<>();
-        for (int node = 0; node < getNbVertices(); node++) {
-            parent.add(node);
-            rank.add(0);
-        }
-        while (e < getNbVertices() - 1 && i < neighbors.size()) {
-           Pair<Vertex, Vertex> uv = neighbors.get(i);
-           i++;
-           int x = find(parent, getVertices().indexOf(uv.getKey()));
-           int y = find(parent, getVertices().indexOf(uv.getValue()));
-           if (x != y) {
-               e++;
-               result.add(uv);
-               union(parent, rank, x, y);
-           }
-        }
-        return new Graph(result);
-    }
 
     //Stratégie Gagnante :
 
@@ -614,7 +527,7 @@ private boolean areDisjoint(List<Integer> tree1, List<Integer> tree2, Map<Intege
 
 
     public boolean winningStrat () {
-        Graph T1 = kruskal();
+        Graph T1 = getSpanningTree();
         Graph T2 = this.soustraction(T1);
         if (T2.estConnexe()) {
             return true; //Short Win
