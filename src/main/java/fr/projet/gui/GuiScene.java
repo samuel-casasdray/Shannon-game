@@ -60,6 +60,15 @@ public class GuiScene {
     @Getter
     @Setter
     private Slider slider = new Slider(0, 1, 0.5);
+    @Getter
+    private double VOLUME = 0.5;
+    @Getter
+    private double MIN_VOLUME = 0.0;
+    @Getter
+    private double MAX_VOLUME = 1.5;
+    @Getter
+    @Setter
+    private Slider slider2 = new Slider(0, 1.5, 0.5);
 
     public Scene home(HandleClick handleButtonClick) {
         Pane root = getBasicScene();
@@ -77,6 +86,8 @@ public class GuiScene {
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
         slider.setLayoutX(100);
         slider.setLayoutY(0);
+        slider2.setLayoutX(100);
+        slider2.setLayoutY(20);
         //création des boutons d'option de jeu
         Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA));
         Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO));
@@ -118,14 +129,19 @@ public class GuiScene {
         deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - deconnexion.getPrefWidth()/2);
         deconnexion.setLayoutY(800);
         if (pseudo.length() >= 3)
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider, slider2);
         else
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, slider);
-        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion, slider);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, slider, slider2);
+        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion, slider, slider2);
         slider.valueProperty().addListener(event -> {
             double sliderValue = slider.getValue();
             NB_STARS = (int) ((1-sliderValue)*MIN_STARS+MAX_STARS*sliderValue);
             Gui.createRemoveStars(NB_STARS);
+        });
+        slider2.valueProperty().addListener(event -> {
+            double sliderValue = slider2.getValue();
+            VOLUME = (int) ((1-sliderValue)*MIN_VOLUME+MAX_VOLUME*sliderValue);
+            Gui.changeVolume(VOLUME);
         });
         if (Gui.getStars() != null)
             Gui.getStars().stop();

@@ -521,14 +521,14 @@ public void deleteCuttedEdge() {
         return joiner;
     }
 
-    public void playSound (String name, float v) {
+    public void playSound (String name) {
         String audioS = "Sounds/"+name+".mp3";
         URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
         assert audioUrl != null;
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(v);
+        mediaPlayer.setVolume(Gui.getVOLUME());
         mediaPlayer.play();
     }
 
@@ -544,7 +544,7 @@ public void deleteCuttedEdge() {
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
         //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        mediaPlayer.setVolume(0.5);
+        mediaPlayer.setVolume(Gui.getVOLUME());
         Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
         mediaPlayer.play();
     }
@@ -561,7 +561,7 @@ public void deleteCuttedEdge() {
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(0.5);
+        mediaPlayer.setVolume(Gui.getVOLUME());
         Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
         mediaPlayer.play();
 

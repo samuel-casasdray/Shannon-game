@@ -91,6 +91,12 @@ public class Gui extends Application {
     private static int NB_STARS = GuiScene.getNB_STARS();
     private static int MIN_STARS = GuiScene.getMIN_STARS();
     private static int MAX_STARS = GuiScene.getMAX_STARS();
+    private static final Slider slider2 = new Slider(0, 1.5, GuiScene.getSlider().getValue());
+    @Getter
+    private static double VOLUME = GuiScene.getVOLUME();
+    private static double MIN_VOLUME = GuiScene.getMIN_VOLUME();
+    private static double MAX_VOLUME = GuiScene.getMAX_VOLUME();
+    private static AudioClip mainSound;
     public static void createAnim() {
         new Thread(() -> {
             Gui.setTimer(new Timeline(new KeyFrame(Duration.millis(20), event -> {
@@ -375,6 +381,8 @@ public class Gui extends Application {
         planetes.setTextFill(Color.WHITE);
         slider.setLayoutX(700);
         slider.setLayoutY(0);
+        slider2.setLayoutX(700);
+        slider2.setLayoutY(20);
         showGraph();
         if (game.isPvpOnline()) {
             GridPane root = new GridPane();
@@ -388,10 +396,10 @@ public class Gui extends Application {
                 turn = Turn.CUT;
             Text text = UtilsGui.createText("Vous jouez : " + turn);
             root.add(text, 1, 1);
-            pane.getChildren().addAll(root, returnButton, planetes, slider);
+            pane.getChildren().addAll(root, returnButton, planetes, slider, slider2);
         }
         else
-            pane.getChildren().addAll(returnButton, planetes, slider);
+            pane.getChildren().addAll(returnButton, planetes, slider, slider2);
 
         slider.valueProperty().addListener(event -> {
             double t = slider.getValue();
@@ -400,6 +408,14 @@ public class Gui extends Application {
             GuiScene.setNB_STARS(NB_STARS);
             createRemoveStars(NB_STARS);
         });
+
+        slider2.valueProperty().addListener(event -> {
+            double t = slider2.getValue();
+            VOLUME = (1-t)*MIN_VOLUME+MAX_VOLUME*t;
+            GuiScene.getSlider().setValue(t);
+            changeVolume(VOLUME);
+        });
+
         borderPane.setCenter(pane);
         pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
@@ -590,7 +606,7 @@ public class Gui extends Application {
 
     public static void create(WebSocketClient client) {
         if (game != null)
-            game.playSound("fight", 0.5F);
+            game.playSound("fight");
         try {
             if (game != null && game.getClient() != null)
                 game.getClient().close();
@@ -657,11 +673,18 @@ public class Gui extends Application {
 //        Gui.pane.getChildren().addAll(imageView);
 //    }
 
+
+    public static void changeVolume (double v) {
+        mainSound.setVolume(0);
+        System.out.println("eehehe");
+    }
+
+
     public static void mainTheme () {
         Media sound = new Media(Gui.class.getClassLoader().getResource("Sounds/testMusic.mp3").toExternalForm());
-        AudioClip mediaPlayer = new AudioClip(sound.getSource());
-        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-        mediaPlayer.play();
+        mainSound = new AudioClip(sound.getSource());
+        mainSound.setCycleCount(MediaPlayer.INDEFINITE);
+        mainSound.play();
     }
 }
 
