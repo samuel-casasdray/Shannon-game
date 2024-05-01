@@ -114,7 +114,7 @@ public class Gui extends Application {
                     line.setTranslateX(i*Ux);
                     line.setTranslateY(i*Uy);
                 }
-                draw(pane, items);
+                draw(pane);
                 if (etoiles.size() < NB_STARS) {
                     etoiles.addAll(generer(100));
                 }
@@ -135,7 +135,7 @@ public class Gui extends Application {
         return lst;
     }
 
-    public static void draw(Pane root, List<Node> nodes) {
+    public static void draw(Pane root) {
         float width = (float) UtilsGui.WINDOW_WIDTH;
         float height = (float) UtilsGui.WINDOW_HEIGHT;
         for (Etoile e : etoiles) {
@@ -145,7 +145,6 @@ public class Gui extends Application {
             }
         }
         root.getChildren().removeIf(Rectangle.class::isInstance);
-        List<Node> circles = root.getChildren().stream().filter(Circle.class::isInstance).toList();
         //etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed());
         for (Etoile etoile : etoiles.stream().filter(e -> e.getZ() >= planZ).toList()) {
             float x = planZ * etoile.getX() / etoile.getZ() + width/2;
@@ -155,16 +154,8 @@ public class Gui extends Application {
                 Color color = etoile.pixelColor();
                 pixel = new Rectangle(x, y, 2,2);
                 pixel.setFill(color);
-                if (nodes.stream().noneMatch(node -> pixel.intersects(node.getBoundsInParent()))
-                        && (!pixel.intersects(planetes.getBoundsInParent())) && (!pixel.intersects(slider.getBoundsInParent())))
-                {
-                    boolean intersect = false;
-                    for (Node node : circles) {
-                        if (pixel.intersects(node.getBoundsInParent())) intersect = true;
-                    }
-                    if (!intersect)
-                        root.getChildren().add(pixel);
-                }
+                pixel.setViewOrder(100);
+                root.getChildren().add(pixel);
             }
         }
     }
