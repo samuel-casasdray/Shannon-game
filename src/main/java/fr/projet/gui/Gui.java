@@ -657,34 +657,11 @@ public class Gui extends Application {
 //        Gui.pane.getChildren().addAll(imageView);
 //    }
 
-
     public static void mainTheme () {
-        String audioS = "Sounds/testMusic.mp3";
-        System.out.println("Audio "+audioS);
-        URL audioUrl = Gui.class.getClassLoader().getResource(audioS);
-        System.out.println("Lool "+audioUrl);
-        assert audioUrl != null;
-        String audioFile = audioUrl.toExternalForm();
-        Media sound = new Media(audioFile);
-        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(1.7);
+        Media sound = new Media(Gui.class.getClassLoader().getResource("Sounds/testMusic.mp3").toExternalForm());
+        AudioClip mediaPlayer = new AudioClip(sound.getSource());
         mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-        stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
         mediaPlayer.play();
-//        new Thread(() -> {
-//            mediaPlayer.play();
-//        }).start();
-        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        //long time = (long) (sound.getDuration().toMillis() + 1000);
-        //mediaPlayer.play();
     }
-
-    private static void stopMediaPlayer(MediaPlayer mp) {
-        if (mp != null) {
-            mp.stop();
-        }
-    }
-
-
 }
 
