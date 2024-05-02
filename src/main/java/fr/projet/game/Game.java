@@ -533,17 +533,12 @@ public void deleteCuttedEdge() {
     }
 
     public void playSoundShort () {
-        Random random = new Random();
-        //int i = random.nextInt(3)+1;
         String audioS = "Sounds/short"+1+".mp3";
-        //System.out.println("Audio "+audioS);
         URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        //System.out.println("Lool "+audioUrl);
         assert audioUrl != null;
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
         mediaPlayer.setVolume(Gui.getVOLUME());
         Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
         mediaPlayer.play();
@@ -554,9 +549,7 @@ public void deleteCuttedEdge() {
         Random random = new Random();
         int i = random.nextInt(2)+1;
         String audioS = "Sounds/cut"+i+".mp3";
-        //System.out.println("Audio "+audioS);
         URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        //System.out.println("Lool "+audioUrl);
         assert audioUrl != null;
         String audioFile = audioUrl.toExternalForm();
         Media sound = new Media(audioFile);
@@ -564,19 +557,6 @@ public void deleteCuttedEdge() {
         mediaPlayer.setVolume(Gui.getVOLUME());
         Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
         mediaPlayer.play();
-
-        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        //stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
-//        System.out.println("Audio "+audioS);
-//        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-//        System.out.println("Lool "+audioUrl);
-//        assert audioUrl != null;
-//        String audioFile = audioUrl.toExternalForm();
-//        Media sound = new Media(audioFile);
-//        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-//        mediaPlayer.setVolume(0.04);
-//        long time = (long) (sound.getDuration().toMillis() + 1000);
-//        mediaPlayer.play();
     }
 
 

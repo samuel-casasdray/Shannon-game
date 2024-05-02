@@ -132,7 +132,6 @@ public class GuiScene {
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider, slider2);
         else
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, slider, slider2);
-        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion, slider, slider2);
         slider.valueProperty().addListener(event -> {
             double sliderValue = slider.getValue();
             NB_STARS = (int) ((1-sliderValue)*MIN_STARS+MAX_STARS*sliderValue);
