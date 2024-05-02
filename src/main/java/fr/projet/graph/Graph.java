@@ -21,7 +21,7 @@ public class Graph {
 
     private boolean aroundCircle = false;
 
-    private double proba = 0.8;
+    private double proba = 1;
 
     private Random random = new Random();
 
@@ -503,11 +503,26 @@ public class Graph {
 
     //Stratégie Gagnante :
 
+    public static boolean sameEdge (Pair<Vertex,Vertex> e1, Pair<Vertex,Vertex> e2) {
+        if ((e1.getKey()==e2.getKey() && e1.getValue()==e2.getValue()) || (e1.getKey()==e2.getValue() && e1.getValue()==e2.getKey())) {
+            return true;
+        }
+        return false;
+    }
+
+    public static Pair<Vertex,Vertex> reverseEdge (Pair<Vertex,Vertex> e1) {
+        Pair<Vertex,Vertex> e2 = new Pair<>(e1.getValue(),e1.getKey());
+        return e2;
+    }
 
 
     public Graph soustraction (Graph dif) {
-        HashSet <Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.neighbors);
-        newNeib.removeAll(dif.getNeighbors());
+        HashSet <Pair<Vertex, Vertex>> newNeib = new HashSet<>();
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            if (!dif.getNeighbors().contains(e) && !dif.getNeighbors().contains(reverseEdge(e))) {
+                newNeib.add(e);
+            }
+        }
         Graph g1 = new Graph(newNeib);
         for (Vertex v : dif.getVertices()) {
             if (!g1.getVertices().contains(v)) {
@@ -669,6 +684,7 @@ public class Graph {
 
     public Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> winningStrat (Graph T1, Graph T2) { // true si SHORT win !!!!!!
         if (T2.estConnexe()) {
+            System.out.println("sortie par T2 connexe");
             return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>())); //Short Win
         }
 
@@ -687,7 +703,8 @@ public class Graph {
 
         boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
 
-        while (!T1.endEvalutation(P) && !T2.endEvalutation(P)) {
+        while (!T1.endEvalutation(P) || !T2.endEvalutation(P)) {
+            System.out.println("On est dedans ! "+actualLevel);
             if (turn2) {
                 ArrayList<Graph> GraphInP =T2.graphInPartitions(P);
                 P = composantesConnexe(GraphInP);
@@ -731,6 +748,7 @@ public class Graph {
 
         //On calcule maintenant si cut gagne
         if (compteur>2*P.size()-3) {
+            System.out.println("sortie par toCut : compteur :"+compteur+" P size : "+P.size()+" P :\n"+P);
             return new Pair<>(false,new Pair<>(new Pair<Graph,Graph>(new Graph(0,0,0,0), new Graph(0,0,0,0)), toCut));
         }
 
@@ -744,11 +762,54 @@ public class Graph {
     }
 
 
-    public void appelStratGagnante () {
+    public ArrayList<Graph> appelStratGagnante () {
         Graph T1 = getSpanningTree();
         Graph T2 = this.soustraction(T1);
-        this.winningStrat(T1,T2);
 
+        ArrayList<Graph> ret = new ArrayList<>();
+        Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = this.winningStrat(T1,T2);
+        System.out.println("====================================================================================\n"+res.getKey());
+        System.out.println("====================================================================================\n");
+
+        //Graph T3 = res.getValue().getKey().getKey();
+        //Graph T4 = res.getValue().getKey().getValue();
+
+
+        //######################################
+        //########## SECTION DE TEST ###########
+        //######################################
+
+        ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
+        ArrayList<ArrayList<Vertex>> allVertice2 = new ArrayList<>();
+        for (Vertex v : allVertice) {
+            ArrayList<Vertex> vl = new ArrayList<>();
+            vl.add(v);
+            allVertice2.add(new ArrayList<>(vl));
+        }
+        ArrayList<ArrayList<Vertex>> P = new ArrayList<>();
+        P.add(allVertice);
+
+        Graph T3 = this.getSpanningTree();
+
+        Graph T5 = new Graph();
+        for (Vertex v : this.getVertices()) {
+            T5.addVertex(v);
+        }
+//        System.out.println("T5 e : "+T5.getNeighbors());
+//
+//
+//        System.out.println(P+"\n"+T5.endEvalutation(P)+"\n");
+//        System.out.println(allVertice2+"\n"+T5.endEvalutation(allVertice2));
+
+        System.out.println(T1.endEvalutation(P));
+        System.out.println(T2.endEvalutation(P));
+
+        Graph T4 = this.soustraction(T3);
+
+        ret.add(T1);
+        ret.add(T2);
+
+        return ret;
     }
 
 
