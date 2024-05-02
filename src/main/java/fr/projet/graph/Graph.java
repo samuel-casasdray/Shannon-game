@@ -543,7 +543,7 @@ public class Graph {
     public ArrayList<Graph> graphInPartitions (ArrayList<ArrayList<Vertex>> P) {
         ArrayList<Graph> res = new ArrayList<>();
         for (ArrayList<Vertex> partition : P) {
-            HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.getNeighbors());
+            HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
             for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
                 if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
                     newNeib.add(edge);
@@ -585,7 +585,7 @@ public class Graph {
     }
 
 
-    public static boolean contientTab (ArrayList<ArrayList<Vertex>> tab, ArrayList s2) {
+    public static boolean contientTab (ArrayList<ArrayList<Vertex>> tab, ArrayList<Vertex> s2) {
         for (ArrayList<Vertex> l : tab) {
             if (l.containsAll(s2) && s2.containsAll(l)) {
                 return true;
@@ -595,7 +595,7 @@ public class Graph {
     }
 
 
-    public ArrayList<ArrayList<Vertex>> composantesConnexe (ArrayList<Graph> listG) {
+    public static ArrayList<ArrayList<Vertex>> composantesConnexe (ArrayList<Graph> listG) {
         ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
         for (Graph G : listG) {
             for (Vertex v : G.getVertices()) {
@@ -608,6 +608,25 @@ public class Graph {
         return newP;
     }
 
+
+    public Graph getT (ArrayList<ArrayList<Vertex>> P) {
+        ArrayList<Graph> res = new ArrayList<>();
+        HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
+        for (ArrayList<Vertex> partition : P) {
+            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+                if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
+                    newNeib.add(edge);
+                }
+            }
+        }
+        Graph toTest = new Graph(newNeib);
+        for (Vertex v : this.getVertices()) {
+            if (!toTest.getVertices().contains(v)) {
+                toTest.addVertex(v);
+            }
+        }
+        return toTest;
+    }
 
 
     public Pair<Boolean,Pair<Pair<Graph,Graph>,HashSet<Pair<Vertex,Vertex>>>> winningStrat () { // true si SHORT win !!!!!!
@@ -636,9 +655,22 @@ public class Graph {
         while (!T1.endEvalutation(P) && !T2.endEvalutation(P)) {
             if (turn2) {
                 ArrayList<Graph> GraphInP =T2.graphInPartitions(P);
-
+                P = composantesConnexe(GraphInP);
+                T1 = T1.getT(P);
+                T2 = T2.getT(P);
+            }
+            else {
+                ArrayList<Graph> GraphInP =T1.graphInPartitions(P);
+                P = composantesConnexe(GraphInP);
+                T1 = T1.getT(P);
+                T2 = T2.getT(P);
             }
         }
+
+        //P est la partition finale
+
+        
+
 
 
         return true;
