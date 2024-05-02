@@ -649,6 +649,23 @@ public class Graph {
         return res;
     }
 
+    public Pair<Vertex,Vertex> cycleForT1 (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, Pair<Vertex,Vertex> stay) {
+        Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
+        int level = -100000000;
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
+            newV.remove(e);
+            Graph newG = new Graph(newV);
+            if (newG.estConnexe()) {
+                if (levels.get(e)<level && e!=stay) {
+                    res=e;
+                    level=levels.get(e);
+                }
+            }
+        }
+        return res;
+    }
+
 
     public Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> winningStrat (Graph T1, Graph T2) { // true si SHORT win !!!!!!
         if (T2.estConnexe()) {
@@ -719,10 +736,11 @@ public class Graph {
 
         //là faut trouver le cycle et l'arrete on utilise une fonction qui trouve l'arrête
         Pair<Vertex,Vertex> toRemove = T2.cycle(P,levels);
+        T2.removeNeighbor(toRemove);
+        T1.addNeighbor(toRemove);
+        T1.removeNeighbor(T1.cycleForT1(P,levels,toRemove));
 
-
-
-        return true;
+        return winningStrat(T1,T2);
     }
 
 
