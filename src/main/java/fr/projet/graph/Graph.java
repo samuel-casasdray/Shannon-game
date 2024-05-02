@@ -457,6 +457,50 @@ public class Graph {
     }
 
 
+
+    public String toString() {
+        StringBuilder r = new StringBuilder();
+        for (Vertex v : getVertices())
+            r.append(getVertices().indexOf(v)).append(" ");
+        return r.toString();
+    }
+
+    public static double distancePointSegment(double x, double y, double x1, double y1, double x2, double y2) {
+        double a = x - x1;
+        double b = y - y1;
+        double c = x2 - x1;
+        double d = y2 - y1;
+
+        double dot = a * c + b * d;
+        double len = c * c + d * d;
+        double param = -1;
+        if (len != 0) //in case of 0 length line
+            param = dot / len;
+
+        double xx;
+        double yy;
+
+        if (param < 0) { // P is between P1 and P2
+            xx = x1;
+            yy = y1;
+        } else if (param > 1) { // closest point in segment is P2
+            xx = x2;
+            yy = y2;
+        } else { // closest point in segment is P1
+            xx = x1 + param * c;
+            yy = y1 + param * d;
+        }
+
+        double dx = x - xx;
+        double dy = y - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    //#############################################################################################################
+    //#############################################################################################################
+    //#############################################################################################################
+    //#############################################################################################################
+
     //Stratégie Gagnante :
 
     public Graph soustraction (Graph dif) {
@@ -526,18 +570,24 @@ public class Graph {
 
 
 
-    public boolean winningStrat () {
+    public Pair<Boolean,Pair<Pair<Graph,Graph>,HashSet<Pair<Vertex,Vertex>>>> winningStrat () { // true si SHORT win !!!!!!
         Graph T1 = getSpanningTree();
         Graph T2 = this.soustraction(T1);
         if (T2.estConnexe()) {
-            return true; //Short Win
+            return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new HashSet<>())); //Short Win
         }
+
+        //On creer la premiere partiton qui contient tout
         ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
         ArrayList<ArrayList<Vertex>> P1 = new ArrayList<>();
         P1.add(allVertice);
+
+        //On enregistre les partitions
         ArrayList<ArrayList<ArrayList<Vertex>>> listP = new ArrayList<>();
         listP.add(P1);
-        ArrayList<Graph> etapes = new ArrayList<>();
+
+        //On retient les graphe a chaque étape
+        ArrayList<Pair<Graph,Graph>> étapes = new ArrayList<>();
         etapes.add(T1);
         etapes.add(T2);
         boolean turn2 = true;
@@ -551,41 +601,11 @@ public class Graph {
         return true;
     }
 
-    public String toString() {
-        StringBuilder r = new StringBuilder();
-        for (Vertex v : getVertices())
-            r.append(getVertices().indexOf(v)).append(" ");
-        return r.toString();
-    }
 
-    public static double distancePointSegment(double x, double y, double x1, double y1, double x2, double y2) {
-        double a = x - x1;
-        double b = y - y1;
-        double c = x2 - x1;
-        double d = y2 - y1;
 
-        double dot = a * c + b * d;
-        double len = c * c + d * d;
-        double param = -1;
-        if (len != 0) //in case of 0 length line
-            param = dot / len;
 
-        double xx;
-        double yy;
 
-        if (param < 0) { // P is between P1 and P2
-            xx = x1;
-            yy = y1;
-        } else if (param > 1) { // closest point in segment is P2
-            xx = x2;
-            yy = y2;
-        } else { // closest point in segment is P1
-            xx = x1 + param * c;
-            yy = y1 + param * d;
-        }
 
-        double dx = x - xx;
-        double dy = y - yy;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
 }
+
+
