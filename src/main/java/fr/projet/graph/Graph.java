@@ -563,11 +563,11 @@ public class Graph {
 
 
 
-    public Set<Vertex> AllComponent(Vertex vertex) {
+    public ArrayList<Vertex> allComponent(Vertex vertex) {
         if (getVertices().isEmpty()) {
-            return new HashSet<>();
+            return new ArrayList<>();
         }
-        HashSet<Vertex> marked = new HashSet<>();
+        ArrayList<Vertex> marked = new ArrayList<>();
         Deque<Vertex> pile = new ArrayDeque<>();
         pile.push(vertex);
         while (!pile.isEmpty()) {
@@ -585,14 +585,27 @@ public class Graph {
     }
 
 
+    public static boolean contientTab (ArrayList<ArrayList<Vertex>> tab, ArrayList s2) {
+        for (ArrayList<Vertex> l : tab) {
+            if (l.containsAll(s2) && s2.containsAll(l)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     public ArrayList<ArrayList<Vertex>> composantesConnexe (ArrayList<Graph> listG) {
         ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
         for (Graph G : listG) {
-
             for (Vertex v : G.getVertices()) {
-
+                ArrayList<Vertex> comp = G.allComponent(v);
+                if (!contientTab(newP,comp)) {
+                    newP.add(comp);
+                }
             }
         }
+        return newP;
     }
 
 
