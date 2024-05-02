@@ -503,6 +503,8 @@ public class Graph {
 
     //Stratégie Gagnante :
 
+
+
     public Graph soustraction (Graph dif) {
         HashSet <Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.neighbors);
         newNeib.removeAll(dif.getNeighbors());
@@ -558,15 +560,40 @@ public class Graph {
         return res;
     }
 
-//    public composantesConnexe (ArrayList<Graph> listG) {
-//        ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
-//        for (Graph G : listG) {
-//
-//            for (Vertex v : G.getVertices()) {
-//
-//            }
-//        }
-//    }
+
+
+
+    public Set<Vertex> AllComponent(Vertex vertex) {
+        if (getVertices().isEmpty()) {
+            return new HashSet<>();
+        }
+        HashSet<Vertex> marked = new HashSet<>();
+        Deque<Vertex> pile = new ArrayDeque<>();
+        pile.push(vertex);
+        while (!pile.isEmpty()) {
+            Vertex v = pile.pop();
+            if (!marked.contains(v)) {
+                marked.add(v);
+                for (Vertex t: this.getAdjVertices().get(v)) {
+                    if (!marked.contains(t)) {
+                        pile.push(t);
+                    }
+                }
+            }
+        }
+        return marked;
+    }
+
+
+    public ArrayList<ArrayList<Vertex>> composantesConnexe (ArrayList<Graph> listG) {
+        ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
+        for (Graph G : listG) {
+
+            for (Vertex v : G.getVertices()) {
+
+            }
+        }
+    }
 
 
 
@@ -579,20 +606,23 @@ public class Graph {
 
         //On creer la premiere partiton qui contient tout
         ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
-        ArrayList<ArrayList<Vertex>> P1 = new ArrayList<>();
-        P1.add(allVertice);
+        ArrayList<ArrayList<Vertex>> P = new ArrayList<>();
+        P.add(allVertice);
 
         //On enregistre les partitions
         ArrayList<ArrayList<ArrayList<Vertex>>> listP = new ArrayList<>();
-        listP.add(P1);
+        listP.add(P);
 
         //On retient les graphe a chaque étape
-        ArrayList<Pair<Graph,Graph>> étapes = new ArrayList<>();
-        etapes.add(T1);
-        etapes.add(T2);
-        boolean turn2 = true;
-        while (!T1.endEvalutation(P1) && !T2.endEvalutation(P1)) {
+        ArrayList<Pair<Graph,Graph>> etapes = new ArrayList<>();
+        Pair<Graph, Graph> step1 = new Pair<>(T1,T2);
+        etapes.add(step1);
+
+        boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
+
+        while (!T1.endEvalutation(P) && !T2.endEvalutation(P)) {
             if (turn2) {
+                ArrayList<Graph> GraphInP =T2.graphInPartitions(P);
 
             }
         }
