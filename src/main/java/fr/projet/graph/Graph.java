@@ -629,11 +629,11 @@ public class Graph {
     }
 
 
-    public Pair<Boolean,Pair<Pair<Graph,Graph>,HashSet<Pair<Vertex,Vertex>>>> winningStrat () { // true si SHORT win !!!!!!
+    public Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> winningStrat () { // true si SHORT win !!!!!!
         Graph T1 = getSpanningTree();
         Graph T2 = this.soustraction(T1);
         if (T2.estConnexe()) {
-            return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new HashSet<>())); //Short Win
+            return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>())); //Short Win
         }
 
         //On creer la premiere partiton qui contient tout
@@ -669,7 +669,28 @@ public class Graph {
 
         //P est la partition finale
 
-        
+        //On regarde combien il y a d'arêtes à couper et on les stockes
+        ArrayList<Pair<Vertex,Vertex>> toCut = new ArrayList<>();
+        int compteur = 0;
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            boolean cutable = true;
+            for (ArrayList<Vertex> partie : P) {
+                if (partie.contains(e.getValue()) && partie.contains(e.getKey())) {
+                    cutable=false;
+                }
+            }
+            if (cutable==true) {
+                compteur+=1;
+                toCut.add(e);
+            }
+        }
+
+        //On calcule maintenant si cut gagne
+        if (compteur>2*P.size()-3) {
+            return new Pair<>(false,new Pair<>(new Pair<Graph,Graph>(new Graph(0,0,0,0), new Graph(0,0,0,0)), toCut));
+        }
+
+        //là faut trouver le cycle
 
 
 
