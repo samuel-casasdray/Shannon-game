@@ -140,7 +140,7 @@ public class GuiScene {
         });
         slider2.valueProperty().addListener(event -> {
             double sliderValue = slider2.getValue();
-            VOLUME = (int) ((1-sliderValue)*MIN_VOLUME+MAX_VOLUME*sliderValue);
+            VOLUME = (1-sliderValue)*MIN_VOLUME+MAX_VOLUME*sliderValue;
             Gui.changeVolume(VOLUME);
         });
         if (Gui.getStars() != null)

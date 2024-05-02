@@ -96,7 +96,7 @@ public class Gui extends Application {
     private static double VOLUME = GuiScene.getVOLUME();
     private static double MIN_VOLUME = GuiScene.getMIN_VOLUME();
     private static double MAX_VOLUME = GuiScene.getMAX_VOLUME();
-    private static MediaPlayer mainSound;
+    private static AudioClip mainSound;
     public static void createAnim() {
         new Thread(() -> {
             Gui.setTimer(new Timeline(new KeyFrame(Duration.millis(20), event -> {
@@ -675,14 +675,14 @@ public class Gui extends Application {
 
 
     public static void changeVolume (double v) {
-        mainSound.setVolume(v);
+        mainSound.setVolume(0);
+        System.out.println("eehehe");
     }
 
 
     public static void mainTheme () {
-        String path = Gui.class.getClassLoader().getResource("Sounds/testMusic.mp3").toString();
-        Media media = new Media(path);
-        mainSound = new MediaPlayer(media);
+        Media sound = new Media(Gui.class.getClassLoader().getResource("Sounds/testMusic.mp3").toExternalForm());
+        mainSound = new AudioClip(sound.getSource());
         mainSound.setCycleCount(MediaPlayer.INDEFINITE);
         mainSound.play();
     }
