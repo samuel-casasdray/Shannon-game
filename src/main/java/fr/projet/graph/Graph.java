@@ -609,13 +609,16 @@ public class Graph {
     }
 
 
-    public Graph getT (ArrayList<ArrayList<Vertex>> P) {
+    public Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> getT (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, int actualLevel) {
         ArrayList<Graph> res = new ArrayList<>();
         HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
         for (ArrayList<Vertex> partition : P) {
             for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
                 if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
                     newNeib.add(edge);
+                }
+                else {
+                    levels.put(edge,actualLevel);
                 }
             }
         }
@@ -625,13 +628,13 @@ public class Graph {
                 toTest.addVertex(v);
             }
         }
-        return toTest;
+        return new Pair<>(toTest,levels);
     }
 
 
     public Pair<Vertex,Vertex> cycle (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
         Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
-        int level = 100000000;
+        int level = -100000000;
         for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
             HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
             newV.remove(e);
@@ -652,11 +655,18 @@ public class Graph {
             return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>())); //Short Win
         }
 
+        //On créé les levels et on dit que le level actuel est de 1
+        Map<Pair<Vertex,Vertex>,Integer> levels = new HashMap<>();
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            levels.put(e,0);
+        }
+        int actualLevel=1;
+
         //On creer la premiere partiton qui contient tout
         ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
         ArrayList<ArrayList<Vertex>> P = new ArrayList<>();
         P.add(allVertice);
-        
+
 
         boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
 
@@ -664,15 +674,24 @@ public class Graph {
             if (turn2) {
                 ArrayList<Graph> GraphInP =T2.graphInPartitions(P);
                 P = composantesConnexe(GraphInP);
-                T1 = T1.getT(P);
-                T2 = T2.getT(P);
+                Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
+                T1 = pairT1.getKey();
+                levels = new HashMap<>(pairT1.getValue());
+                Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
+                T2 = pairT2.getKey();
+                levels = new HashMap<>(pairT1.getValue());
             }
             else {
                 ArrayList<Graph> GraphInP =T1.graphInPartitions(P);
                 P = composantesConnexe(GraphInP);
-                T1 = T1.getT(P);
-                T2 = T2.getT(P);
+                Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
+                T1 = pairT1.getKey();
+                levels = new HashMap<>(pairT1.getValue());
+                Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
+                T2 = pairT2.getKey();
+                levels = new HashMap<>(pairT1.getValue());
             }
+            actualLevel+=1;
         }
 
         //P est la partition finale
