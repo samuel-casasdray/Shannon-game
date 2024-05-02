@@ -629,9 +629,25 @@ public class Graph {
     }
 
 
-    public Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> winningStrat () { // true si SHORT win !!!!!!
-        Graph T1 = getSpanningTree();
-        Graph T2 = this.soustraction(T1);
+    public Pair<Vertex,Vertex> cycle (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
+        Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
+        int level = 100000000;
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
+            newV.remove(e);
+            Graph newG = new Graph(newV);
+            if (newG.estConnexe()) {
+                if (levels.get(e)<level) {
+                    res=e;
+                    level=levels.get(e);
+                }
+            }
+        }
+        return res;
+    }
+
+
+    public Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> winningStrat (Graph T1, Graph T2) { // true si SHORT win !!!!!!
         if (T2.estConnexe()) {
             return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>())); //Short Win
         }
@@ -640,15 +656,7 @@ public class Graph {
         ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
         ArrayList<ArrayList<Vertex>> P = new ArrayList<>();
         P.add(allVertice);
-
-        //On enregistre les partitions
-        ArrayList<ArrayList<ArrayList<Vertex>>> listP = new ArrayList<>();
-        listP.add(P);
-
-        //On retient les graphe a chaque étape
-        ArrayList<Pair<Graph,Graph>> etapes = new ArrayList<>();
-        Pair<Graph, Graph> step1 = new Pair<>(T1,T2);
-        etapes.add(step1);
+        
 
         boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
 
@@ -690,7 +698,8 @@ public class Graph {
             return new Pair<>(false,new Pair<>(new Pair<Graph,Graph>(new Graph(0,0,0,0), new Graph(0,0,0,0)), toCut));
         }
 
-        //là faut trouver le cycle
+        //là faut trouver le cycle et l'arrete on utilise une fonction qui trouve l'arrête
+        Pair<Vertex,Vertex> toRemove = T2.cycle(P,levels);
 
 
 
@@ -698,6 +707,12 @@ public class Graph {
     }
 
 
+    public void appelStratGagnante () {
+        Graph T1 = getSpanningTree();
+        Graph T2 = this.soustraction(T1);
+        this.winningStrat(T1,T2);
+
+    }
 
 
 
