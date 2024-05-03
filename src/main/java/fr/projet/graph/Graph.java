@@ -788,8 +788,10 @@ public class Graph {
             vl.add(v);
             allVertice2.add(new ArrayList<>(vl));
         }
+
         ArrayList<ArrayList<Vertex>> P = new ArrayList<>();
         P.add(allVertice);
+        //System.out.println(allVertice2);
 //
 //        Graph T3 = this.getSpanningTree();
 //
@@ -803,26 +805,39 @@ public class Graph {
 //        System.out.println(P+"\n"+T5.endEvalutation(P)+"\n");
 //        System.out.println(allVertice2+"\n"+T5.endEvalutation(allVertice2));
 
-        System.out.println(T1.endEvalutation(P));
-        System.out.println(T2.endEvalutation(P));
+        System.out.println(T1.endEvalutation(allVertice2));
+        System.out.println(T2.endEvalutation(allVertice2));
 
         //Graph T4 = this.soustraction(T3);
 
-        ret.add(T1);
-        ret.add(T2);
+        //ret.add(T1);
+        //ret.add(T2);
+
+        Map<Pair<Vertex,Vertex>,Integer> levels = new HashMap<>();
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            levels.put(e,0);
+        }
+        int actualLevel=1;
 
         System.out.println("Pour T1 : ");
-        ArrayList<Graph> GraphInP =T1.graphInPartitions(P);
-        for (Graph g : GraphInP) {
-            System.out.println(g.getVertices());
-        }
+        ArrayList<Graph> GraphInP =T2.graphInPartitions(P);
+        P = composantesConnexe(GraphInP);
+        System.out.println(P);
+        Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
+        T2 = pairT1.getKey();
+//        System.out.println(GraphInP.size());
+//        for (Graph g : GraphInP) {
+//            System.out.println(g.getVertices());
+//        }
 
-        System.out.println("Pour T2 : ");
-        ArrayList<Graph> GraphInP2 =T2.graphInPartitions(P);
-        for (Graph g : GraphInP2) {
-            System.out.println(g.getVertices());
-        }
+//        System.out.println("Pour T2 : ");
+//        ArrayList<Graph> GraphInP2 =T2.graphInPartitions(P);
+//        for (Graph g : GraphInP2) {
+//            System.out.println(g.getVertices());
+//        }
 
+        ret.add(T1);
+        ret.add(T2);
 
         return ret;
     }
