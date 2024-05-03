@@ -366,8 +366,7 @@ public class Gui extends Application {
 //                System.out.println("Il n'y a pas deux arbres couvrants disjoints");
 //            }
 //        });
-//        arbres.setDaemon(true);
-//        arbres.start();
+        //arbres.start();
         Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, Gui::handleButtonClick);
         edges.clear();
         planetes.setLayoutX(500);
