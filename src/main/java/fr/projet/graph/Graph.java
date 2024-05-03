@@ -556,6 +556,8 @@ public class Graph {
     }
 
     public ArrayList<Graph> graphInPartitions (ArrayList<ArrayList<Vertex>> P) {
+        //prend en paramettre un partition et renvoie la liste qui contient les graphequi sont les sous graphe de this dans les partie de P
+
         ArrayList<Graph> res = new ArrayList<>();
         for (ArrayList<Vertex> partition : P) {
             HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
@@ -703,10 +705,10 @@ public class Graph {
 
         boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
 
-        while (!T1.endEvalutation(P) || !T2.endEvalutation(P)) {
+        while (!T1.endEvalutation(P) && !T2.endEvalutation(P)) {
             System.out.println("On est dedans ! "+actualLevel);
             if (turn2) {
-                ArrayList<Graph> GraphInP =T2.graphInPartitions(P);
+                ArrayList<Graph> GraphInP = T2.graphInPartitions(P);
                 P = composantesConnexe(GraphInP);
                 Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
                 T1 = pairT1.getKey();
@@ -767,9 +769,9 @@ public class Graph {
         Graph T2 = this.soustraction(T1);
 
         ArrayList<Graph> ret = new ArrayList<>();
-        Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = this.winningStrat(T1,T2);
-        System.out.println("====================================================================================\n"+res.getKey());
-        System.out.println("====================================================================================\n");
+        //Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = this.winningStrat(T1,T2);
+        //System.out.println("====================================================================================\n"+res.getKey());
+        //System.out.println("====================================================================================\n");
 
         //Graph T3 = res.getValue().getKey().getKey();
         //Graph T4 = res.getValue().getKey().getValue();
@@ -788,13 +790,13 @@ public class Graph {
         }
         ArrayList<ArrayList<Vertex>> P = new ArrayList<>();
         P.add(allVertice);
-
-        Graph T3 = this.getSpanningTree();
-
-        Graph T5 = new Graph();
-        for (Vertex v : this.getVertices()) {
-            T5.addVertex(v);
-        }
+//
+//        Graph T3 = this.getSpanningTree();
+//
+//        Graph T5 = new Graph();
+//        for (Vertex v : this.getVertices()) {
+//            T5.addVertex(v);
+//        }
 //        System.out.println("T5 e : "+T5.getNeighbors());
 //
 //
@@ -804,10 +806,23 @@ public class Graph {
         System.out.println(T1.endEvalutation(P));
         System.out.println(T2.endEvalutation(P));
 
-        Graph T4 = this.soustraction(T3);
+        //Graph T4 = this.soustraction(T3);
 
         ret.add(T1);
         ret.add(T2);
+
+        System.out.println("Pour T1 : ");
+        ArrayList<Graph> GraphInP =T1.graphInPartitions(P);
+        for (Graph g : GraphInP) {
+            System.out.println(g.getVertices());
+        }
+
+        System.out.println("Pour T2 : ");
+        ArrayList<Graph> GraphInP2 =T2.graphInPartitions(P);
+        for (Graph g : GraphInP2) {
+            System.out.println(g.getVertices());
+        }
+
 
         return ret;
     }
