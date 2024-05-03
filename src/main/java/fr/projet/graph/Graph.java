@@ -635,7 +635,12 @@ public class Graph {
                     newNeib.add(edge);
                 }
                 else {
-                    levels.put(edge,actualLevel);
+                    if (levels.containsKey(edge)) {
+                        levels.put(edge, actualLevel);
+                    }
+                    else {
+                        levels.put(reverseEdge(edge), actualLevel);
+                    }
                 }
             }
         }
@@ -825,6 +830,7 @@ public class Graph {
         System.out.println(P);
         Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
         T2 = pairT1.getKey();
+        System.out.println(levels);
 //        System.out.println(GraphInP.size());
 //        for (Graph g : GraphInP) {
 //            System.out.println(g.getVertices());
