@@ -710,8 +710,9 @@ public class Graph {
 
         boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
 
-        while (!T1.endEvalutation(P) && !T2.endEvalutation(P)) {
+        while (actualLevel < 4 && (!T1.endEvalutation(P) || !T2.endEvalutation(P))) {
             System.out.println("On est dedans ! "+actualLevel);
+            System.out.println(P);
             if (turn2) {
                 ArrayList<Graph> GraphInP = T2.graphInPartitions(P);
                 P = composantesConnexe(GraphInP);
@@ -721,6 +722,7 @@ public class Graph {
                 Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
                 T2 = pairT2.getKey();
                 levels = new HashMap<>(pairT1.getValue());
+                turn2=false;
             }
             else {
                 ArrayList<Graph> GraphInP =T1.graphInPartitions(P);
@@ -731,6 +733,7 @@ public class Graph {
                 Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
                 T2 = pairT2.getKey();
                 levels = new HashMap<>(pairT1.getValue());
+                turn2=true;
             }
             actualLevel+=1;
         }
@@ -754,7 +757,7 @@ public class Graph {
         }
 
         //On calcule maintenant si cut gagne
-        if (compteur>2*P.size()-3) {
+        if (compteur<2*P.size()-3) {
             System.out.println("sortie par toCut : compteur :"+compteur+" P size : "+P.size()+" P :\n"+P);
             return new Pair<>(false,new Pair<>(new Pair<Graph,Graph>(new Graph(0,0,0,0), new Graph(0,0,0,0)), toCut));
         }
@@ -774,76 +777,22 @@ public class Graph {
         Graph T2 = this.soustraction(T1);
 
         ArrayList<Graph> ret = new ArrayList<>();
-        //Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = this.winningStrat(T1,T2);
-        //System.out.println("====================================================================================\n"+res.getKey());
-        //System.out.println("====================================================================================\n");
+        Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = this.winningStrat(T1,T2);
+        System.out.println("====================================================================================\n"+res.getKey());
+        System.out.println("====================================================================================\n");
 
-        //Graph T3 = res.getValue().getKey().getKey();
-        //Graph T4 = res.getValue().getKey().getValue();
+        Graph T3 = res.getValue().getKey().getKey();
+        Graph T4 = res.getValue().getKey().getValue();
 
 
         //######################################
         //########## SECTION DE TEST ###########
         //######################################
 
-        ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
-        ArrayList<ArrayList<Vertex>> allVertice2 = new ArrayList<>();
-        for (Vertex v : allVertice) {
-            ArrayList<Vertex> vl = new ArrayList<>();
-            vl.add(v);
-            allVertice2.add(new ArrayList<>(vl));
-        }
 
-        ArrayList<ArrayList<Vertex>> P = new ArrayList<>();
-        P.add(allVertice);
-        //System.out.println(allVertice2);
-//
-//        Graph T3 = this.getSpanningTree();
-//
-//        Graph T5 = new Graph();
-//        for (Vertex v : this.getVertices()) {
-//            T5.addVertex(v);
-//        }
-//        System.out.println("T5 e : "+T5.getNeighbors());
-//
-//
-//        System.out.println(P+"\n"+T5.endEvalutation(P)+"\n");
-//        System.out.println(allVertice2+"\n"+T5.endEvalutation(allVertice2));
 
-        System.out.println(T1.endEvalutation(allVertice2));
-        System.out.println(T2.endEvalutation(allVertice2));
-
-        //Graph T4 = this.soustraction(T3);
-
-        //ret.add(T1);
-        //ret.add(T2);
-
-        Map<Pair<Vertex,Vertex>,Integer> levels = new HashMap<>();
-        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
-            levels.put(e,0);
-        }
-        int actualLevel=1;
-
-        System.out.println("Pour T1 : ");
-        ArrayList<Graph> GraphInP =T2.graphInPartitions(P);
-        P = composantesConnexe(GraphInP);
-        System.out.println(P);
-        Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
-        T2 = pairT1.getKey();
-        System.out.println(levels);
-//        System.out.println(GraphInP.size());
-//        for (Graph g : GraphInP) {
-//            System.out.println(g.getVertices());
-//        }
-
-//        System.out.println("Pour T2 : ");
-//        ArrayList<Graph> GraphInP2 =T2.graphInPartitions(P);
-//        for (Graph g : GraphInP2) {
-//            System.out.println(g.getVertices());
-//        }
-
-        ret.add(T1);
-        ret.add(T2);
+        ret.add(T3);
+        ret.add(T4);
 
         return ret;
     }
