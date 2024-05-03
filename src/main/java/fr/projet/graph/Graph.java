@@ -655,16 +655,28 @@ public class Graph {
 
 
     public Pair<Vertex,Vertex> cycle (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
+        System.out.println("iciciciccii : "+this.getNeighbors());
         Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
         int level = -100000000;
         for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
             HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
             newV.remove(e);
             Graph newG = new Graph(newV);
+            for (Vertex v : this.getVertices()) {
+                newG.addVertex(v);
+            }
             if (newG.estConnexe()) {
-                if (levels.get(e)<level) {
-                    res=e;
-                    level=levels.get(e);
+                if (levels.containsKey(e)) {
+                    if (levels.get(e)<level) {
+                        res=e;
+                        level=levels.get(e);
+                    }
+                }
+                else {
+                    if (levels.get(reverseEdge(e))<level) {
+                        res=reverseEdge(e);
+                        level=levels.get(reverseEdge(e));
+                    }
                 }
             }
         }
@@ -678,10 +690,22 @@ public class Graph {
             HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
             newV.remove(e);
             Graph newG = new Graph(newV);
+            for (Vertex v : this.getVertices()) {
+                newG.addVertex(v);
+            }
             if (newG.estConnexe()) {
-                if (levels.get(e)<level && e!=stay) {
-                    res=e;
-                    level=levels.get(e);
+
+                if (levels.containsKey(e)) {
+                    if (levels.get(e)<level && e!=stay && e!=reverseEdge(stay)) {
+                        res=e;
+                        level=levels.get(e);
+                    }
+                }
+                else {
+                    if (levels.get(reverseEdge(e))<level && e!=stay && e!=reverseEdge(stay)) {
+                        res=reverseEdge(e);
+                        level=levels.get(reverseEdge(e));
+                    }
                 }
             }
         }
@@ -690,6 +714,9 @@ public class Graph {
 
 
     public Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> winningStrat (Graph T1, Graph T2) { // true si SHORT win !!!!!!
+        Graph stockT1 = T1;
+        Graph stockT2 = T2;
+        System.out.println("StockT1 dep : "+stockT1.getNeighbors());
         if (T2.estConnexe()) {
             System.out.println("sortie par T2 connexe");
             return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>())); //Short Win
@@ -710,9 +737,9 @@ public class Graph {
 
         boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
 
-        while (actualLevel < 4 && (!T1.endEvalutation(P) || !T2.endEvalutation(P))) {
-            System.out.println("On est dedans ! "+actualLevel);
-            System.out.println(P);
+        while (!T1.endEvalutation(P) || !T2.endEvalutation(P)) {
+            //System.out.println("On est dedans ! "+actualLevel);
+            //System.out.println(P);
             if (turn2) {
                 ArrayList<Graph> GraphInP = T2.graphInPartitions(P);
                 P = composantesConnexe(GraphInP);
@@ -739,6 +766,9 @@ public class Graph {
         }
 
         //P est la partition finale
+        T1 = stockT1;
+        T2 = stockT2;
+        System.out.println("StockT1 fin : "+stockT1.getNeighbors());
 
         //On regarde combien il y a d'arêtes à couper et on les stockes
         ArrayList<Pair<Vertex,Vertex>> toCut = new ArrayList<>();
@@ -766,7 +796,14 @@ public class Graph {
         Pair<Vertex,Vertex> toRemove = T2.cycle(P,levels);
         T2.removeNeighbor(toRemove);
         T1.addNeighbor(toRemove);
-        T1.removeNeighbor(T1.cycleForT1(P,levels,toRemove));
+        Pair<Vertex,Vertex> toRemT1 = T1.cycleForT1(P,levels,toRemove);
+        T1.removeNeighbor(toRemT1);
+        T2.addNeighbor(toRemT1);
+
+        System.out.println(T1.getNeighbors().size()+" "+T2.getNeighbors().size());
+
+        //T2.removeNeighbor(reverseEdge(toRemove));
+        //T1.removeNeighbor(reverseEdge(toRemT1));
 
         return winningStrat(T1,T2);
     }
