@@ -37,7 +37,7 @@ public class Game {
     private final int nbVertices;
     private final int minDeg = 3;
     private final int maxDeg = 7;
-    private final int AIDelay = 700;
+    private final int AIDelay = 1000;
     private Graph graph;
     @Setter
     private Turn turn = Turn.CUT;
@@ -60,6 +60,11 @@ public class Game {
     @Setter
     @Getter
     private boolean interrupted = false;
+    Random random = new Random();
+    private Media soundShort = new Media(getClass().getClassLoader().getResource("Sounds/short"+1+".mp3").toExternalForm());
+    private Media soundCut1 = new Media(getClass().getClassLoader().getResource("Sounds/cut"+1+".mp3").toExternalForm());
+    private Media soundCut2 = new Media(getClass().getClassLoader().getResource("Sounds/cut"+2+".mp3").toExternalForm());
+    private Media soundFight = new Media(this.getClass().getClassLoader().getResource("Sounds/fight.mp3").toExternalForm());
 
     public Game(int nbv) throws TimeoutException { 
       this(nbv,false, Turn.CUT, Level.EASY); 
@@ -137,7 +142,7 @@ public class Game {
         while (!cutWon && !shortWon) {
             if (interrupted) return;
             AIPlay(ia, ia2, turn);
-            long delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
+            long delay = time.until(LocalTime.now(), ChronoUnit.MILLIS);
             if (delay < AIDelay) {
                 try {
                     Thread.sleep(AIDelay - delay);
@@ -521,68 +526,29 @@ public void deleteCuttedEdge() {
         return joiner;
     }
 
-    public void playSound (String name, float v) {
-        String audioS = "Sounds/"+name+".mp3";
-        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        assert audioUrl != null;
-        String audioFile = audioUrl.toExternalForm();
-        Media sound = new Media(audioFile);
-        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(v);
+    public void playSound () {
+        MediaPlayer mediaPlayer = new MediaPlayer(soundFight);
+        mediaPlayer.setVolume(Gui.getVOLUME());
         mediaPlayer.play();
     }
 
     public void playSoundShort () {
-        Random random = new Random();
-        //int i = random.nextInt(3)+1;
-        String audioS = "Sounds/short"+1+".mp3";
-        //System.out.println("Audio "+audioS);
-        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        //System.out.println("Lool "+audioUrl);
-        assert audioUrl != null;
-        String audioFile = audioUrl.toExternalForm();
-        Media sound = new Media(audioFile);
-        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        mediaPlayer.setVolume(0.5);
-        Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
+        MediaPlayer mediaPlayer = new MediaPlayer(soundShort);
+        mediaPlayer.setVolume(Gui.getVOLUME()/2);
         mediaPlayer.play();
     }
 
 
     public void playSoundCut () {
-        Random random = new Random();
         int i = random.nextInt(2)+1;
-        String audioS = "Sounds/cut"+i+".mp3";
-        //System.out.println("Audio "+audioS);
-        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        //System.out.println("Lool "+audioUrl);
-        assert audioUrl != null;
-        String audioFile = audioUrl.toExternalForm();
-        Media sound = new Media(audioFile);
-        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(0.5);
-        Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
-        mediaPlayer.play();
-
-        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        //stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
-//        System.out.println("Audio "+audioS);
-//        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-//        System.out.println("Lool "+audioUrl);
-//        assert audioUrl != null;
-//        String audioFile = audioUrl.toExternalForm();
-//        Media sound = new Media(audioFile);
-//        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-//        mediaPlayer.setVolume(0.04);
-//        long time = (long) (sound.getDuration().toMillis() + 1000);
-//        mediaPlayer.play();
-    }
-
-
-    private void stopMediaPlayer2(MediaPlayer mp) {
-        if (mp != null) {
-            mp.stop();
+        Media sound;
+        if (i == 1) {
+            sound = soundCut1;
+        } else {
+            sound = soundCut2;
         }
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.setVolume(Gui.getVOLUME()/2);
+        mediaPlayer.play();
     }
 }
