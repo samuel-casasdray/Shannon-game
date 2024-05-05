@@ -31,6 +31,7 @@ import javafx.scene.text.*;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
+import javafx.util.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -81,7 +82,6 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static Timeline stars;
-    static List<Node> items = new ArrayList<>();
     @Getter
     @Setter
     private static Timeline timer = new Timeline();
@@ -91,12 +91,12 @@ public class Gui extends Application {
     private static int NB_STARS = GuiScene.getNB_STARS();
     private static int MIN_STARS = GuiScene.getMIN_STARS();
     private static int MAX_STARS = GuiScene.getMAX_STARS();
-    private static final Slider slider2 = new Slider(0, 1.5, GuiScene.getSlider().getValue());
+    private static final Slider slider2 = new Slider(0, 1.5, GuiScene.getSlider2().getValue());
     @Getter
     private static double VOLUME = GuiScene.getVOLUME();
     private static double MIN_VOLUME = GuiScene.getMIN_VOLUME();
     private static double MAX_VOLUME = GuiScene.getMAX_VOLUME();
-    private static AudioClip mainSound;
+    private static MediaPlayer mainSound;
     public static void createAnim() {
         new Thread(() -> {
             Gui.setTimer(new Timeline(new KeyFrame(Duration.millis(20), event -> {
@@ -320,6 +320,45 @@ public class Gui extends Application {
 
     public static Scene run() {
         slider.setValue(GuiScene.getSlider().getValue());
+        slider.setMinorTickCount(0);
+        slider.setMajorTickUnit(1);
+        slider.setShowTickMarks(true);
+        slider.setShowTickLabels(true);
+        slider.setLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "Less stars";
+                return "More stars";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                if (s.equals("Less stars")) {
+                    return 0d;
+                }
+                return 1d;
+            }
+        });
+        slider2.setMinorTickCount(0);
+        slider2.setMajorTickUnit(1.5);
+        slider2.setShowTickMarks(true);
+        slider2.setShowTickLabels(true);
+        slider2.setLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "-";
+                return "+";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                if (s.equals("-")) {
+                    return 0d;
+                }
+                return 1.5d;
+            }
+        });
+        slider2.setValue(GuiScene.getSlider2().getValue());
         NB_STARS = GuiScene.getNB_STARS();
         // Création d'un BorderPane pour centrer le contenu
         BorderPane borderPane = new BorderPane();
@@ -344,6 +383,7 @@ public class Gui extends Application {
 
 
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
+  /*
         Thread arbres = new Thread(() -> {
             List<Graph> result = graph.appelStratGagnante();
             if (!result.isEmpty()) {
@@ -377,10 +417,7 @@ public class Gui extends Application {
         });
         arbres.setDaemon(true);
         arbres.start();
-
-
-
-
+      */
         Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, Gui::handleButtonClick);
         edges.clear();
         planetes.setLayoutX(500);
@@ -388,8 +425,8 @@ public class Gui extends Application {
         planetes.setTextFill(Color.WHITE);
         slider.setLayoutX(700);
         slider.setLayoutY(0);
-        slider2.setLayoutX(700);
-        slider2.setLayoutY(20);
+        slider2.setLayoutX(900);
+        slider2.setLayoutY(0);
         showGraph();
         if (game.isPvpOnline()) {
             GridPane root = new GridPane();
@@ -418,8 +455,8 @@ public class Gui extends Application {
 
         slider2.valueProperty().addListener(event -> {
             double t = slider2.getValue();
+            GuiScene.getSlider2().setValue(t);
             VOLUME = (1-t)*MIN_VOLUME+MAX_VOLUME*t;
-            GuiScene.getSlider().setValue(t);
             changeVolume(VOLUME);
         });
 
@@ -508,13 +545,6 @@ public class Gui extends Application {
             line.setEndX(pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE + xOffset);
             line.setEndY(pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE + yOffset);
         }
-
-//        int nodeIndex=0;
-        // Mise à jour des positions des sommets et des textes
-//        List<Node> nodes = pane.getChildren();
-//        for (int i = 0; i < nodes.size(); i++) {
-//            Node node = nodes.get(i);
-//        }
         for (Node node : pane.getChildren()) {
             if (node instanceof Circle || node instanceof ImageView) {
                 node.setTranslateX(xOffset + UtilsGui.CIRCLE_SIZE);
@@ -612,8 +642,6 @@ public class Gui extends Application {
     }
 
     public static void create(WebSocketClient client) {
-        if (game != null)
-            game.playSound("fight");
         try {
             if (game != null && game.getClient() != null)
                 game.getClient().close();
@@ -624,6 +652,7 @@ public class Gui extends Application {
         }
         try {
             Gui.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
+            Gui.game.playSound();
         }
         catch (TimeoutException e) {
             Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
@@ -645,6 +674,7 @@ public class Gui extends Application {
             WebSocketClient client = new WebSocketClient(code);
             game = client.connect(() -> {});
             if (game == null) return;
+            game.playSound();
             stage.setScene(run());
             if (client.getWaiting() != null)
                 game.play1vs1(client.getWaiting());
@@ -661,35 +691,15 @@ public class Gui extends Application {
     }
 
 
-//    public static void destroy (Vertex v) {
-//        System.out.println("odjdoajdz");
-//        String name = "boom.gif";
-//        URL ressource = Gui.stage.getClass().getClassLoader().getResource(name);
-//        Image image = new Image(ressource.toExternalForm());
-//        ImageView imageView = new ImageView(image);
-//        double initialWidth = image.getWidth();
-//        double initialHeight = image.getHeight();
-//        imageView.setFitWidth(initialWidth / 2);
-//        imageView.setFitHeight(initialHeight / 2);
-//        double newX = v.getX() - (imageView.getFitWidth() / 2);
-//        double newY = v.getY() - (imageView.getFitHeight() / 2);
-//        imageView.setLayoutX(newX);
-//        imageView.setLayoutY(newY);
-//        double width = image.getWidth();
-//        double height = image.getHeight();
-//        Gui.pane.getChildren().addAll(imageView);
-//    }
-
-
     public static void changeVolume (double v) {
-        mainSound.setVolume(0);
-        System.out.println("eehehe");
+        mainSound.setVolume(v);
+        VOLUME = v;
     }
 
 
     public static void mainTheme () {
         Media sound = new Media(Gui.class.getClassLoader().getResource("Sounds/testMusic.mp3").toExternalForm());
-        mainSound = new AudioClip(sound.getSource());
+        mainSound = new MediaPlayer(sound);
         mainSound.setCycleCount(MediaPlayer.INDEFINITE);
         mainSound.play();
     }

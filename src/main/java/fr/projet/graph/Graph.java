@@ -34,9 +34,8 @@ public class Graph {
     @Getter
     private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
     public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
-        this.neighbors = new HashSet<>(neighbors);
         Set<Vertex> vertexSet = new HashSet<>();
-        for (Pair<Vertex, Vertex> element : this.neighbors) {
+        for (Pair<Vertex, Vertex> element : neighbors) {
             vertexSet.add(element.getKey());
             vertexSet.add(element.getValue());
             addNeighbor(element);
@@ -106,8 +105,8 @@ public class Graph {
         while (getNbVertices() < nbVertices) {
             iterCount++;
             // Coord aléatoire
-            Vertex newVertex = new Vertex(random.nextInt(UtilsGui.WINDOW_MARGE, maxSize-UtilsGui.WINDOW_MARGE),
-                                          random.nextInt(UtilsGui.WINDOW_MARGE, maxSize-UtilsGui.WINDOW_MARGE));
+            Vertex newVertex = new Vertex(random.nextInt(0, maxSize),
+                                          random.nextInt(0, maxSize));
             boolean distanceOk = true;
             for (Vertex v1: getVertices()) {
                 // Si la distance entre le sommet à placer est >= minDist de tous ses voisins, on le place
@@ -150,7 +149,7 @@ public class Graph {
         // On converti les coordonnées des sommets pour les afficher sur l'écran
         for (Vertex v : getVertices()) {
             v.setCoords(new Pair<>((int) toScreenSize(v.getX(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_WIDTH-UtilsGui.WINDOW_MARGE),
-                    (int) toScreenSize(v.getY(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_HEIGHT-UtilsGui.WINDOW_MARGE)));
+                    (int) toScreenSize(v.getY(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_HEIGHT-UtilsGui.WINDOW_MARGE*2)));
         }
     }
 
@@ -294,13 +293,21 @@ public class Graph {
 
     public void addNeighbor(Pair<Vertex, Vertex> edge) {
         if (!neighbors.contains(new Pair<>(edge.getValue(), edge.getKey())))
-            neighbors.add(edge);
-        if (!vertices.contains(edge.getKey()))
+        {
+            boolean contained = neighbors.add(edge);
+            if (!contained) return;
+        }
+        else return;
+        if (!adjVertices.containsKey(edge.getKey()))
+        {
             vertices.add(edge.getKey());
-        if (!vertices.contains(edge.getValue()))
+            adjVertices.put(edge.getKey(), new ArrayList<>());
+        }
+        if (!adjVertices.containsKey(edge.getValue()))
+        {
             vertices.add(edge.getValue());
-        getAdjVertices().putIfAbsent(edge.getKey(), new ArrayList<>());
-        getAdjVertices().putIfAbsent(edge.getValue(), new ArrayList<>());
+            adjVertices.put(edge.getValue(), new ArrayList<>());
+        }
         if (!getAdjVertices().get(edge.getKey()).contains(edge.getValue()))
             getAdjVertices().get(edge.getKey()).add(edge.getValue());
         if (!getAdjVertices().get(edge.getValue()).contains(edge.getKey()))
@@ -380,7 +387,7 @@ public class Graph {
                 if (isNotPossibleToGetASecondSpanningTree) continue;
                 Graph diff = new Graph();
                 for (Pair<Vertex, Vertex> edge : getNeighbors()) {
-                    if (!spanningTree.getNeighbors().contains(edge) && !spanningTree.getNeighbors().contains(new Pair<>(edge.getValue(), edge.getKey()))) {
+                    if (!spanningTree.getAdjVertices().get(edge.getKey()).contains(edge.getValue())) {
                         diff.addNeighbor(edge);
                     }
                 }
@@ -457,7 +464,6 @@ public class Graph {
                 }
             }
         }
-
         return new Graph(edges);
     }
 
