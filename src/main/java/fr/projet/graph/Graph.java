@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.awt.desktop.SystemSleepEvent;
 import java.util.*;
 import java.util.function.BiPredicate;
 
@@ -656,12 +657,14 @@ public class Graph {
     public Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> getT (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, int actualLevel) {
         ArrayList<Graph> res = new ArrayList<>();
         HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
+        System.out.println(actualLevel+" "+levels.size()+ " ICI P : "+P);
         for (ArrayList<Vertex> partition : P) {
             for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
                 if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
                     newNeib.add(edge);
                 }
                 else {
+                    System.out.println(edge);
                     if (levels.containsKey(edge)) {
                         levels.put(edge, actualLevel);
                     }
@@ -671,6 +674,7 @@ public class Graph {
                 }
             }
         }
+        System.out.println(levels);
         Graph toTest = new Graph(newNeib);
         for (Vertex v : this.getVertices()) {
             if (!toTest.getVertices().contains(v)) {
@@ -683,7 +687,7 @@ public class Graph {
 
     public Pair<Vertex,Vertex> cycle (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
         //System.out.println("iciciciccii : "+this.getNeighbors());
-        System.out.println("LOL"+levels);
+        System.out.println("LOL"+levels+"\nP : "+P);
         Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
         int level = -100000000;
         for (Graph G : composantesConnexeGraph(this)) {
@@ -718,43 +722,6 @@ public class Graph {
         }
         if (!this.getNeighbors().contains(res)) {
             res=reverseEdge(res);
-        }
-        return res;
-    }
-
-
-    public Pair<Vertex,Vertex> cycleAncien (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
-        //System.out.println("iciciciccii : "+this.getNeighbors());
-        System.out.println("LOL"+levels);
-        Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
-        int level = -100000000;
-        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
-            HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
-            newV.remove(e);
-            Graph newG = new Graph(newV);
-            for (Vertex v : this.getVertices()) {
-                if (!newG.getVertices().contains(v)) {
-                    newG.addVertex(v);
-                }
-            }
-            System.out.println("Test : "+newG.getNeighbors());
-            System.out.println(newG.getVertices());
-            if (newG.estConnexe()) {
-                if (levels.containsKey(e)) {
-                    System.out.println("OH1");
-                    if (levels.get(e)>level) {
-                        res=e;
-                        level=levels.get(e);
-                    }
-                }
-                else {
-                    System.out.println("OH2");
-                    if (levels.get(reverseEdge(e))>level) {
-                        res=e;
-                        level=levels.get(reverseEdge(e));
-                    }
-                }
-            }
         }
         return res;
     }
@@ -835,7 +802,7 @@ public class Graph {
                 levels = new HashMap<>(pairT1.getValue());
                 Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
                 T2 = pairT2.getKey();
-                levels = new HashMap<>(pairT1.getValue());
+                levels = new HashMap<>(pairT2.getValue());
                 turn2=false;
             }
             else {
@@ -846,7 +813,7 @@ public class Graph {
                 levels = new HashMap<>(pairT1.getValue());
                 Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
                 T2 = pairT2.getKey();
-                levels = new HashMap<>(pairT1.getValue());
+                levels = new HashMap<>(pairT2.getValue());
                 turn2=true;
             }
             actualLevel+=1;
