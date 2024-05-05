@@ -627,6 +627,31 @@ public class Graph {
         return newP;
     }
 
+    public static ArrayList<Graph> composantesConnexeGraph (Graph G) {
+        ArrayList<Graph> res = new ArrayList<>();
+        ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
+        for (Vertex v : G.getVertices()) {
+            ArrayList<Vertex> comp = G.allComponent(v);
+            if (!contientTab(newP,comp)) {
+                newP.add(comp);
+                ArrayList<Pair<Vertex,Vertex>> newNeib = new ArrayList<>();
+                for (Pair<Vertex,Vertex> e : G.getNeighbors()) {
+                    if (comp.contains(e.getKey()) && comp.contains(e.getValue())) {
+                        newNeib.add(e);
+                    }
+                }
+                Graph newG = new Graph(newNeib);
+                for (Vertex ver : comp) {
+                    if (!newG.getVertices().contains(ver)) {
+                        newG.addVertex(v);
+                    }
+                }
+                res.add(newG);
+            }
+        }
+        return res;
+    }
+
 
     public Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> getT (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, int actualLevel) {
         ArrayList<Graph> res = new ArrayList<>();
@@ -658,6 +683,49 @@ public class Graph {
 
     public Pair<Vertex,Vertex> cycle (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
         //System.out.println("iciciciccii : "+this.getNeighbors());
+        System.out.println("LOL"+levels);
+        Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
+        int level = -100000000;
+        for (Graph G : composantesConnexeGraph(this)) {
+            //System.out.println(G.getVertices().size()+" "+G.getNeighbors().size());
+            for (Pair<Vertex, Vertex> e : G.getNeighbors()) {
+                HashSet<Pair<Vertex, Vertex>> newV = new HashSet(this.getNeighbors());
+                newV.remove(e);
+                Graph newG = new Graph(newV);
+                for (Vertex v : G.getVertices()) {
+                    if (!newG.getVertices().contains(v)) {
+                        newG.addVertex(v);
+                    }
+                }
+                //System.out.println("Test : " + newG.getNeighbors());
+                //System.out.println(newG.getVertices());
+                if (newG.estConnexe()) {
+                    if (levels.containsKey(e)) {
+                        System.out.println("OH1");
+                        if (levels.get(e) > level) {
+                            res = e;
+                            level = levels.get(e);
+                        }
+                    } else {
+                        System.out.println("OH2");
+                        if (levels.get(reverseEdge(e)) > level) {
+                            res = e;
+                            level = levels.get(reverseEdge(e));
+                        }
+                    }
+                }
+            }
+        }
+        if (!this.getNeighbors().contains(res)) {
+            res=reverseEdge(res);
+        }
+        return res;
+    }
+
+
+    public Pair<Vertex,Vertex> cycleAncien (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
+        //System.out.println("iciciciccii : "+this.getNeighbors());
+        System.out.println("LOL"+levels);
         Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
         int level = -100000000;
         for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
@@ -669,16 +737,18 @@ public class Graph {
                     newG.addVertex(v);
                 }
             }
+            System.out.println("Test : "+newG.getNeighbors());
+            System.out.println(newG.getVertices());
             if (newG.estConnexe()) {
                 if (levels.containsKey(e)) {
-                    System.out.println("fjopzejgfiojgiohgp");
+                    System.out.println("OH1");
                     if (levels.get(e)>level) {
                         res=e;
                         level=levels.get(e);
                     }
                 }
                 else {
-                    System.out.println("fjopzejgfiojgiohgp");
+                    System.out.println("OH2");
                     if (levels.get(reverseEdge(e))>level) {
                         res=e;
                         level=levels.get(reverseEdge(e));
@@ -688,6 +758,10 @@ public class Graph {
         }
         return res;
     }
+
+
+
+
 
     public Pair<Vertex,Vertex> cycleForT1 (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, Pair<Vertex,Vertex> stay) {
         Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
@@ -806,13 +880,14 @@ public class Graph {
         }
 
         //là faut trouver le cycle et l'arrete on utilise une fonction qui trouve l'arrête
+        //System.out.println("T2 : "+T2.getNeighbors()+"\n"+T2.getVertices().size());
         Pair<Vertex,Vertex> toRemove = T2.cycle(P,levels);
         T2.removeNeighbor(toRemove);
         T1.addNeighbor(toRemove);
-        System.out.println(toRemove+"\n"+T1.getNeighbors()+"\n"+T1.getVertices().size());
         Pair<Vertex,Vertex> toRemT1 = T1.cycleForT1(P,levels,toRemove);
         T1.removeNeighbor(toRemT1);
         T2.addNeighbor(toRemT1);
+        System.out.println("T2 : "+toRemove+"   T1 : "+toRemT1);
 
         //System.out.println("Compteur : "+compteur+"  P size : "+P.size());
 
@@ -829,6 +904,26 @@ public class Graph {
 
         Graph T1 = getSpanningTree();
         Graph T2 = this.soustraction(T1);
+
+//        Iterator<Pair<Vertex, Vertex>> iterator = T1.getNeighbors().iterator();
+//        int c=0;
+//        Pair<Vertex, Vertex> v = null;
+//        Pair<Vertex, Vertex> v2 = null;
+//        while (iterator.hasNext() && c<4) {
+//            System.out.println(v);
+//            v = iterator.next();
+//            if (c==2) {
+//                v2= v;
+//            }
+//            c+=1;
+//        }
+//        System.out.println(v);
+//        T1.removeNeighbor(v);
+//        T1.removeNeighbor(v2);
+//        ArrayList<Graph> res2 = composantesConnexeGraph(T1);
+//        for (Graph g : res2) {
+//            System.out.println(g.getVertices());
+//        }
 
         System.out.println("==================== DEPART ====================");
         System.out.println("==== "+T1.getNeighbors().size() + " ======" + T2.getNeighbors().size());
@@ -849,8 +944,8 @@ public class Graph {
 
         //T4=T4.getSpanningTree();
 
-        ret.add(T3);
-        ret.add(T4);
+        ret.add(T1);
+        ret.add(T2);
 
         return ret;
     }
