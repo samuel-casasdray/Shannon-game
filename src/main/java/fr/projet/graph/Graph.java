@@ -26,7 +26,7 @@ public class Graph {
     private Random random = new Random();
 
     private List<Vertex> vertices = new ArrayList<>();
-    private Map<Vertex, List<Vertex>> adjVertices = new HashMap<>();
+    private Map<Vertex, HashSet<Vertex>> adjVertices = new HashMap<>();
 
     @Getter
     private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
@@ -41,11 +41,11 @@ public class Graph {
         this.nbVertices = vertexSet.size();
     }
 
-    public Graph(Collection<Vertex> vertices, Map<Vertex, List<Vertex>> adjVertices) {
+    public Graph(Collection<Vertex> vertices, Map<Vertex, HashSet<Vertex>> adjVertices) {
         for (Vertex v : vertices) {
             addVertex(v);
         }
-        for (Map.Entry<Vertex, List<Vertex>> entry : adjVertices.entrySet()) {
+        for (Map.Entry<Vertex, HashSet<Vertex>> entry : adjVertices.entrySet()) {
             for (Vertex v : entry.getValue()) {
                 addNeighbor(new Pair<>(entry.getKey(), v));
             }
@@ -69,14 +69,14 @@ public class Graph {
         this.adjVertices = new HashMap<>();
     }
     public void addVertex(Vertex v) {
-        adjVertices.putIfAbsent(v, new ArrayList<>());
+        adjVertices.putIfAbsent(v, new HashSet<>());
         vertices.add(v);
     }
 
     public void removeVertex(Vertex v) {
         vertices.remove(v);
         getAdjVertices().remove(v);
-        for (List<Vertex> listVertex : getAdjVertices().values()) {
+        for (HashSet<Vertex> listVertex : getAdjVertices().values()) {
             listVertex.remove(v);
         }
         neighbors.removeIf(neighbor -> neighbor.getKey().equals(v) || neighbor.getValue().equals(v));
@@ -298,17 +298,15 @@ public class Graph {
         if (!adjVertices.containsKey(edge.getKey()))
         {
             vertices.add(edge.getKey());
-            adjVertices.put(edge.getKey(), new ArrayList<>());
+            adjVertices.put(edge.getKey(), new HashSet<>());
         }
         if (!adjVertices.containsKey(edge.getValue()))
         {
             vertices.add(edge.getValue());
-            adjVertices.put(edge.getValue(), new ArrayList<>());
+            adjVertices.put(edge.getValue(), new HashSet<>());
         }
-        if (!getAdjVertices().get(edge.getKey()).contains(edge.getValue()))
-            getAdjVertices().get(edge.getKey()).add(edge.getValue());
-        if (!getAdjVertices().get(edge.getValue()).contains(edge.getKey()))
-            getAdjVertices().get(edge.getValue()).add(edge.getKey());
+        getAdjVertices().get(edge.getKey()).add(edge.getValue());
+        getAdjVertices().get(edge.getValue()).add(edge.getKey());
     }
 
 
