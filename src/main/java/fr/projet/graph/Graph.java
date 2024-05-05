@@ -657,14 +657,14 @@ public class Graph {
     public Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> getT (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, int actualLevel) {
         ArrayList<Graph> res = new ArrayList<>();
         HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
-        System.out.println(actualLevel+" "+levels.size()+ " ICI P : "+P);
+        //System.out.println(actualLevel+" "+levels.size()+ " ICI P : "+P);
         for (ArrayList<Vertex> partition : P) {
             for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
                 if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
                     newNeib.add(edge);
                 }
                 else {
-                    System.out.println(edge);
+                    //System.out.println(edge);
                     if (levels.containsKey(edge)) {
                         levels.put(edge, actualLevel);
                     }
@@ -674,7 +674,7 @@ public class Graph {
                 }
             }
         }
-        System.out.println(levels);
+        //System.out.println(levels);
         Graph toTest = new Graph(newNeib);
         for (Vertex v : this.getVertices()) {
             if (!toTest.getVertices().contains(v)) {
