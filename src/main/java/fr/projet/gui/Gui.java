@@ -100,26 +100,26 @@ public class Gui extends Application {
     public static void createAnim() {
         new Thread(() -> {
             Gui.setTimer(new Timeline(new KeyFrame(Duration.millis(20), event -> {
-                for(Line line: posTransport) {
-                    ObservableMap<Object, Object> properties = line.getProperties();
-                    int i = (int) properties.get("i");
-                    double Ux = (double) properties.get("Ux");
-                    double Uy = (double) properties.get("Uy");
-                    int Ax = (int) properties.get("Ax");
-                    int Ay = (int) properties.get("Ay");
-                    int Bx = (int) properties.get("Bx");
-                    int By = (int) properties.get("By");
-                    i++;
-                    properties.put("i", i);
-                    double posX = i * Ux + Ax;
-                    double posY = i * Uy + Ay;
-                    if ((Ax < Bx && posX > Bx) || (Ax > Bx && posX < Bx) || (Ay < By && posY > By) || (Ay > By && posY < By)) {
-                        i = 0;
-                        properties.put("i", i);
-                    }
-                    line.setTranslateX(i*Ux);
-                    line.setTranslateY(i*Uy);
-                }
+//                for(Line line: posTransport) {
+//                    ObservableMap<Object, Object> properties = line.getProperties();
+//                    int i = (int) properties.get("i");
+//                    double Ux = (double) properties.get("Ux");
+//                    double Uy = (double) properties.get("Uy");
+//                    int Ax = (int) properties.get("Ax");
+//                    int Ay = (int) properties.get("Ay");
+//                    int Bx = (int) properties.get("Bx");
+//                    int By = (int) properties.get("By");
+//                    i++;
+//                    properties.put("i", i);
+//                    double posX = i * Ux + Ax;
+//                    double posY = i * Uy + Ay;
+//                    if ((Ax < Bx && posX > Bx) || (Ax > Bx && posX < Bx) || (Ay < By && posY > By) || (Ay > By && posY < By)) {
+//                        i = 0;
+//                        properties.put("i", i);
+//                    }
+//                    line.setTranslateX(i*Ux);
+//                    line.setTranslateY(i*Uy);
+//                }
                 draw(pane);
                 if (etoiles.size() < NB_STARS) {
                     etoiles.addAll(generer(100));
@@ -591,29 +591,14 @@ public class Gui extends Application {
             int Ay = pair.getKey().getCoords().getValue();
             int Bx = pair.getValue().getCoords().getKey();
             int By = pair.getValue().getCoords().getValue();
-            double pas = random.nextDouble() / 200 + 0.0025;
-            double Ux = (Bx-Ax) * pas;
-            double Uy = (By-Ay) * pas;
             Line line = new Line(Ax, Ay, Bx, By);
             line.setStroke(Paint.valueOf("#a2d2ff"));
-            Line line2 = new Line(Ax, Ay, Ax+Ux, Ay+Uy);
             line.setStrokeWidth(5);
-            line2.setStrokeWidth(7);
-            line2.setStroke(Paint.valueOf("#a2d2ff"));
             line.setOnMouseClicked(handler);
-            line2.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
-            line2.getProperties().put("Ux", Ux);
-            line2.getProperties().put("Uy", Uy);
-            line2.getProperties().put("Ax", Ax);
-            line2.getProperties().put("Ay", Ay);
-            line2.getProperties().put("Bx", Bx);
-            line2.getProperties().put("By", By);
-            line2.getProperties().put("i", 0);
             // Ajout de la ligne sur sur l'affichage
-            pane.getChildren().addAll(line, line2);
+            pane.getChildren().addAll(line);
             edges.add(new Pair<>(pair, line));
-            posTransport.add(line2);
         }
         colorPlanarGraph(game.getGraph());
         for (int i = 0; i < Gui.game.getGraph().getNbVertices(); i++) {
