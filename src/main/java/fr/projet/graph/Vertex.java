@@ -4,21 +4,11 @@ import javafx.util.Pair;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.util.HashSet;
-import java.util.List;
-
 @Accessors(chain = true)
 @Data
 public class Vertex {
-    //private HashSet<Vertex> neighbors;
-    private HashSet<Vertex> neighborsCut = new HashSet<>(); // Pour avoir un contains en O(1) et aucune répétition ?
-    private HashSet<Vertex> neighborsPaint = new HashSet<>();
     private Pair<Integer, Integer> coords;
     private int color = 0;
-
-    public Vertex(List<Vertex> vertices, int x, int y) {
-        this.coords = new Pair<>(x, y);
-    }
 
     public Vertex(int x, int y) {
         this.coords = new Pair<>(x, y);
@@ -34,9 +24,8 @@ public class Vertex {
     }
 
     @Override
-    public boolean equals(Object o) { 
-        // à mon avis il faut garder le equals par défaut pour comparer les instances
-        return super.equals(o); 
+    public boolean equals(Object o) {
+        return super.equals(o);
     }
 
     @Override
@@ -55,32 +44,9 @@ public class Vertex {
                 (vertex1.getKey().equals(vertex2.getValue()) && vertex1.getValue().equals(vertex2.getKey()));
     }
 
-    public void cut(Vertex v) {
-        neighborsCut.add(v);
-        v.neighborsCut.add(this); // si c'est cut, c'est cut dans les deux sens
-    }
-
-    public boolean isCut(Vertex v) {
-        return neighborsCut.contains(v)
-        || v.getNeighborsCut().contains(this);
-    }
-
-    public void paint(Vertex v) {
-        neighborsPaint.add(v);
-        v.getNeighborsPaint().add(this);
-    }
-
-    public boolean isPainted(Vertex v) {
-        return neighborsPaint.contains(v) || v.getNeighborsPaint().contains(this);
-    }
-
-    public boolean isCutOrPanted(Vertex v) {
-        return isCut(v) || isPainted(v);
-    }
-
     public double distance(Vertex v) {
-        return Math.sqrt(Math.pow(getCoords().getKey() - v.getCoords().getKey(), 2)
-                + Math.pow(getCoords().getValue() - v.getCoords().getValue(), 2));
+        return Math.sqrt(Math.pow(getX() - v.getX(), 2)
+                + Math.pow(getY() - v.getY(), 2));
     }
 }
 

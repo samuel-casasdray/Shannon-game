@@ -34,11 +34,10 @@ public class UtilsGui {
     public static final double CIRCLE_SIZE = 20D;
     public static final double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
     public static final double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight();
-    public static final int WINDOW_MARGE = 100;
+    public static final int WINDOW_MARGE = (int) (0.1*WINDOW_HEIGHT);
 
 
     private void addHoverEffect(Button button) {
-
         // Effet de grossissement lorsqu'on passe sur le bouton
         ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(100), button);
         scaleTransition.setFromX(1.0);
@@ -78,12 +77,14 @@ public class UtilsGui {
             if (event.getCode() == KeyCode.ENTER) action.handle(event);
         });
     }
-    public Button createButton(String text, EventHandler<ActionEvent> action) {
+    public Button createButton(String text, EventHandler<ActionEvent> action, boolean arrow) {
         Button button = new Button(text);
         //button.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         button.setFont(FONT3);
-        button.setPrefSize(350,35);
-
+        if (!arrow)
+            button.setPrefSize(350,35);
+        else
+            button.setPrefSize(50,35);
         //effet d'ombre des boutons
         DropShadow shadow = new DropShadow();
         shadow.setOffsetX(3.0); // Décalage horizontal pour l'effet 3D
@@ -113,19 +114,13 @@ public class UtilsGui {
         }
 
         Button returnButton = UtilsGui.createButton(imageView == null ? "<-" : "", event ->
-                new Thread(() -> Platform.runLater(() -> handleButtonClick.call(nomscene))).start());
+                new Thread(() -> Platform.runLater(() -> handleButtonClick.call(nomscene))).start(), true);
         returnButton.setStyle("-fx-background-color: transparent;");
-        returnButton.setLayoutX(10);
-        returnButton.setLayoutY(0);
         returnButton.setMinSize(40, 20);
+        returnButton.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        returnButton.setLayoutY(0);
         if(imageView != null)
             returnButton.setGraphic(imageView);
-
-        DropShadow shadow = new DropShadow();
-        shadow.setOffsetX(5.0); // Décalage horizontal pour l'effet 3D
-        shadow.setOffsetY(5.0);
-        shadow.setColor(Color.GRAY);
-        returnButton.setEffect(shadow);
         return returnButton;
     }
 

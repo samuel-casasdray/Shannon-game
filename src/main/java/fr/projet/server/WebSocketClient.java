@@ -11,7 +11,6 @@ import javafx.application.Platform;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
 import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;

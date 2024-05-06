@@ -1,17 +1,16 @@
 package fr.projet.ia;
 
 import fr.projet.game.Game;
-import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.util.Pair;
-
-
-import java.util.*;
-
-import static java.util.Collections.max;
-import static java.util.Collections.min;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Set;
 
 public class Minimax extends InterfaceIA {
 
@@ -23,7 +22,7 @@ public class Minimax extends InterfaceIA {
     }
 
 
-    public int evaluate(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
+    public int evaluate(Set<Pair<Vertex, Vertex>> secured, Set<Pair<Vertex, Vertex>> cutted) {
         //if (this.graph.difference(cutted)) System.out.println("OOFEJOZEJIOEIOZ");
         Graph testSecured = new Graph(secured);
         if (this.graph.difference(cutted)) return 1000;
@@ -32,7 +31,7 @@ public class Minimax extends InterfaceIA {
     }
 
 
-    public int evaluateDegree (HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted) {
+    public int evaluateDegree (Set<Pair<Vertex, Vertex>> secured, Set<Pair<Vertex, Vertex>> cutted) {
         HashMap<Vertex,Integer> tab = new HashMap<>();
         HashMap<Vertex,Integer> link = new HashMap<>();
         int i=0;
@@ -61,7 +60,7 @@ public class Minimax extends InterfaceIA {
             if (!scoreTot.containsKey(entry.getValue())) {
                 scoreTot.put(entry.getValue(),0);
                 for (Map.Entry<Vertex, Integer> entry2 : link.entrySet()) {
-                    if (entry2.getValue()==entry.getValue()) {
+                    if (Objects.equals(entry2.getValue(), entry.getValue())) {
                         scoreTot.put(entry.getValue(),scoreTot.get(entry.getValue())+tab.get(entry2.getKey()));
                     }
                 }
@@ -177,7 +176,7 @@ public class Minimax extends InterfaceIA {
 
 
 
-    public int minMax(HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player) { //1 pour CUT 0 pour SHORT
+    public int minMax(HashSet<Pair<Vertex, Vertex>> secured, Set<Pair<Vertex, Vertex>> cutted, int d, int player) { //1 pour CUT 0 pour SHORT
         int eval = evaluate(secured, cutted);
         //System.out.println(eval);
         //System.out.println(cutted.size()+"   "+secured.size());
@@ -214,7 +213,7 @@ public class Minimax extends InterfaceIA {
 
 
 
-    public int alpha_beta (HashSet<Pair<Vertex, Vertex>> secured, HashSet<Pair<Vertex, Vertex>> cutted, int d, int player, int alpha, int beta) { //1 pour CUT 0 pour SHORT
+    public int alpha_beta (Set<Pair<Vertex, Vertex>> secured, Set<Pair<Vertex, Vertex>> cutted, int d, int player, int alpha, int beta) { //1 pour CUT 0 pour SHORT
         int eval = evaluateDegree(secured, cutted);
         int eval2 = evaluate(secured, cutted);
         //int eval2 = evaluateDegree(secured, cutted);

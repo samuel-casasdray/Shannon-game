@@ -21,7 +21,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -192,7 +191,7 @@ public class Game {
             Pair<Vertex, Vertex> played;
             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                 if (Vertex.isSameCouple(new Pair<>(key, value), neighbors.getKey())) {
-                    if (key.isCutOrPanted(value) || isInterrupted()) {
+                    if (isCutted(key, value) || isSecured(key, value) || isInterrupted()) {
                         return;
                     }
                     if (turn == Turn.CUT) {
@@ -284,7 +283,7 @@ public class Game {
     }
 
     public void isolateComponent() {
-        Set<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        Set<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !isCutted(x, v));
         Optional<Vertex> u = Optional.empty();
         for (Vertex x : getGraph().getVertices()) {
             if (!component.contains(x)) {
@@ -293,7 +292,7 @@ public class Game {
             }
         }
         if (u.isEmpty()) return;
-        Set<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        Set<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !isCutted(x, v));
         Set<Vertex> smallestComponent;
         if (component.size() > secondComponent.size()) {
             smallestComponent = secondComponent;
@@ -303,7 +302,7 @@ public class Game {
         Set<Vertex> finalSmallestComponent = smallestComponent;
         List<Pair<Pair<Vertex, Vertex>, Line>> edgesGreen = Gui.getEdges().stream().filter(pair -> finalSmallestComponent.contains(pair.getKey().getKey())
             && finalSmallestComponent.contains(pair.getKey().getValue())
-            && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
+            && !isCutted(pair.getKey().getKey(), pair.getKey().getValue())).toList();
         createTimer(edgesGreen, false, 250);
         List<Pair<Pair<Vertex, Vertex>, Line>> cuttedLines = Gui.getEdges().stream().filter(x ->
             cutted.contains(x.getKey())).toList();
@@ -373,7 +372,7 @@ public void deleteCuttedEdge() {
         }
         if (line == null) return;
         Pair<Vertex, Vertex> move = (Pair<Vertex, Vertex>) line.getProperties().get("pair");
-        if (move == null || move.getKey().isCut(move.getValue()) || move.getKey().isPainted(move.getValue())) return;
+        if (move == null || isCutted(move.getKey(), move.getValue()) || isSecured(move.getKey(), move.getValue())) return;
         if (pvpOnline) {
             try {
                 sendMove(move);
@@ -386,12 +385,10 @@ public void deleteCuttedEdge() {
     }
 
     public void cutEdge(Pair<Vertex, Vertex> edge) {
-        edge.getKey().cut(edge.getValue());
         getCutted().add(edge);
     }
 
     public void secureEdge(Pair<Vertex, Vertex> edge) {
-        edge.getKey().paint(edge.getValue());
         getSecured().add(edge);
     }
 
@@ -533,7 +530,7 @@ public void deleteCuttedEdge() {
     }
 
     public boolean graphIsNotOkay() {
-        return graph.getVertices().size() != nbVertices || graph.minDeg() < minDeg || graph.maxDeg() > maxDeg || !graph.estConnexe();
+        return graph.getNbVertices() != nbVertices || graph.minDeg() < minDeg || graph.maxDeg() > maxDeg || !graph.estConnexe();
     }
 
     public boolean getCutWon() {
@@ -581,5 +578,13 @@ public void deleteCuttedEdge() {
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
         mediaPlayer.setVolume(Gui.getVOLUME()/2);
         mediaPlayer.play();
+    }
+
+    private boolean isCutted(Vertex key, Vertex value) {
+        return cutted.contains(new Pair<>(key, value)) || cutted.contains(new Pair<>(value, key));
+    }
+
+    private boolean isSecured(Vertex key, Vertex value) {
+        return secured.contains(new Pair<>(key, value)) || secured.contains(new Pair<>(value, key));
     }
 }
