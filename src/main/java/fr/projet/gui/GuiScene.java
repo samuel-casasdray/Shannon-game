@@ -127,11 +127,11 @@ public class GuiScene {
         slider2.setLayoutX(300);
         slider2.setLayoutY(0);
         //création des boutons d'option de jeu
-        Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA));
-        Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO));
-        Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL));
-        Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA));
-        Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED));
+        Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA), false);
+        Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO), false);
+        Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL), false);
+        Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA), false);
+        Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED), false);
         Button statsButton = new Button("?");
         statsButton.setTextFill(Color.RED);
         Button deconnexion = new Button("Déconnexion");
@@ -252,7 +252,7 @@ public class GuiScene {
 
         TextField textJoin = new TextField();
         textJoin.setPromptText("code de partie");
-        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin));
+        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin), false);
 
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
@@ -310,7 +310,7 @@ public class GuiScene {
                         }).start();
 
                     } catch (Exception ignored) {}
-                });
+                }, false);
         if (pseudo.length() >= 3)
         {
             root.add(pseudoText, 0, 2);
@@ -381,7 +381,7 @@ public class GuiScene {
                     }
                     nbVertices = nbSommets;
                     handleButtonClick.call(ButtonClickType.AIvsAI);
-                });
+                }, false);
         scene.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
@@ -407,8 +407,8 @@ public class GuiScene {
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("JOUEUR VS IA", true);
         Text text1 = UtilsGui.createText("Quel joueur voulez vous jouer ?");
-        Button shortbut = UtilsGui.createButton("SHORT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_SHORT));
-        Button cutbut = UtilsGui.createButton("CUT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_CUT));
+        Button shortbut = UtilsGui.createButton("SHORT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_SHORT), false);
+        Button cutbut = UtilsGui.createButton("CUT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_CUT), false);
         title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
         title.setY(100);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
@@ -431,9 +431,9 @@ public class GuiScene {
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("JOUEUR VS IA", true);
         Text text1 = UtilsGui.createText("Choisissez la difficulte");
-        Button facile = UtilsGui.createButton("facile", event -> handleButtonClick.call(ButtonClickType.PVIA_EASY));
-        Button normal = UtilsGui.createButton("normale", event -> handleButtonClick.call(ButtonClickType.PVIA_MEDIUM));
-        Button difficile = UtilsGui.createButton("difficile", event -> handleButtonClick.call(ButtonClickType.PVIA_HARD));
+        Button facile = UtilsGui.createButton("facile", event -> handleButtonClick.call(ButtonClickType.PVIA_EASY), false);
+        Button normal = UtilsGui.createButton("normale", event -> handleButtonClick.call(ButtonClickType.PVIA_MEDIUM), false);
+        Button difficile = UtilsGui.createButton("difficile", event -> handleButtonClick.call(ButtonClickType.PVIA_HARD), false);
         title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
         title.setY(100);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
@@ -461,7 +461,7 @@ public class GuiScene {
             nbVertices = spinner.getValue();
             handleButtonClick.call(ButtonClickType.VERTICES);
 
-        });
+        }, false);
         root.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
@@ -535,8 +535,8 @@ public class GuiScene {
 
     public Scene ranked(HandleClick handleButtonClick) {
         Pane root = getBasicScene();
-        Button button1 = UtilsGui.createButton("Se connecter", event -> handleButtonClick.call(ButtonClickType.LOGIN));
-        Button button2 = UtilsGui.createButton("S'inscrire", event -> handleButtonClick.call(ButtonClickType.REGISTER));
+        Button button1 = UtilsGui.createButton("Se connecter", event -> handleButtonClick.call(ButtonClickType.LOGIN), false);
+        Button button2 = UtilsGui.createButton("S'inscrire", event -> handleButtonClick.call(ButtonClickType.REGISTER), false);
         button1.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button1.getPrefWidth()/2);
         button1.setLayoutY(300);
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
@@ -576,7 +576,7 @@ public class GuiScene {
                     });
                 }
             }).start();
-        });
+        }, false);
         scene.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
@@ -638,7 +638,7 @@ public class GuiScene {
                     });
                 }
             }).start();
-        });
+        }, false);
         scene.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
