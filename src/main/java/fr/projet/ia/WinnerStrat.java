@@ -6,16 +6,16 @@ import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.util.Pair;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class WinnerStrat extends InterfaceIA {
     private List<Graph> stratGagnante;
-    private List<Pair<Vertex, Vertex>> toCut;
+    private Set<Pair<Vertex, Vertex>> toCut;
     public WinnerStrat(Game game, Turn plays, List<Graph> stratGagnante) {
         super(game, plays);
         this.stratGagnante = stratGagnante;
-        this.toCut = new ArrayList<>(stratGagnante.getFirst().getNeighbors());
+        this.toCut = stratGagnante.getFirst().getNeighbors();
     }
 
     public Pair<Vertex, Vertex> playCUT() {
@@ -29,11 +29,9 @@ public class WinnerStrat extends InterfaceIA {
             }
             if (theEdge != null) {
                 toCut.remove(theEdge);
-                System.out.println("The edge : " + theEdge);
                 return theEdge;
             }
         }
-        System.out.println("No more edges to cut");
         return null;
     }
 

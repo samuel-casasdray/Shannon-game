@@ -80,7 +80,34 @@ public class Game {
         seed = new Random().nextLong();
         LocalTime duration = LocalTime.now();
         int c = 0;
-        do {
+        if (level == Level.STRAT_WIN)
+        {
+            if (typeIA == Turn.CUT) {
+                do {
+                    do {
+                        graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
+                        c++;
+                        if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                            throw new TimeoutException();
+                        }
+                    } while (graphIsNotOkay());
+                    stratGagnante = graph.appelStratGagnante();
+                } while (stratGagnante.isEmpty() || stratGagnante.get(1).getNbVertices() > 0);
+            }
+            else {
+                do {
+                    do {
+                        graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
+                        c++;
+                        if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                            throw new TimeoutException();
+                        }
+                    } while (graphIsNotOkay());
+                    stratGagnante = graph.appelStratGagnante();
+                } while (stratGagnante.isEmpty() || stratGagnante.get(1).getNbVertices() == 0);
+            }
+        }
+        else {
             do {
                 graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
                 c++;
@@ -88,8 +115,7 @@ public class Game {
                     throw new TimeoutException();
                 }
             } while (graphIsNotOkay());
-            stratGagnante = graph.appelStratGagnante();
-        } while (stratGagnante.isEmpty() || stratGagnante.get(1).getNbVertices() > 0);
+        }
         if (withIA) {
             ia = getIAwithDifficulty(level);
             this.againstAI = true;
