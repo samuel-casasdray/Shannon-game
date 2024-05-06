@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import java.awt.desktop.SystemSleepEvent;
 import java.util.*;
 import java.util.function.BiPredicate;
 
@@ -523,20 +521,13 @@ public class Graph {
         return tab;
     }
 
-
-
-
-
     public static boolean sameEdge (Pair<Vertex,Vertex> e1, Pair<Vertex,Vertex> e2) {
-        if ((e1.getKey()==e2.getKey() && e1.getValue()==e2.getValue()) || (e1.getKey()==e2.getValue() && e1.getValue()==e2.getKey())) {
-            return true;
-        }
-        return false;
+        return (e1.getKey() == e2.getKey() && e1.getValue() == e2.getValue()) ||
+                (e1.getKey() == e2.getValue() && e1.getValue() == e2.getKey());
     }
 
     public static Pair<Vertex,Vertex> reverseEdge (Pair<Vertex,Vertex> e1) {
-        Pair<Vertex,Vertex> e2 = new Pair<>(e1.getValue(),e1.getKey());
-        return e2;
+        return new Pair<>(e1.getValue(),e1.getKey());
     }
 
 
@@ -611,9 +602,6 @@ public class Graph {
         return res;
     }
 
-
-
-
     public ArrayList<Vertex> allComponent(Vertex vertex) {
         if (getVertices().isEmpty()) {
             return new ArrayList<>();
@@ -686,16 +674,13 @@ public class Graph {
 
 
     public Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> getT (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, int actualLevel) {
-        ArrayList<Graph> res = new ArrayList<>();
         HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
-        //System.out.println(actualLevel+" "+levels.size()+ " ICI P : "+P);
         for (ArrayList<Vertex> partition : P) {
             for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
                 if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
                     newNeib.add(edge);
                 }
                 else {
-                    //System.out.println(edge);
                     if (levels.containsKey(edge)) {
                         levels.put(edge, actualLevel);
                     }
@@ -705,7 +690,6 @@ public class Graph {
                 }
             }
         }
-        //System.out.println(levels);
         Graph toTest = new Graph(newNeib);
         for (Vertex v : this.getVertices()) {
             if (!toTest.getVertices().contains(v)) {
@@ -717,22 +701,15 @@ public class Graph {
 
 
     public Pair<Vertex,Vertex> cycle (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
-        //System.out.println("iciciciccii : "+this.getNeighbors());
-        //System.out.println("LOL"+levels+"\nP : "+P);
         Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
         int level = 100000000;
         for (Graph G : composantesConnexeGraph(this)) {
-            //System.out.println(G.getVertices().size()+" "+G.getNeighbors().size());
             for (Pair<Vertex, Vertex> e : G.getNeighbors()) {
                 HashSet<Pair<Vertex, Vertex>> newV = new HashSet(this.getNeighbors());
                 newV.remove(e);
-                Boolean betweenTwo = true;
+                boolean betweenTwo = true;
                 for (ArrayList<Vertex> part : P) {
                     if (part.contains(e.getKey()) && part.contains(e.getValue())) {
-                        System.out.println("ça arrive");
-                        System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nça arrive");
-                        System.out.println("ça arrive");
-
                         betweenTwo = false;
                     }
                 }
@@ -743,17 +720,13 @@ public class Graph {
                         newG.addVertex(v);
                     }
                 }
-                //System.out.println("Test : " + newG.getNeighbors());
-                //System.out.println(newG.getVertices());
                 if (newG.estConnexe() && betweenTwo) {
                     if (levels.containsKey(e)) {
-                        //System.out.println("OH1");
                         if (levels.get(e) < level) {
                             res = e;
                             level = levels.get(e);
                         }
                     } else {
-                        //System.out.println("OH2");
                         if (levels.get(reverseEdge(e)) < level) {
                             res = e;
                             level = levels.get(reverseEdge(e));
@@ -768,37 +741,27 @@ public class Graph {
         return res;
     }
 
-
-
-
-
     public Pair<Vertex,Vertex> cycleForT1 (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, Pair<Vertex,Vertex> stay) {
         Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
-        //System.out.println("LOL");
         int level = 100000000;
         for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
             HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
             newV.remove(e);
             Graph newG = new Graph(newV);
-            //System.out.println("Test : "+newG.getNeighbors());
             for (Vertex v : this.getVertices()) {
                 if (!newG.getVertices().contains(v)) {
                     newG.addVertex(v);
                 }
             }
-            //System.out.println(newG.getVertices());
             if (newG.estConnexe()) {
                 if (levels.containsKey(e)) {
-                    //System.out.println("OH");
-                    if (levels.get(e)<level && e!=stay && e!=reverseEdge(stay)) {
+                    if (levels.get(e)<level && e!=stay && !Objects.equals(e, reverseEdge(stay))) {
                         res=e;
                         level=levels.get(e);
-                        //System.out.println("OH2");
                     }
                 }
                 else {
-                    if (levels.get(reverseEdge(e))<level && e!=stay && e!=reverseEdge(stay)) {
-                        //System.out.println("OH3");
+                    if (levels.get(reverseEdge(e))<level && e!=stay && !e.equals(reverseEdge(stay))) {
                         res=e;
                         level=levels.get(reverseEdge(e));
                     }
@@ -823,12 +786,7 @@ public class Graph {
     public Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> winningStrat (Graph T1, Graph T2) { // true si SHORT win !!!!!!
         Graph stockT1 = T1.copy();
         Graph stockT2 = T2.copy();
-        //System.out.println("StockT1 dep : "+stockT1.getNeighbors());
-
-
-
         if (T2.estConnexe()) {
-            //System.out.println("sortie par T2 connexe");
             return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>())); //Short Win
         }
 
@@ -846,12 +804,6 @@ public class Graph {
 
         if (globalVariable>100) {
             System.out.println("PLAAAAAANTE");
-            System.out.println("PLAAAAAANTE");
-            System.out.println("PLAAAAAANTE");
-            System.out.println("PLAAAAAANTE");
-            System.out.println("PLAAAAAANTE");
-            System.out.println("PLAAAAAANTE");
-
             return new Pair<>(true, new Pair<>( new Pair<>(null, null), new ArrayList<>())); //Short Win
         }
         globalVariable+=1;
@@ -859,57 +811,33 @@ public class Graph {
         boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
 
         while (!T1.endEvalutation(P) || !T2.endEvalutation(P)) {
-            //System.out.println("On est dedans ! "+actualLevel);
             if (turn2) {
                 ArrayList<Graph> GraphInP = T2.graphInPartitions(P);
                 P = composantesConnexe(GraphInP);
                 Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
                 T1 = pairT1.getKey();
                 levels = new HashMap<>(pairT1.getValue());
-                //Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
-                //T2 = pairT2.getKey();
-                //levels = new HashMap<>(pairT2.getValue());
                 turn2=false;
-                System.out.println("AU TOUR DE T2 : "+T2.endEvalutation(P));
-                for (Graph G : GraphInP) {
-                   System.out.println("connexe : "+G.estConnexe()+" | G : "+G.getNeighbors() + "\n Vertices : "+G.getVertices());
-                }
-                System.out.println("ET T1 : "+T1.endEvalutation(P));
-                for (Graph G : T1.graphInPartitions(P)) {
-                    System.out.println("connexe : "+G.estConnexe()+" | G : "+G.getNeighbors() + "\n Vertices : "+G.getVertices());
-                }
+                T2.endEvalutation(P);
+                T1.endEvalutation(P);
+                T1.graphInPartitions(P);
             }
             else {
                 ArrayList<Graph> GraphInP =T1.graphInPartitions(P);
                 P = composantesConnexe(GraphInP);
-                //Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
-                //T1 = pairT1.getKey();
-                //levels = new HashMap<>(pairT1.getValue());
                 Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
                 T2 = pairT2.getKey();
                 levels = new HashMap<>(pairT2.getValue());
                 turn2=true;
-                System.out.println("AU TOUR DE T1 : "+T1.endEvalutation(P));
-                for (Graph G : GraphInP) {
-                    System.out.println("connexe : "+G.estConnexe()+" | G : "+G.getNeighbors());
-                }
-                System.out.println("ET T2 : "+T2.endEvalutation(P));
-                for (Graph G : T2.graphInPartitions(P)) {
-                    System.out.println("connexe : "+G.estConnexe()+" | G : "+G.getNeighbors() + "\n Vertices : "+G.getVertices());
-                }
+                T1.endEvalutation(P);
+                T2.endEvalutation(P);
+                T2.graphInPartitions(P);
             }
-            //System.out.println(levels);
-            System.out.println(P+"\nFin De boucle");
-            System.out.println("Debut de boucle : ");
             actualLevel+=1;
         }
-
-        System.out.println("======================");
-
         //P est la partition finale
         T1 = stockT1.copy();
         T2 = stockT2.copy();
-        //System.out.println("StockT1 fin : "+stockT1.getNeighbors());
 
         //On regarde combien il y a d'arêtes à couper et on les stockes
         ArrayList<Pair<Vertex,Vertex>> toCut = new ArrayList<>();
@@ -921,7 +849,7 @@ public class Graph {
                     cutable=false;
                 }
             }
-            if (cutable==true && !toCut.contains(e) && !toCut.contains(reverseEdge(e))) {
+            if (cutable && !toCut.contains(e) && !toCut.contains(reverseEdge(e))) {
                 compteur+=1;
                 toCut.add(e);
             }
@@ -929,38 +857,16 @@ public class Graph {
 
         //On calcule maintenant si cut gagne
         if (compteur<2*P.size()-2) {
-            System.out.println("sortie par toCut : compteur :"+compteur+" P size : "+P.size()+" P :\n"+P);
-            return new Pair<>(false,new Pair<>(new Pair<Graph,Graph>(new Graph(0,0,0,0), new Graph(0,0,0,0)), toCut));
+            return new Pair<>(false,new Pair<>(new Pair<>(new Graph(0, 0, 0, 0), new Graph(0, 0, 0, 0)), toCut));
         }
 
         //là faut trouver le cycle et l'arrete on utilise une fonction qui trouve l'arrête
-        //System.out.println("T2 : "+T2.getNeighbors()+"\n"+T2.getVertices().size());
         Pair<Vertex,Vertex> toRemove = T2.cycle(P,levels);
         T2.removeNeighbor(toRemove);
         T1.addNeighbor(toRemove);
         Pair<Vertex,Vertex> toRemT1 = T1.cycleForT1(P,levels,toRemove);
         T1.removeNeighbor(toRemT1);
         T2.addNeighbor(toRemT1);
-        //System.out.println("T2 : "+toRemove+"   T1 : "+toRemT1);
-
-//        globalVariable+=1;
-//        if (globalVariable>10) {
-//            T1.removeNeighbor(toRemove);
-//            T2.removeNeighbor(toRemT1);
-//            System.out.println("AYAYAYAYAYAAY");
-//            return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>()));
-//        }
-
-        //System.out.println("Compteur : "+compteur+"  P size : "+P.size());
-
-        System.out.println("r1 : "+toRemove+"   t2 : "+toRemT1);
-
-        //System.out.println(T1.getNeighbors().size()+" "+T2.getNeighbors().size()+" "+this.getNeighbors().size());
-
-        System.out.println("T1 : "+T1.getNeighbors()+"\n T2 : "+T2.getNeighbors());
-
-        System.out.println("##########################################################");
-
         return winningStrat(T1.copy(),T2.copy());
     }
 
@@ -970,47 +876,17 @@ public class Graph {
 
         Graph TA = getSpanningTree();
         Graph TB = this.soustraction(TA);
-        System.out.println(TB.estConnexe());
-
-//        Iterator<Pair<Vertex, Vertex>> iterator = T1.getNeighbors().iterator();
-//        int c=0;
-//        Pair<Vertex, Vertex> v = null;
-//        Pair<Vertex, Vertex> v2 = null;
-//        while (iterator.hasNext() && c<4) {
-//            System.out.println(v);
-//            v = iterator.next();
-//            if (c==2) {
-//                v2= v;
-//            }
-//            c+=1;
-//        }
-//        System.out.println(v);
-//        T1.removeNeighbor(v);
-//        T1.removeNeighbor(v2);
-//        ArrayList<Graph> res2 = composantesConnexeGraph(T1);
-//        for (Graph g : res2) {
-//            System.out.println(g.getVertices());
-//        }
-
-        System.out.println("==================== DEPART ====================");
-        System.out.println("==== "+TA.getNeighbors().size() + " ======" + TB.getNeighbors().size());
-
-        System.out.println(TA.getNeighbors());
         ArrayList<Graph> ret = new ArrayList<>();
         var winningStrat = this.winningStrat(TA.copy(),TB.copy());
         if (winningStrat.getValue().getKey().getKey() == null ) {
             return new ArrayList<>();
         }
         Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = winningStrat;
-        System.out.println("====================================================================================\n"+res.getKey());
-        System.out.println("====================================================================================\n");
-
         Graph T3 = res.getValue().getKey().getKey();
         Graph T4 = res.getValue().getKey().getValue();
 
         ArrayList<Pair<Vertex,Vertex>> aCut = res.getValue().getValue();
         if (!aCut.isEmpty()) {
-            System.out.println("CUT GAGNE EN COUPANT : "+aCut);
             Graph T6 = new Graph(aCut);
             for (Vertex v : this.getVertices()) {
                 if (!T6.getVertices().contains(v)) {
@@ -1019,27 +895,14 @@ public class Graph {
             }
             ret.add(T6);
             ret.add(new Graph());
-            int lol = this.getVertices().size()*2-2;
-            System.out.println("V : "+this.getVertices().size()+" | N : "+this.getNeighbors().size()+" | sum : "+lol);
             return ret;
         }
-
-
-        System.out.println("toCut : "+res.getValue().getValue());
 
         //######################################
         //########## SECTION DE TEST ###########
         //######################################
-
-        //T4=T4.getSpanningTree();
-
         ret.add(T3);
         ret.add(T4.getSpanningTree());
-
-        int lol = this.getVertices().size()*2-2;
-
-        System.out.println("V : "+this.getVertices().size()+" | N : "+this.getNeighbors().size()+" | sum : "+lol);
-
         return ret;
     }
 
