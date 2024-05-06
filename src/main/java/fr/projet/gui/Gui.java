@@ -223,6 +223,10 @@ public class Gui extends Application {
                 Gui.level = Level.HARD;
                 stage.setScene(GuiScene.joueur(Gui::handleButtonClick));
             }
+            case STRAT_WIN -> {
+                Gui.level = Level.STRAT_WIN;
+                stage.setScene(GuiScene.joueur(Gui::handleButtonClick));
+            }
             case JEU -> Platform.runLater(Gui::popupMessage);
             case VERTICES -> {
                 Gui.nbVertices=GuiScene.getNbVertices();
@@ -384,39 +388,39 @@ public class Gui extends Application {
 
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 
-        Thread arbres = new Thread(() -> {
-            List<Graph> result = graph.appelStratGagnante();
-            if (!result.isEmpty()) {
-                for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
-                    Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                            pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                            pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                            pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
-                    Platform.runLater(() -> {
-                        line.setStroke(Color.LIGHTGREEN);
-                        line.setStrokeWidth(10);
-                        pane.getChildren().add(line);
-                    });
-                }
-
-                for (Pair<Vertex, Vertex> pair : result.getLast().getNeighbors()) {
-                    Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                            pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
-                            pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
-                            pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
-                    Platform.runLater(() -> {
-                        line.setStroke(Color.RED);
-                        line.setStrokeWidth(5);
-                        pane.getChildren().add(line);
-                    });
-                }
-            }
-            else {
-                System.out.println("Il n'y a pas deux arbres couvrants disjoints");
-            }
-        });
-        arbres.setDaemon(true);
-        arbres.start();
+//        Thread arbres = new Thread(() -> {
+//            List<Graph> result = graph.appelStratGagnante();
+//            if (!result.isEmpty()) {
+//                for (Pair<Vertex, Vertex> pair : result.getFirst().getNeighbors()) {
+//                    Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                            pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+//                            pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                            pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+//                    Platform.runLater(() -> {
+//                        line.setStroke(Color.LIGHTGREEN);
+//                        line.setStrokeWidth(10);
+//                        pane.getChildren().add(line);
+//                    });
+//                }
+//
+//                for (Pair<Vertex, Vertex> pair : result.getLast().getNeighbors()) {
+//                    Line line = new Line(pair.getKey().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                            pair.getKey().getCoords().getValue() + UtilsGui.CIRCLE_SIZE,
+//                            pair.getValue().getCoords().getKey() + UtilsGui.CIRCLE_SIZE,
+//                            pair.getValue().getCoords().getValue() + UtilsGui.CIRCLE_SIZE);
+//                    Platform.runLater(() -> {
+//                        line.setStroke(Color.RED);
+//                        line.setStrokeWidth(5);
+//                        pane.getChildren().add(line);
+//                    });
+//                }
+//            }
+//            else {
+//                System.out.println("Il n'y a pas deux arbres couvrants disjoints");
+//            }
+//        });
+//        arbres.setDaemon(true);
+//        arbres.start();
 
         Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, Gui::handleButtonClick);
         edges.clear();

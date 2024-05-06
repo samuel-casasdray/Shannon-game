@@ -852,7 +852,7 @@ public class Graph {
             System.out.println("PLAAAAAANTE");
             System.out.println("PLAAAAAANTE");
 
-            return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>())); //Short Win
+            return new Pair<>(true, new Pair<>( new Pair<>(null, null), new ArrayList<>())); //Short Win
         }
         globalVariable+=1;
 
@@ -997,7 +997,11 @@ public class Graph {
 
         System.out.println(TA.getNeighbors());
         ArrayList<Graph> ret = new ArrayList<>();
-        Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = this.winningStrat(TA.copy(),TB.copy());
+        var winningStrat = this.winningStrat(TA.copy(),TB.copy());
+        if (winningStrat.getValue().getKey().getKey() == null ) {
+            return new ArrayList<>();
+        }
+        Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = winningStrat;
         System.out.println("====================================================================================\n"+res.getKey());
         System.out.println("====================================================================================\n");
 

@@ -7,6 +7,7 @@ import fr.projet.gui.UtilsGui;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.InterfaceIA;
 import fr.projet.ia.Minimax;
+import fr.projet.ia.WinnerStrat;
 import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
 import javafx.application.Platform;
@@ -65,7 +66,7 @@ public class Game {
     private Media soundCut1 = new Media(getClass().getClassLoader().getResource("Sounds/cut"+1+".mp3").toExternalForm());
     private Media soundCut2 = new Media(getClass().getClassLoader().getResource("Sounds/cut"+2+".mp3").toExternalForm());
     private Media soundFight = new Media(this.getClass().getClassLoader().getResource("Sounds/fight.mp3").toExternalForm());
-
+    private List<Graph> stratGagnante;
     public Game(int nbv) throws TimeoutException { 
       this(nbv,false, Turn.CUT, Level.EASY); 
     }
@@ -80,12 +81,15 @@ public class Game {
         LocalTime duration = LocalTime.now();
         int c = 0;
         do {
-            graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
-            c++;
-            if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
-                throw new TimeoutException();
-            }
-        } while (graphIsNotOkay());
+            do {
+                graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
+                c++;
+                if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                    throw new TimeoutException();
+                }
+            } while (graphIsNotOkay());
+            stratGagnante = graph.appelStratGagnante();
+        } while (stratGagnante.isEmpty() || stratGagnante.get(1).getNbVertices() > 0);
         if (withIA) {
             ia = getIAwithDifficulty(level);
             this.againstAI = true;
@@ -519,6 +523,7 @@ public void deleteCuttedEdge() {
             case EASY -> new BasicAI(this, turn);
             case MEDIUM -> new Minimax(this, turn, 3);
             case HARD -> new Minimax(this, turn, 5);
+            case STRAT_WIN -> new WinnerStrat(this, turn, stratGagnante);
         };
     }
 
