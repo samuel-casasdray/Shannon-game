@@ -43,9 +43,11 @@ public class WinnerStrat extends InterfaceIA {
     }
 
 
-    public static Graph modEgdeGraph (Graph g, HashSet<Pair<Vertex,Vertex>> edgesAdd, HashSet<Pair<Vertex,Vertex>> edgesDel) {
+    public Graph modEgdeGraph (Graph g, HashSet<Pair<Vertex,Vertex>> edgesAdd, HashSet<Pair<Vertex,Vertex>> edgesDel) {
         for (Pair<Vertex,Vertex> e : edgesAdd) {
-            g.addNeighbor(e);
+            if (!g.getNeighbors().contains(e) && !g.getNeighbors().contains(Graph.reverseEdge(e))) {
+                g.addNeighbor(e);
+            }
         }
         for (Pair<Vertex,Vertex> e : edgesDel) {
             if (g.getNeighbors().contains(e)) {
@@ -53,6 +55,11 @@ public class WinnerStrat extends InterfaceIA {
             }
             if (g.getNeighbors().contains(Graph.reverseEdge(e))) {
                 g.removeNeighbor(Graph.reverseEdge(e));
+            }
+        }
+        for (Vertex v : this.graph.getVertices()) {
+            if (!g.getVertices().contains(v)) {
+                g.addVertex(v);
             }
         }
         return g;
@@ -63,7 +70,10 @@ public class WinnerStrat extends InterfaceIA {
         HashSet<Pair<Vertex, Vertex>> cuttedInit = new HashSet<>(game.getCutted());
         Graph T1mod = modEgdeGraph(T1.copy(),securedInit,cuttedInit);
         Graph T2mod = modEgdeGraph(T2.copy(),securedInit,cuttedInit);
+        System.out.println(T1.getNeighbors());
+        System.out.println(T2.getNeighbors());
         if (T1mod.estConnexe() && T2mod.estConnexe()) {
+            System.out.println("lol");
             for (Pair<Vertex,Vertex> e : graph.getNeighbors()) {
                 if (!securedInit.contains(e) && !cuttedInit.contains(e)) {
                     return e;
@@ -71,17 +81,22 @@ public class WinnerStrat extends InterfaceIA {
             }
         }
         if (!T1mod.estConnexe())
+            System.out.println("T1");
             for (Pair<Vertex,Vertex> e : T2mod.getNeighbors()) {
                 T1mod.addNeighbor(e);
-                if (T1mod.estConnexe()) {
+                if (T1mod.estConnexe() && !securedInit.contains(e)) {
+                    System.out.println("T1Valide");
                     return e;
                 }
                 T1mod.removeNeighbor(e);
             }
         if (!T2mod.estConnexe())
+            System.out.println("T2");
             for (Pair<Vertex,Vertex> e : T1mod.getNeighbors()) {
                 T2mod.addNeighbor(e);
-                if (T2mod.estConnexe()) {
+                System.out.println(T2mod.estConnexe());
+                if (T2mod.estConnexe() && !securedInit.contains(e)) {
+                    System.out.println("T2Valide");
                     return e;
                 }
                 T2mod.removeNeighbor(e);
