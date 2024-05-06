@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.awt.desktop.SystemSleepEvent;
 import java.util.*;
 import java.util.function.BiPredicate;
 
@@ -15,6 +16,8 @@ import java.util.function.BiPredicate;
 @Data
 @Slf4j
 public class Graph {
+
+    public static int globalVariable = 0;
 
     // nombre de vertex
     private int nbVertices = 5;
@@ -63,6 +66,7 @@ public class Graph {
         this.adjVertices = new HashMap<>();
     }
     public void addVertex(Vertex v) {
+        if (adjVertices.containsKey(v)) return;
         adjVertices.putIfAbsent(v, new HashSet<>());
         vertices.add(v);
     }
@@ -446,7 +450,9 @@ public class Graph {
             for (Vertex t : getAdjVertices().get(s)) {
                 if (!marques.contains(t)) {
                     file.add(t);
-                    edges.add(new Pair<>(s, t));
+                    if (!edges.contains(new Pair<>(s,t)) && !edges.contains(new Pair<>(t,s))) {
+                        edges.add(new Pair<>(s, t));
+                    }
                     marques.add(t);
                 }
             }
@@ -455,99 +461,6 @@ public class Graph {
     }
 
 
-    //Stratégie Gagnante :
-
-    public Graph soustraction (Graph dif) {
-        HashSet <Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.neighbors);
-        newNeib.removeAll(dif.getNeighbors());
-        Graph g1 = new Graph(newNeib);
-        for (Vertex v : dif.getVertices()) {
-            if (!g1.getAdjVertices().keySet().contains(v)) {
-                g1.addVertex(v);
-            }
-        }
-        return g1;
-    }
-
-
-    public boolean endEvalutation (ArrayList<ArrayList<Vertex>> P) {
-        boolean result = true;
-        for (ArrayList<Vertex> partition : P) {
-            HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.getNeighbors());
-            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
-                if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
-                    newNeib.add(edge);
-                }
-            }
-            Graph toTest = new Graph(newNeib);
-            for (Vertex v : partition) {
-                if (!toTest.getAdjVertices().keySet().contains(v)) {
-                    toTest.addVertex(v);
-                }
-            }
-            if (!toTest.estConnexe()) {
-                result=false;
-            }
-        }
-        return result;
-    }
-
-    public ArrayList<Graph> graphInPartitions (ArrayList<ArrayList<Vertex>> P) {
-        ArrayList<Graph> res = new ArrayList<>();
-        for (ArrayList<Vertex> partition : P) {
-            HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.getNeighbors());
-            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
-                if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
-                    newNeib.add(edge);
-                }
-            }
-            Graph toTest = new Graph(newNeib);
-            for (Vertex v : partition) {
-                if (!toTest.getAdjVertices().keySet().contains(v)) {
-                    toTest.addVertex(v);
-                }
-            }
-            res.add(toTest);
-        }
-        return res;
-    }
-
-//    public composantesConnexe (ArrayList<Graph> listG) {
-//        ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
-//        for (Graph G : listG) {
-//
-//            for (Vertex v : G.getVertices()) {
-//
-//            }
-//        }
-//    }
-
-
-
-    public boolean winningStrat () {
-        Graph T1 = getSpanningTree();
-        Graph T2 = this.soustraction(T1);
-        if (T2.estConnexe()) {
-            return true; //Short Win
-        }
-        ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
-        ArrayList<ArrayList<Vertex>> P1 = new ArrayList<>();
-        P1.add(allVertice);
-        ArrayList<ArrayList<ArrayList<Vertex>>> listP = new ArrayList<>();
-        listP.add(P1);
-        ArrayList<Graph> etapes = new ArrayList<>();
-        etapes.add(T1);
-        etapes.add(T2);
-        boolean turn2 = true;
-        while (!T1.endEvalutation(P1) && !T2.endEvalutation(P1)) {
-            if (turn2) {
-
-            }
-        }
-
-
-        return true;
-    }
 
     public String toString() {
         StringBuilder r = new StringBuilder();
@@ -586,4 +499,454 @@ public class Graph {
         double dy = y - yy;
         return Math.sqrt(dx * dx + dy * dy);
     }
+
+    //#############################################################################################################
+    //#############################################################################################################
+    //#############################################################################################################
+    //#############################################################################################################
+
+    //Stratégie Gagnante :
+
+    public static boolean sameEdge (Pair<Vertex,Vertex> e1, Pair<Vertex,Vertex> e2) {
+        if ((e1.getKey()==e2.getKey() && e1.getValue()==e2.getValue()) || (e1.getKey()==e2.getValue() && e1.getValue()==e2.getKey())) {
+            return true;
+        }
+        return false;
+    }
+
+    public static Pair<Vertex,Vertex> reverseEdge (Pair<Vertex,Vertex> e1) {
+        Pair<Vertex,Vertex> e2 = new Pair<>(e1.getValue(),e1.getKey());
+        return e2;
+    }
+
+
+    public Graph soustraction (Graph dif) {
+        HashSet <Pair<Vertex, Vertex>> newNeib = new HashSet<>();
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            if (!dif.getNeighbors().contains(e) && !dif.getNeighbors().contains(reverseEdge(e))) {
+                newNeib.add(e);
+            }
+        }
+        Graph g1 = new Graph(newNeib);
+        for (Vertex v : dif.getVertices()) {
+            if (!g1.getAdjVertices().keySet().contains(v)) {
+                g1.addVertex(v);
+            }
+        }
+        return g1;
+    }
+
+
+    public boolean endEvalutation (ArrayList<ArrayList<Vertex>> P) {
+        boolean result = true;
+        for (ArrayList<Vertex> partition : P) {
+            HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>(this.getNeighbors());
+            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+                if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
+                    newNeib.add(edge);
+                }
+            }
+            Graph toTest = new Graph(newNeib);
+            for (Vertex v : partition) {
+                if (!toTest.getAdjVertices().keySet().contains(v)) {
+                    toTest.addVertex(v);
+                }
+            }
+            if (!toTest.estConnexe()) {
+                result=false;
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<Graph> graphInPartitions (ArrayList<ArrayList<Vertex>> P) {
+        //prend en paramettre un partition et renvoie la liste qui contient les graphequi sont les sous graphe de this dans les partie de P
+
+        ArrayList<Graph> res = new ArrayList<>();
+        for (ArrayList<Vertex> partition : P) {
+            HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
+            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+                if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
+                    newNeib.add(edge);
+                }
+            }
+            Graph toTest = new Graph(newNeib);
+            for (Vertex v : partition) {
+                if (!toTest.getAdjVertices().keySet().contains(v)) {
+                    toTest.addVertex(v);
+                }
+            }
+            res.add(toTest);
+        }
+        return res;
+    }
+
+
+
+
+    public ArrayList<Vertex> allComponent(Vertex vertex) {
+        if (getVertices().isEmpty()) {
+            return new ArrayList<>();
+        }
+        ArrayList<Vertex> marked = new ArrayList<>();
+        Deque<Vertex> pile = new ArrayDeque<>();
+        pile.push(vertex);
+        while (!pile.isEmpty()) {
+            Vertex v = pile.pop();
+            if (!marked.contains(v)) {
+                marked.add(v);
+                for (Vertex t: this.getAdjVertices().get(v)) {
+                    if (!marked.contains(t)) {
+                        pile.push(t);
+                    }
+                }
+            }
+        }
+        return marked;
+    }
+
+
+    public static boolean contientTab (ArrayList<ArrayList<Vertex>> tab, ArrayList<Vertex> s2) {
+        for (ArrayList<Vertex> l : tab) {
+            if (l.containsAll(s2) && s2.containsAll(l)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public static ArrayList<ArrayList<Vertex>> composantesConnexe (ArrayList<Graph> listG) {
+        ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
+        for (Graph G : listG) {
+            for (Vertex v : G.getVertices()) {
+                ArrayList<Vertex> comp = G.allComponent(v);
+                if (!contientTab(newP,comp)) {
+                    newP.add(comp);
+                }
+            }
+        }
+        return newP;
+    }
+
+    public static ArrayList<Graph> composantesConnexeGraph (Graph G) {
+        ArrayList<Graph> res = new ArrayList<>();
+        ArrayList<ArrayList<Vertex>> newP = new ArrayList<>();
+        for (Vertex v : G.getVertices()) {
+            ArrayList<Vertex> comp = G.allComponent(v);
+            if (!contientTab(newP,comp)) {
+                newP.add(comp);
+                ArrayList<Pair<Vertex,Vertex>> newNeib = new ArrayList<>();
+                for (Pair<Vertex,Vertex> e : G.getNeighbors()) {
+                    if (comp.contains(e.getKey()) && comp.contains(e.getValue())) {
+                        newNeib.add(e);
+                    }
+                }
+                Graph newG = new Graph(newNeib);
+                for (Vertex ver : comp) {
+                    if (!newG.getVertices().contains(ver)) {
+                        newG.addVertex(v);
+                    }
+                }
+                res.add(newG);
+            }
+        }
+        return res;
+    }
+
+
+    public Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> getT (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, int actualLevel) {
+        ArrayList<Graph> res = new ArrayList<>();
+        HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
+        //System.out.println(actualLevel+" "+levels.size()+ " ICI P : "+P);
+        for (ArrayList<Vertex> partition : P) {
+            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+                if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
+                    newNeib.add(edge);
+                }
+                else {
+                    //System.out.println(edge);
+                    if (levels.containsKey(edge)) {
+                        levels.put(edge, actualLevel);
+                    }
+                    else {
+                        levels.put(reverseEdge(edge), actualLevel);
+                    }
+                }
+            }
+        }
+        //System.out.println(levels);
+        Graph toTest = new Graph(newNeib);
+        for (Vertex v : this.getVertices()) {
+            if (!toTest.getVertices().contains(v)) {
+                toTest.addVertex(v);
+            }
+        }
+        return new Pair<>(toTest,levels);
+    }
+
+
+    public Pair<Vertex,Vertex> cycle (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
+        //System.out.println("iciciciccii : "+this.getNeighbors());
+        //System.out.println("LOL"+levels+"\nP : "+P);
+        Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
+        int level = 100000000;
+        for (Graph G : composantesConnexeGraph(this)) {
+            //System.out.println(G.getVertices().size()+" "+G.getNeighbors().size());
+            for (Pair<Vertex, Vertex> e : G.getNeighbors()) {
+                HashSet<Pair<Vertex, Vertex>> newV = new HashSet(this.getNeighbors());
+                newV.remove(e);
+                Graph newG = new Graph(newV);
+                for (Vertex v : G.getVertices()) {
+                    if (!newG.getVertices().contains(v)) {
+                        newG.addVertex(v);
+                    }
+                }
+                //System.out.println("Test : " + newG.getNeighbors());
+                //System.out.println(newG.getVertices());
+                if (newG.estConnexe()) {
+                    if (levels.containsKey(e)) {
+                        //System.out.println("OH1");
+                        if (levels.get(e) < level) {
+                            res = e;
+                            level = levels.get(e);
+                        }
+                    } else {
+                        //System.out.println("OH2");
+                        if (levels.get(reverseEdge(e)) < level) {
+                            res = e;
+                            level = levels.get(reverseEdge(e));
+                        }
+                    }
+                }
+            }
+        }
+        if (!this.getNeighbors().contains(res)) {
+            res=reverseEdge(res);
+        }
+        return res;
+    }
+
+
+
+
+
+    public Pair<Vertex,Vertex> cycleForT1 (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, Pair<Vertex,Vertex> stay) {
+        Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
+        //System.out.println("LOL");
+        int level = 100000000;
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
+            newV.remove(e);
+            Graph newG = new Graph(newV);
+            //System.out.println("Test : "+newG.getNeighbors());
+            for (Vertex v : this.getVertices()) {
+                if (!newG.getVertices().contains(v)) {
+                    newG.addVertex(v);
+                }
+            }
+            //System.out.println(newG.getVertices());
+            if (newG.estConnexe()) {
+                if (levels.containsKey(e)) {
+                    //System.out.println("OH");
+                    if (levels.get(e)<level && e!=stay && e!=reverseEdge(stay)) {
+                        res=e;
+                        level=levels.get(e);
+                        //System.out.println("OH2");
+                    }
+                }
+                else {
+                    if (levels.get(reverseEdge(e))<level && e!=stay && e!=reverseEdge(stay)) {
+                        //System.out.println("OH3");
+                        res=e;
+                        level=levels.get(reverseEdge(e));
+                    }
+                }
+            }
+        }
+        return res;
+    }
+
+
+    public Graph copy () {
+        Graph res = new Graph(this.getNeighbors());
+        for (Vertex v : this.getVertices()) {
+            if (!res.getVertices().contains(v)) {
+                res.addVertex(v);
+            }
+        }
+        return res;
+    }
+
+
+    public Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> winningStrat (Graph T1, Graph T2) { // true si SHORT win !!!!!!
+        Graph stockT1 = T1.copy();
+        Graph stockT2 = T2.copy();
+        //System.out.println("StockT1 dep : "+stockT1.getNeighbors());
+
+
+
+        if (T2.estConnexe()) {
+            //System.out.println("sortie par T2 connexe");
+            return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>())); //Short Win
+        }
+
+        //On créé les levels et on dit que le level actuel est de 1
+        Map<Pair<Vertex,Vertex>,Integer> levels = new HashMap<>();
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            levels.put(e,1000000);
+        }
+        int actualLevel=1;
+
+        //On creer la premiere partiton qui contient tout
+        ArrayList<Vertex> allVertice = new ArrayList<>(this.vertices);
+        ArrayList<ArrayList<Vertex>> P = new ArrayList<>();
+        P.add(allVertice);
+
+
+        boolean turn2 = true;//Tour de T1 ou T2, true si tour de T2
+
+        while (!T1.endEvalutation(P) || !T2.endEvalutation(P)) {
+            //System.out.println("On est dedans ! "+actualLevel);
+            //System.out.println(P);
+            if (turn2) {
+                ArrayList<Graph> GraphInP = T2.graphInPartitions(P);
+                P = composantesConnexe(GraphInP);
+                Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
+                T1 = pairT1.getKey();
+                levels = new HashMap<>(pairT1.getValue());
+                Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
+                T2 = pairT2.getKey();
+                levels = new HashMap<>(pairT2.getValue());
+                turn2=false;
+            }
+            else {
+                ArrayList<Graph> GraphInP =T1.graphInPartitions(P);
+                P = composantesConnexe(GraphInP);
+                Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT1 = T1.getT(P,levels,actualLevel);
+                T1 = pairT1.getKey();
+                levels = new HashMap<>(pairT1.getValue());
+                Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> pairT2 = T2.getT(P,levels,actualLevel);
+                T2 = pairT2.getKey();
+                levels = new HashMap<>(pairT2.getValue());
+                turn2=true;
+            }
+            //System.out.println(P.size());
+            System.out.println(levels);
+            actualLevel+=1;
+        }
+
+        //P est la partition finale
+        T1 = stockT1.copy();
+        T2 = stockT2.copy();
+        //System.out.println("StockT1 fin : "+stockT1.getNeighbors());
+
+        //On regarde combien il y a d'arêtes à couper et on les stockes
+        ArrayList<Pair<Vertex,Vertex>> toCut = new ArrayList<>();
+        int compteur = 0;
+        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+            boolean cutable = true;
+            for (ArrayList<Vertex> partie : P) {
+                if (partie.contains(e.getValue()) && partie.contains(e.getKey())) {
+                    cutable=false;
+                }
+            }
+            if (cutable==true && !toCut.contains(e) && !toCut.contains(reverseEdge(e))) {
+                compteur+=1;
+                toCut.add(e);
+            }
+        }
+
+        //On calcule maintenant si cut gagne
+        if (compteur<2*P.size()-3) {
+            System.out.println("sortie par toCut : compteur :"+compteur+" P size : "+P.size()+" P :\n"+P);
+            return new Pair<>(false,new Pair<>(new Pair<Graph,Graph>(new Graph(0,0,0,0), new Graph(0,0,0,0)), toCut));
+        }
+
+        //là faut trouver le cycle et l'arrete on utilise une fonction qui trouve l'arrête
+        //System.out.println("T2 : "+T2.getNeighbors()+"\n"+T2.getVertices().size());
+        Pair<Vertex,Vertex> toRemove = T2.cycle(P,levels);
+        T2.removeNeighbor(toRemove);
+        T1.addNeighbor(toRemove);
+        Pair<Vertex,Vertex> toRemT1 = T1.cycleForT1(P,levels,toRemove);
+        T1.removeNeighbor(toRemT1);
+        T2.addNeighbor(toRemT1);
+        System.out.println("T2 : "+toRemove+"   T1 : "+toRemT1);
+
+//        globalVariable+=1;
+//        if (globalVariable>10) {
+//            T1.removeNeighbor(toRemove);
+//            T2.removeNeighbor(toRemT1);
+//            System.out.println("AYAYAYAYAYAAY");
+//            return new Pair<>(true, new Pair<>( new Pair<>(T1,T2), new ArrayList<>()));
+//        }
+
+        //System.out.println("Compteur : "+compteur+"  P size : "+P.size());
+
+        //System.out.println("r1 : "+toRemove+"   t2 : "+toRemT1);
+
+        //System.out.println(T1.getNeighbors().size()+" "+T2.getNeighbors().size()+" "+this.getNeighbors().size());
+
+
+        return winningStrat(T1.copy(),T2.copy());
+    }
+
+
+    public ArrayList<Graph> appelStratGagnante () {
+
+        Graph TA = getSpanningTree();
+        Graph TB = this.soustraction(TA);
+        System.out.println(TB.estConnexe());
+
+//        Iterator<Pair<Vertex, Vertex>> iterator = T1.getNeighbors().iterator();
+//        int c=0;
+//        Pair<Vertex, Vertex> v = null;
+//        Pair<Vertex, Vertex> v2 = null;
+//        while (iterator.hasNext() && c<4) {
+//            System.out.println(v);
+//            v = iterator.next();
+//            if (c==2) {
+//                v2= v;
+//            }
+//            c+=1;
+//        }
+//        System.out.println(v);
+//        T1.removeNeighbor(v);
+//        T1.removeNeighbor(v2);
+//        ArrayList<Graph> res2 = composantesConnexeGraph(T1);
+//        for (Graph g : res2) {
+//            System.out.println(g.getVertices());
+//        }
+
+        System.out.println("==================== DEPART ====================");
+        System.out.println("==== "+TA.getNeighbors().size() + " ======" + TB.getNeighbors().size());
+
+        System.out.println(TA.getNeighbors());
+        ArrayList<Graph> ret = new ArrayList<>();
+        Pair<Boolean,Pair<Pair<Graph,Graph>,ArrayList<Pair<Vertex,Vertex>>>> res = this.winningStrat(TA.copy(),TB.copy());
+        System.out.println("====================================================================================\n"+res.getKey());
+        System.out.println("====================================================================================\n");
+
+        Graph T3 = res.getValue().getKey().getKey();
+        Graph T4 = res.getValue().getKey().getValue();
+
+        System.out.println("toCut : "+res.getValue().getValue());
+
+        //######################################
+        //########## SECTION DE TEST ###########
+        //######################################
+
+        //T4=T4.getSpanningTree();
+
+        ret.add(T3);
+        ret.add(T4.getSpanningTree());
+
+        return ret;
+    }
+
+
+
+
 }
+
+
