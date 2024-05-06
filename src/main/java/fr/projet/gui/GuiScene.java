@@ -24,6 +24,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.UtilityClass;
@@ -86,8 +87,46 @@ public class GuiScene {
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
         slider.setLayoutX(100);
         slider.setLayoutY(0);
-        slider2.setLayoutX(100);
-        slider2.setLayoutY(20);
+        slider.setMinorTickCount(0);
+        slider.setMajorTickUnit(1);
+        slider.setShowTickMarks(true);
+        slider.setShowTickLabels(true);
+        slider.setLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "Less stars";
+                return "More stars";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                if (s.equals("Less stars")) {
+                    return 0d;
+                }
+                return 1d;
+            }
+        });
+        slider2.setMinorTickCount(0);
+        slider2.setMajorTickUnit(1.5);
+        slider2.setShowTickMarks(true);
+        slider2.setShowTickLabels(true);
+        slider2.setLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "-";
+                return "+";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                if (s.equals("-")) {
+                    return 0d;
+                }
+                return 1.5d;
+            }
+        });
+        slider2.setLayoutX(300);
+        slider2.setLayoutY(0);
         //création des boutons d'option de jeu
         Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA));
         Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO));
@@ -132,7 +171,6 @@ public class GuiScene {
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider, slider2);
         else
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, slider, slider2);
-        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, pseudoText, elo, deconnexion, slider, slider2);
         slider.valueProperty().addListener(event -> {
             double sliderValue = slider.getValue();
             NB_STARS = (int) ((1-sliderValue)*MIN_STARS+MAX_STARS*sliderValue);
