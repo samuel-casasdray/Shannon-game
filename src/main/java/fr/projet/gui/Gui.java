@@ -441,6 +441,7 @@ public class Gui extends Application {
             Text text = UtilsGui.createText("Vous jouez : " + turn);
             root.add(text, 1, 1);
             pane.getChildren().addAll(root, returnButton, planetes, slider, slider2);
+            game.playSound();
         }
         else
             pane.getChildren().addAll(returnButton, planetes, slider, slider2);
@@ -652,7 +653,6 @@ public class Gui extends Application {
         }
         try {
             Gui.game = client.connect(() -> Platform.runLater(() -> stage.setScene(run())));
-            Gui.game.playSound();
         }
         catch (TimeoutException e) {
             Platform.runLater(() -> popupMessage("La génération du graphe a pris trop de temps", "Veuillez essayer" +
@@ -674,7 +674,6 @@ public class Gui extends Application {
             WebSocketClient client = new WebSocketClient(code);
             game = client.connect(() -> {});
             if (game == null) return;
-            game.playSound();
             stage.setScene(run());
             if (client.getWaiting() != null)
                 game.play1vs1(client.getWaiting());

@@ -24,12 +24,12 @@ public class Graph {
 
     private boolean aroundCircle = false;
 
-    private double proba = 0.8;
+    private double proba = 0.8; // Probabilité de garder l'arête
 
     private Random random = new Random();
 
     private List<Vertex> vertices = new ArrayList<>();
-    private Map<Vertex, List<Vertex>> adjVertices = new HashMap<>();
+    private Map<Vertex, HashSet<Vertex>> adjVertices = new HashMap<>();
 
     @Getter
     private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
@@ -44,21 +44,15 @@ public class Graph {
         this.nbVertices = vertexSet.size();
     }
 
-    public Graph(Collection<Vertex> vertices, Map<Vertex, List<Vertex>> adjVertices) {
+    public Graph(Collection<Vertex> vertices, Map<Vertex, HashSet<Vertex>> adjVertices) {
         for (Vertex v : vertices) {
             addVertex(v);
         }
-        for (Map.Entry<Vertex, List<Vertex>> entry : adjVertices.entrySet()) {
+        for (Map.Entry<Vertex, HashSet<Vertex>> entry : adjVertices.entrySet()) {
             for (Vertex v : entry.getValue()) {
                 addNeighbor(new Pair<>(entry.getKey(), v));
             }
         }
-    }
-
-    public Graph(int nbVertices, int maxDeg, int minDeg) {
-        this.nbVertices = nbVertices;
-        this.adjVertices = new HashMap<>();
-        this.generateGraphPlanaire(maxDeg, minDeg);
     }
 
     public Graph(int nbVertices, int maxDeg, int minDeg, long seed) {
@@ -73,14 +67,14 @@ public class Graph {
     }
     public void addVertex(Vertex v) {
         if (adjVertices.containsKey(v)) return;
-        adjVertices.putIfAbsent(v, new ArrayList<>());
+        adjVertices.putIfAbsent(v, new HashSet<>());
         vertices.add(v);
     }
 
     public void removeVertex(Vertex v) {
         vertices.remove(v);
         getAdjVertices().remove(v);
-        for (List<Vertex> listVertex : getAdjVertices().values()) {
+        for (HashSet<Vertex> listVertex : getAdjVertices().values()) {
             listVertex.remove(v);
         }
         neighbors.removeIf(neighbor -> neighbor.getKey().equals(v) || neighbor.getValue().equals(v));
@@ -147,7 +141,7 @@ public class Graph {
             if (p > proba && degree(edge.getKey()) > minDeg && degree(edge.getValue()) > minDeg)
                 removeNeighbor(edge);
         }
-        // On converti les coordonnées des sommets pour les afficher sur l'écran
+        // On convertit les coordonnées des sommets pour les afficher sur l'écran
         for (Vertex v : getVertices()) {
             v.setCoords(new Pair<>((int) toScreenSize(v.getX(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_WIDTH-UtilsGui.WINDOW_MARGE),
                     (int) toScreenSize(v.getY(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_HEIGHT-UtilsGui.WINDOW_MARGE*2)));
@@ -302,17 +296,15 @@ public class Graph {
         if (!adjVertices.containsKey(edge.getKey()))
         {
             vertices.add(edge.getKey());
-            adjVertices.put(edge.getKey(), new ArrayList<>());
+            adjVertices.put(edge.getKey(), new HashSet<>());
         }
         if (!adjVertices.containsKey(edge.getValue()))
         {
             vertices.add(edge.getValue());
-            adjVertices.put(edge.getValue(), new ArrayList<>());
+            adjVertices.put(edge.getValue(), new HashSet<>());
         }
-        if (!getAdjVertices().get(edge.getKey()).contains(edge.getValue()))
-            getAdjVertices().get(edge.getKey()).add(edge.getValue());
-        if (!getAdjVertices().get(edge.getValue()).contains(edge.getKey()))
-            getAdjVertices().get(edge.getValue()).add(edge.getKey());
+        getAdjVertices().get(edge.getKey()).add(edge.getValue());
+        getAdjVertices().get(edge.getValue()).add(edge.getKey());
     }
 
 
@@ -537,7 +529,7 @@ public class Graph {
         }
         Graph g1 = new Graph(newNeib);
         for (Vertex v : dif.getVertices()) {
-            if (!g1.getVertices().contains(v)) {
+            if (!g1.getAdjVertices().keySet().contains(v)) {
                 g1.addVertex(v);
             }
         }
@@ -556,7 +548,7 @@ public class Graph {
             }
             Graph toTest = new Graph(newNeib);
             for (Vertex v : partition) {
-                if (!toTest.getVertices().contains(v)) {
+                if (!toTest.getAdjVertices().keySet().contains(v)) {
                     toTest.addVertex(v);
                 }
             }
@@ -580,7 +572,7 @@ public class Graph {
             }
             Graph toTest = new Graph(newNeib);
             for (Vertex v : partition) {
-                if (!toTest.getVertices().contains(v)) {
+                if (!toTest.getAdjVertices().keySet().contains(v)) {
                     toTest.addVertex(v);
                 }
             }

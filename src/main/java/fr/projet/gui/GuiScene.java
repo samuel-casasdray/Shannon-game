@@ -11,7 +11,6 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -302,8 +301,11 @@ public class GuiScene {
                                 code.setText("Vérifiez votre connexion internet");
                                 code.setFill(Color.RED);
                             }
-                            catch (URISyntaxException | InterruptedException e) {
+                            catch (URISyntaxException e) {
                                 log.error("Erreur lors de la création de la partie", e);
+                            }
+                            catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
                             }
                         }).start();
 
