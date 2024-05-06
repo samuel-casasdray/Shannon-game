@@ -383,7 +383,7 @@ public class Gui extends Application {
 
 
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
-  /*
+
         Thread arbres = new Thread(() -> {
             List<Graph> result = graph.appelStratGagnante();
             if (!result.isEmpty()) {
@@ -417,7 +417,7 @@ public class Gui extends Application {
         });
         arbres.setDaemon(true);
         arbres.start();
-      */
+
         Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, Gui::handleButtonClick);
         edges.clear();
         planetes.setLayoutX(500);
