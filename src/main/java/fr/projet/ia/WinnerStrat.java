@@ -6,20 +6,19 @@ import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.util.Pair;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class WinnerStrat extends InterfaceIA {
     private List<Graph> stratGagnante;
-    private Set<Pair<Vertex, Vertex>> toCut;
+    private List<Pair<Vertex, Vertex>> toCut;
     private Graph T1;
     private Graph T2;
-
     public WinnerStrat(Game game, Turn plays, List<Graph> stratGagnante) {
         super(game, plays);
         this.stratGagnante = stratGagnante;
-        this.toCut = stratGagnante.getFirst().getNeighbors();
+        this.toCut = new ArrayList<>(stratGagnante.getFirst().getNeighbors());
         this.T1 = stratGagnante.getFirst();
         this.T2 = stratGagnante.get(1);
     }
@@ -35,11 +34,14 @@ public class WinnerStrat extends InterfaceIA {
             }
             if (theEdge != null) {
                 toCut.remove(theEdge);
+                System.out.println("The edge : " + theEdge);
                 return theEdge;
             }
         }
+        System.out.println("No more edges to cut");
         return null;
     }
+
 
     public static Graph modEgdeGraph (Graph g, HashSet<Pair<Vertex,Vertex>> edgesAdd, HashSet<Pair<Vertex,Vertex>> edgesDel) {
         for (Pair<Vertex,Vertex> e : edgesAdd) {
@@ -63,7 +65,7 @@ public class WinnerStrat extends InterfaceIA {
         Graph T2mod = modEgdeGraph(T2.copy(),securedInit,cuttedInit);
         if (T1mod.estConnexe() && T2mod.estConnexe()) {
             for (Pair<Vertex,Vertex> e : graph.getNeighbors()) {
-                if (!securedInit.contains(e) && !cuttedInit.contains(e) && !game.getCutted().contains(e) && !game.getSecured().contains(e)){
+                if (!securedInit.contains(e) && !cuttedInit.contains(e)) {
                     return e;
                 }
             }
@@ -71,7 +73,7 @@ public class WinnerStrat extends InterfaceIA {
         if (!T1mod.estConnexe())
             for (Pair<Vertex,Vertex> e : T2mod.getNeighbors()) {
                 T1mod.addNeighbor(e);
-                if (T1mod.estConnexe() && !game.getCutted().contains(e) && !game.getSecured().contains(e)) {
+                if (T1mod.estConnexe()) {
                     return e;
                 }
                 T1mod.removeNeighbor(e);
@@ -79,12 +81,11 @@ public class WinnerStrat extends InterfaceIA {
         if (!T2mod.estConnexe())
             for (Pair<Vertex,Vertex> e : T1mod.getNeighbors()) {
                 T2mod.addNeighbor(e);
-                if (T2mod.estConnexe() && !game.getCutted().contains(e) && !game.getSecured().contains(e)) {
+                if (T2mod.estConnexe()) {
                     return e;
                 }
                 T2mod.removeNeighbor(e);
             }
-        System.out.println("Erreur : pas d'arête à couper");
         return null;
     }
 }
