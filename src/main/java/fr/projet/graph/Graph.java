@@ -21,7 +21,7 @@ public class Graph {
 
     private boolean aroundCircle = false;
 
-    private double proba = 0.8;
+    private double proba = 0.8; // Probabilité de garder l'arête
 
     private Random random = new Random();
 
@@ -50,12 +50,6 @@ public class Graph {
                 addNeighbor(new Pair<>(entry.getKey(), v));
             }
         }
-    }
-
-    public Graph(int nbVertices, int maxDeg, int minDeg) {
-        this.nbVertices = nbVertices;
-        this.adjVertices = new HashMap<>();
-        this.generateGraphPlanaire(maxDeg, minDeg);
     }
 
     public Graph(int nbVertices, int maxDeg, int minDeg, long seed) {
@@ -143,7 +137,7 @@ public class Graph {
             if (p > proba && degree(edge.getKey()) > minDeg && degree(edge.getValue()) > minDeg)
                 removeNeighbor(edge);
         }
-        // On converti les coordonnées des sommets pour les afficher sur l'écran
+        // On convertit les coordonnées des sommets pour les afficher sur l'écran
         for (Vertex v : getVertices()) {
             v.setCoords(new Pair<>((int) toScreenSize(v.getX(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_WIDTH-UtilsGui.WINDOW_MARGE),
                     (int) toScreenSize(v.getY(), 0, maxSize, UtilsGui.WINDOW_MARGE, UtilsGui.WINDOW_HEIGHT-UtilsGui.WINDOW_MARGE*2)));
@@ -468,7 +462,7 @@ public class Graph {
         newNeib.removeAll(dif.getNeighbors());
         Graph g1 = new Graph(newNeib);
         for (Vertex v : dif.getVertices()) {
-            if (!g1.getVertices().contains(v)) {
+            if (!g1.getAdjVertices().keySet().contains(v)) {
                 g1.addVertex(v);
             }
         }
@@ -487,7 +481,7 @@ public class Graph {
             }
             Graph toTest = new Graph(newNeib);
             for (Vertex v : partition) {
-                if (!toTest.getVertices().contains(v)) {
+                if (!toTest.getAdjVertices().keySet().contains(v)) {
                     toTest.addVertex(v);
                 }
             }
@@ -509,7 +503,7 @@ public class Graph {
             }
             Graph toTest = new Graph(newNeib);
             for (Vertex v : partition) {
-                if (!toTest.getVertices().contains(v)) {
+                if (!toTest.getAdjVertices().keySet().contains(v)) {
                     toTest.addVertex(v);
                 }
             }
