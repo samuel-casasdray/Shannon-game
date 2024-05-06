@@ -6,6 +6,7 @@ import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import javafx.util.Pair;
 
+import java.sql.PseudoColumnUsage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -66,12 +67,19 @@ public class WinnerStrat extends InterfaceIA {
     }
 
     public Pair<Vertex, Vertex> playSHORT() {
+        System.out.println("========================================");
         HashSet<Pair<Vertex, Vertex>> securedInit = new HashSet<>(game.getSecured());
         HashSet<Pair<Vertex, Vertex>> cuttedInit = new HashSet<>(game.getCutted());
         Graph T1mod = modEgdeGraph(T1.copy(),securedInit,cuttedInit);
         Graph T2mod = modEgdeGraph(T2.copy(),securedInit,cuttedInit);
-        System.out.println(T1.getNeighbors());
-        System.out.println(T2.getNeighbors());
+        System.out.println(securedInit+"\n"+cuttedInit);
+        System.out.println("ET : "+T1mod.estConnexe() +" "+ T2mod.estConnexe());
+        System.out.println("test : ");
+        for (Pair<Vertex,Vertex> e : graph.getNeighbors()) {
+            if ((T1mod.getNeighbors().contains(e) && T2mod.getNeighbors().contains(e)) || (T1mod.getNeighbors().contains(Graph.reverseEdge(e)) && T2mod.getNeighbors().contains(Graph.reverseEdge(e)))) {
+                System.out.println(e+" et "+securedInit.contains(e)+" "+securedInit.contains(Graph.reverseEdge(e)));
+            }
+        }
         if (T1mod.estConnexe() && T2mod.estConnexe()) {
             System.out.println("lol");
             for (Pair<Vertex,Vertex> e : graph.getNeighbors()) {
@@ -80,27 +88,55 @@ public class WinnerStrat extends InterfaceIA {
                 }
             }
         }
-        if (!T1mod.estConnexe())
+        if (!T1mod.estConnexe()) {
             System.out.println("T1");
-            for (Pair<Vertex,Vertex> e : T2mod.getNeighbors()) {
-                T1mod.addNeighbor(e);
-                if (T1mod.estConnexe() && !securedInit.contains(e)) {
+            for (Pair<Vertex, Vertex> e : T2mod.getNeighbors()) {
+                Boolean allReadyIn = true;
+                if (!T1mod.getNeighbors().contains(e) && !T1mod.getNeighbors().contains(Graph.reverseEdge(e))) {
+                    allReadyIn = false;
+                }
+                if (!allReadyIn) {
+                    T1mod.addNeighbor(e);
+                }
+                if (T1mod.estConnexe() && !securedInit.contains(e) && !cuttedInit.contains(e) && !securedInit.contains(Graph.reverseEdge(e)) && !cuttedInit.contains(Graph.reverseEdge(e))) {
                     System.out.println("T1Valide");
+                    //System.out.println(graph.getNeighbors().contains(e)+" "+graph.getNeighbors().contains(Graph.reverseEdge(e)));
+                    if (graph.getNeighbors().contains(Graph.reverseEdge(e))) {
+                        e = Graph.reverseEdge(e);
+                    }
+                    System.out.println(e);
                     return e;
                 }
-                T1mod.removeNeighbor(e);
+                if (!allReadyIn) {
+                    T1mod.removeNeighbor(e);
+                }
             }
-        if (!T2mod.estConnexe())
+        }
+        if (!T2mod.estConnexe()) {
             System.out.println("T2");
-            for (Pair<Vertex,Vertex> e : T1mod.getNeighbors()) {
-                T2mod.addNeighbor(e);
-                System.out.println(T2mod.estConnexe());
-                if (T2mod.estConnexe() && !securedInit.contains(e)) {
+            for (Pair<Vertex, Vertex> e : T1mod.getNeighbors()) {
+                Boolean allReadyIn = true;
+                if (!T2mod.getNeighbors().contains(e) && !T2mod.getNeighbors().contains(Graph.reverseEdge(e))) {
+                    allReadyIn = false;
+                }
+                if (!allReadyIn) {
+                    T2mod.addNeighbor(e);
+                }
+                //System.out.println(T2mod.estConnexe());
+                if (T2mod.estConnexe() && !securedInit.contains(e) && !cuttedInit.contains(e) && !securedInit.contains(Graph.reverseEdge(e)) && !cuttedInit.contains(Graph.reverseEdge(e))) {
                     System.out.println("T2Valide");
+                    //System.out.println(graph.getNeighbors().contains(e)+" "+graph.getNeighbors().contains(Graph.reverseEdge(e)));
+                    if (graph.getNeighbors().contains(Graph.reverseEdge(e))) {
+                        e = Graph.reverseEdge(e);
+                    }
+                    System.out.println(e);
                     return e;
                 }
-                T2mod.removeNeighbor(e);
+                if (!allReadyIn) {
+                    T2mod.removeNeighbor(e);
+                }
             }
+        }
         return null;
     }
 }
