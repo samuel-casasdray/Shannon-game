@@ -18,5 +18,6 @@ public enum ButtonClickType {
     STATS,
     RANKED,
     LOGIN,
-    REGISTER
+    REGISTER,
+    STRAT_WIN
 }

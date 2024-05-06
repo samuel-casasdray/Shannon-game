@@ -434,6 +434,7 @@ public class GuiScene {
         Button facile = UtilsGui.createButton("facile", event -> handleButtonClick.call(ButtonClickType.PVIA_EASY), false);
         Button normal = UtilsGui.createButton("normale", event -> handleButtonClick.call(ButtonClickType.PVIA_MEDIUM), false);
         Button difficile = UtilsGui.createButton("difficile", event -> handleButtonClick.call(ButtonClickType.PVIA_HARD), false);
+        Button strat = UtilsGui.createButton("Stratégie Gagnante", event -> handleButtonClick.call(ButtonClickType.STRAT_WIN), false);
         title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
         title.setY(100);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
@@ -444,7 +445,9 @@ public class GuiScene {
         normal.setLayoutY(400);
         difficile.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - difficile.getPrefWidth()/2);
         difficile.setLayoutY(500);
-        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile);
+        strat.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - strat.getPrefWidth()/2);
+        strat.setLayoutY(600);
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile, strat);
         Gui.getStars().stop();
         createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
