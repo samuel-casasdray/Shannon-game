@@ -1,7 +1,6 @@
 package fr.projet.ia;
 
 import fr.projet.game.Game;
-import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;

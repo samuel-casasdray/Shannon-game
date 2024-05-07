@@ -242,7 +242,7 @@ async fn handle_socket(
 	                if move_message == *"CUT!" {
 						update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
 					} else {
-						update_players(&my_coll, short_player, cut_player, Turn::Short).await;
+						update_players(&my_coll, cut_player, short_player, Turn::Short).await;
 					}
                 }
                 games.games[current_game_indice].ended = true;
@@ -254,7 +254,7 @@ async fn handle_socket(
                	if move_message == *"CUT" {
 					update_players(&my_coll, cut_player, short_player, Turn::Cut).await;
 				} else {
-					update_players(&my_coll, short_player, cut_player, Turn::Short).await;
+					update_players(&my_coll, cut_player, short_player, Turn::Short).await;
 				}
 				games.games[current_game_indice].ended = true;
 				let _ = tx.send(move_message + " a gagné"); 

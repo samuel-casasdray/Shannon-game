@@ -37,5 +37,4 @@ public class BasicAI extends InterfaceIA {
     public Pair<Vertex, Vertex> playSHORT() {
         return playCUT();
     }
-
 }

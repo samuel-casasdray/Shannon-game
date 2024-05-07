@@ -68,5 +68,24 @@ class MainTest {
         }
         assertEquals(g.getNbVertices(), k);
         assertEquals(g.getTwoDistinctSpanningTrees().size(), 2);
+        for (Graph spanningTree : g.getTwoDistinctSpanningTrees()) {
+            assertTrue(spanningTree.getNbVertices() == k && spanningTree.getNeighbors().size() == g.getNbVertices()-1 && spanningTree.estConnexe());
+        }
+    }
+
+    @Test
+    void testSpanningTreeGrapheComplet() {
+        Graph g = new Graph();
+        int k = 6;
+        // Création graphe complet à k sommets
+        for (int i = 0; i < k; i++) {
+            Vertex v = new Vertex(0, 0);
+            g.addVertex(v);
+            for (int j = 0; j < i; j++)
+                g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
+        }
+        Graph spanningTree = g.getSpanningTree();
+        assertTrue(spanningTree.getNbVertices() == g.getNbVertices() &&
+                spanningTree.getNeighbors().size() < g.getNeighbors().size() && spanningTree.estConnexe());
     }
 }

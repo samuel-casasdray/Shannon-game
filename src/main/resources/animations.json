@@ -1,0 +1,37 @@
+[
+    {
+        "text": ".........................................................................."
+    },
+    {
+        "text": "Hi",
+        "actif": 0,
+        "perso": [
+            {
+                "name": "player",
+                "img": "cap.png",
+                "same": false
+            },
+            {
+                "name": "player2",
+                "img": "cap.png",
+                "same": false
+            }
+        ]
+    },
+    {
+        "text": "Why are you here ??",
+        "actif": 1,
+        "perso": [
+            {
+                "name": "player",
+                "img": "cap.png",
+                "same": true
+            },
+            {
+                "name": "player2",
+                "img": "cap.png",
+                "same": true
+            }
+        ]
+    }
+]

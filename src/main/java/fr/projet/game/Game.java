@@ -7,6 +7,7 @@ import fr.projet.gui.UtilsGui;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.InterfaceIA;
 import fr.projet.ia.Minimax;
+import fr.projet.ia.WinnerStrat;
 import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
 import javafx.application.Platform;
@@ -20,7 +21,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -37,7 +37,7 @@ public class Game {
     private final int nbVertices;
     private final int minDeg = 3;
     private final int maxDeg = 7;
-    private final int AIDelay = 700;
+    private final int AIDelay = 1000;
     private Graph graph;
     @Setter
     private Turn turn = Turn.CUT;
@@ -60,7 +60,12 @@ public class Game {
     @Setter
     @Getter
     private boolean interrupted = false;
-
+    Random random = new Random();
+    private Media soundShort = new Media(getClass().getClassLoader().getResource("Sounds/short"+1+".mp3").toExternalForm());
+    private Media soundCut1 = new Media(getClass().getClassLoader().getResource("Sounds/cut"+1+".mp3").toExternalForm());
+    private Media soundCut2 = new Media(getClass().getClassLoader().getResource("Sounds/cut"+2+".mp3").toExternalForm());
+    private Media soundFight = new Media(this.getClass().getClassLoader().getResource("Sounds/fight.mp3").toExternalForm());
+    private List<Graph> stratGagnante;
     public Game(int nbv) throws TimeoutException { 
       this(nbv,false, Turn.CUT, Level.EASY); 
     }
@@ -69,18 +74,54 @@ public class Game {
       this(20,false, Turn.CUT, Level.EASY); 
     }
 
+    public Game(List<Vertex> vertices, Map<Vertex, HashSet<Vertex>> adjVertices) {
+        nbVertices = vertices.size();
+        graph = new Graph(vertices, adjVertices);
+        Gui.setGraph(graph);
+        Gui.setHandler(this::handleEvent);
+    }
+
     public Game(int nbv, boolean withIA, Turn typeIA, Level level) throws TimeoutException {
         nbVertices = nbv;
         seed = new Random().nextLong();
         LocalTime duration = LocalTime.now();
         int c = 0;
-        do {
-            graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
-            c++;
-            if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
-                throw new TimeoutException();
+        if (level == Level.STRAT_WIN)
+        {
+            if (typeIA == Turn.CUT) {
+                do {
+                    do {
+                        graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
+                        c++;
+                        if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                            throw new TimeoutException();
+                        }
+                    } while (graphIsNotOkay());
+                    stratGagnante = graph.appelStratGagnante();
+                } while (stratGagnante.isEmpty() || stratGagnante.get(1).getNbVertices() > 0);
             }
-        } while (graphIsNotOkay());
+            else {
+                do {
+                    do {
+                        graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
+                        c++;
+                        if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                            throw new TimeoutException();
+                        }
+                    } while (graphIsNotOkay());
+                    stratGagnante = graph.appelStratGagnante();
+                } while (stratGagnante.isEmpty() || stratGagnante.get(1).getNbVertices() == 0);
+            }
+        }
+        else {
+            do {
+                graph = new Graph(nbVertices, maxDeg, minDeg, seed+c);
+                c++;
+                if (duration.until(LocalTime.now(), ChronoUnit.MILLIS) >= 2000) {
+                    throw new TimeoutException();
+                }
+            } while (graphIsNotOkay());
+        }
         if (withIA) {
             ia = getIAwithDifficulty(level);
             this.againstAI = true;
@@ -137,7 +178,7 @@ public class Game {
         while (!cutWon && !shortWon) {
             if (interrupted) return;
             AIPlay(ia, ia2, turn);
-            long delay = Math.toIntExact(time.until(LocalTime.now(), ChronoUnit.MILLIS));
+            long delay = time.until(LocalTime.now(), ChronoUnit.MILLIS);
             if (delay < AIDelay) {
                 try {
                     Thread.sleep(AIDelay - delay);
@@ -157,7 +198,7 @@ public class Game {
             Pair<Vertex, Vertex> played;
             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
                 if (Vertex.isSameCouple(new Pair<>(key, value), neighbors.getKey())) {
-                    if (key.isCutOrPanted(value) || isInterrupted()) {
+                    if (isCutted(key, value) || isSecured(key, value) || isInterrupted()) {
                         return;
                     }
                     if (turn == Turn.CUT) {
@@ -249,7 +290,7 @@ public class Game {
     }
 
     public void isolateComponent() {
-        Set<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        Set<Vertex> component = graph.getComponent(graph.getVertices().getFirst(), (x,v) -> !isCutted(x, v));
         Optional<Vertex> u = Optional.empty();
         for (Vertex x : getGraph().getVertices()) {
             if (!component.contains(x)) {
@@ -258,7 +299,7 @@ public class Game {
             }
         }
         if (u.isEmpty()) return;
-        Set<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !x.isCut(v) && !v.isCut(x));
+        Set<Vertex> secondComponent = graph.getComponent(u.get(), (x,v) -> !isCutted(x, v));
         Set<Vertex> smallestComponent;
         if (component.size() > secondComponent.size()) {
             smallestComponent = secondComponent;
@@ -268,7 +309,7 @@ public class Game {
         Set<Vertex> finalSmallestComponent = smallestComponent;
         List<Pair<Pair<Vertex, Vertex>, Line>> edgesGreen = Gui.getEdges().stream().filter(pair -> finalSmallestComponent.contains(pair.getKey().getKey())
             && finalSmallestComponent.contains(pair.getKey().getValue())
-            && !pair.getKey().getKey().isCut(pair.getKey().getValue())).toList();
+            && !isCutted(pair.getKey().getKey(), pair.getKey().getValue())).toList();
         createTimer(edgesGreen, false, 250);
         List<Pair<Pair<Vertex, Vertex>, Line>> cuttedLines = Gui.getEdges().stream().filter(x ->
             cutted.contains(x.getKey())).toList();
@@ -338,7 +379,7 @@ public void deleteCuttedEdge() {
         }
         if (line == null) return;
         Pair<Vertex, Vertex> move = (Pair<Vertex, Vertex>) line.getProperties().get("pair");
-        if (move == null || move.getKey().isCut(move.getValue()) || move.getKey().isPainted(move.getValue())) return;
+        if (move == null || isCutted(move.getKey(), move.getValue()) || isSecured(move.getKey(), move.getValue())) return;
         if (pvpOnline) {
             try {
                 sendMove(move);
@@ -351,12 +392,10 @@ public void deleteCuttedEdge() {
     }
 
     public void cutEdge(Pair<Vertex, Vertex> edge) {
-        edge.getKey().cut(edge.getValue());
         getCutted().add(edge);
     }
 
     public void secureEdge(Pair<Vertex, Vertex> edge) {
-        edge.getKey().paint(edge.getValue());
         getSecured().add(edge);
     }
 
@@ -413,7 +452,7 @@ public void deleteCuttedEdge() {
                     Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
                     HttpsClient.sendStatistics(2, 1, seed);
                 }
-                client.sendMessage(turn.toString()); // On envoie le gagnant au serveur pour qu'il puisse update les elo
+                client.sendMessage(turnValue.toString()); // On envoie le gagnant au serveur pour qu'il puisse update les elo
                 getClient().close();
             }
             return;
@@ -498,7 +537,7 @@ public void deleteCuttedEdge() {
     }
 
     public boolean graphIsNotOkay() {
-        return graph.getVertices().size() != nbVertices || graph.minDeg() < minDeg || graph.maxDeg() > maxDeg || !graph.estConnexe();
+        return graph.getNbVertices() != nbVertices || graph.minDeg() < minDeg || graph.maxDeg() > maxDeg || !graph.estConnexe();
     }
 
     public boolean getCutWon() {
@@ -514,6 +553,7 @@ public void deleteCuttedEdge() {
             case EASY -> new BasicAI(this, turn);
             case MEDIUM -> new Minimax(this, turn, 3);
             case HARD -> new Minimax(this, turn, 5);
+            case STRAT_WIN -> new WinnerStrat(this, turn, stratGagnante);
         };
     }
 
@@ -521,68 +561,37 @@ public void deleteCuttedEdge() {
         return joiner;
     }
 
-    public void playSound (String name, float v) {
-        String audioS = "Sounds/"+name+".mp3";
-        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        assert audioUrl != null;
-        String audioFile = audioUrl.toExternalForm();
-        Media sound = new Media(audioFile);
-        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(v);
+    public void playSound () {
+        MediaPlayer mediaPlayer = new MediaPlayer(soundFight);
+        mediaPlayer.setVolume(Gui.getVOLUME());
         mediaPlayer.play();
     }
 
     public void playSoundShort () {
-        Random random = new Random();
-        //int i = random.nextInt(3)+1;
-        String audioS = "Sounds/short"+1+".mp3";
-        //System.out.println("Audio "+audioS);
-        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        //System.out.println("Lool "+audioUrl);
-        assert audioUrl != null;
-        String audioFile = audioUrl.toExternalForm();
-        Media sound = new Media(audioFile);
-        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        mediaPlayer.setVolume(0.5);
-        Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
+        MediaPlayer mediaPlayer = new MediaPlayer(soundShort);
+        mediaPlayer.setVolume(Gui.getVOLUME()/2);
         mediaPlayer.play();
     }
 
 
     public void playSoundCut () {
-        Random random = new Random();
         int i = random.nextInt(2)+1;
-        String audioS = "Sounds/cut"+i+".mp3";
-        //System.out.println("Audio "+audioS);
-        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-        //System.out.println("Lool "+audioUrl);
-        assert audioUrl != null;
-        String audioFile = audioUrl.toExternalForm();
-        Media sound = new Media(audioFile);
+        Media sound;
+        if (i == 1) {
+            sound = soundCut1;
+        } else {
+            sound = soundCut2;
+        }
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(0.5);
-        Gui.getStage().setOnCloseRequest(event -> stopMediaPlayer2(mediaPlayer));
+        mediaPlayer.setVolume(Gui.getVOLUME()/2);
         mediaPlayer.play();
-
-        //mediaPlayer.setOnEndOfMedia(() -> mediaPlayer.stop());
-        //stage.setOnCloseRequest(event -> stopMediaPlayer(mediaPlayer));
-//        System.out.println("Audio "+audioS);
-//        URL audioUrl = this.getClass().getClassLoader().getResource(audioS);
-//        System.out.println("Lool "+audioUrl);
-//        assert audioUrl != null;
-//        String audioFile = audioUrl.toExternalForm();
-//        Media sound = new Media(audioFile);
-//        MediaPlayer mediaPlayer = new MediaPlayer(sound);
-//        mediaPlayer.setVolume(0.04);
-//        long time = (long) (sound.getDuration().toMillis() + 1000);
-//        mediaPlayer.play();
     }
 
+    private boolean isCutted(Vertex key, Vertex value) {
+        return cutted.contains(new Pair<>(key, value)) || cutted.contains(new Pair<>(value, key));
+    }
 
-    private void stopMediaPlayer2(MediaPlayer mp) {
-        if (mp != null) {
-            mp.stop();
-        }
+    private boolean isSecured(Vertex key, Vertex value) {
+        return secured.contains(new Pair<>(key, value)) || secured.contains(new Pair<>(value, key));
     }
 }

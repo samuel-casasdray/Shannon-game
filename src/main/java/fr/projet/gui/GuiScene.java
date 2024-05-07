@@ -5,12 +5,12 @@ import fr.projet.game.Level;
 import fr.projet.game.Turn;
 import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
+import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -25,11 +25,15 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
+import javafx.scene.effect.ColorAdjust;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -51,8 +55,56 @@ public class GuiScene {
     @Setter
     private Level level2;
     private static final Random random = new Random();
+    @Getter
+    @Setter
+    private int NB_STARS = 4000;
+    @Getter
+    private int MIN_STARS = 1000;
+    @Getter
+    private int MAX_STARS = 8000;
+    @Getter
+    @Setter
+    private double starsSliderValue = 0.5;
+    @Getter
+    @Setter
+    private Slider slider = new Slider(0, 1, starsSliderValue);
+    @Getter
+    @Setter
+    private double VOLUME = 0.5;
+    @Getter
+    private double MIN_VOLUME = 0.0;
+    @Getter
+    private double MAX_VOLUME = 1.5;
+    @Getter
+    @Setter
+    private double volumeSliderValue = 0.5;
+    @Getter
+    @Setter
+    private Slider slider2 = new Slider(0, 1.5, volumeSliderValue);
+
+
+    @Getter
+    @Setter
+    private boolean histoireAnimText = false;
+    @Getter
+    @Setter
+    private AnimationType[] animations = AnimationType.loadAnimationTypes("animations.json");
+    @Getter
+    @Setter
+    private int currentAnimation = 0;
+    @Getter
+    @Setter
+    private ImageView arrow;
+    @Getter
+    private final ColorAdjust colorAdjust = new ColorAdjust(0, 0, -0.6, 0);
+    @Getter
+    private ImageView[] images = new ImageView[2];
 
     public Scene home(HandleClick handleButtonClick) {
+        slider.setValue(starsSliderValue);
+        slider2.setValue(volumeSliderValue);
+        NB_STARS = (int) ((1-starsSliderValue)*MIN_STARS+MAX_STARS*starsSliderValue);
+        VOLUME = (1-volumeSliderValue)*MIN_VOLUME+MAX_VOLUME*volumeSliderValue;
         Pane root = getBasicScene();
         String pseudo = WebSocketClient.getPseudoCUT();
         Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
@@ -66,14 +118,55 @@ public class GuiScene {
         Text elo = UtilsGui.createText("Elo : " + eloPlayer);
         Text text1 = UtilsGui.createText("SHANNON GAME", true);
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
+        slider.setLayoutX(100);
+        slider.setLayoutY(0);
+        slider.setMinorTickCount(0);
+        slider.setMajorTickUnit(1);
+        slider.setShowTickMarks(true);
+        slider.setShowTickLabels(true);
+        slider.setLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "Less stars";
+                return "More stars";
+            }
 
+            @Override
+            public Double fromString(String s) {
+                if (s.equals("Less stars")) {
+                    return 0d;
+                }
+                return 1d;
+            }
+        });
+        slider2.setMinorTickCount(0);
+        slider2.setMajorTickUnit(1.5);
+        slider2.setShowTickMarks(true);
+        slider2.setShowTickLabels(true);
+        slider2.setLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "-";
+                return "+";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                if (s.equals("-")) {
+                    return 0d;
+                }
+                return 1.5d;
+            }
+        });
+        slider2.setLayoutX(300);
+        slider2.setLayoutY(0);
         //création des boutons d'option de jeu
-        Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA));
-        Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO));
-        Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL));
-        Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA));
-        Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED));
-        Button button6 = UtilsGui.createButton("Histoire", event -> handleButtonClick.call(ButtonClickType.HISTOIRE));
+        Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA), false);
+        Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO), false);
+        Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL), false);
+        Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA), false);
+        Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED), false);
+        Button button6 = UtilsGui.createButton("Histoire", event -> handleButtonClick.call(ButtonClickType.HISTOIRE), false);
         Button statsButton = new Button("?");
         statsButton.setTextFill(Color.RED);
         Button deconnexion = new Button("Déconnexion");
@@ -93,17 +186,17 @@ public class GuiScene {
         text2.setX(UtilsGui.WINDOW_WIDTH/2 - text2.getLayoutBounds().getWidth()/2);
         text2.setY(200);
         button1.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button1.getPrefWidth()/2);
-        button1.setLayoutY(300);
+        button1.setLayoutY(250);
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
-        button2.setLayoutY(400);
+        button2.setLayoutY(320);
         button3.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button3.getPrefWidth()/2);
-        button3.setLayoutY(500);
+        button3.setLayoutY(390);
         button4.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
-        button4.setLayoutY(600);
+        button4.setLayoutY(460);
         button5.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
-        button5.setLayoutY(700);
+        button5.setLayoutY(530);
         button6.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
-        button6.setLayoutY(800);
+        button6.setLayoutY(600);
         pseudoText.setX(UtilsGui.WINDOW_WIDTH/2 - pseudoText.getLayoutBounds().getWidth()/2);
         pseudoText.setY(700);
         elo.setX(UtilsGui.WINDOW_WIDTH/2 - elo.getLayoutBounds().getWidth()/2);
@@ -111,60 +204,128 @@ public class GuiScene {
         deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - deconnexion.getPrefWidth()/2);
         deconnexion.setLayoutY(800);
         if (pseudo.length() >= 3)
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider, slider2);
         else
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, button6);
-        List<Node> nodes = List.of(text1, text2, button1, button2, button3, button4, button5, button6, pseudoText, elo, deconnexion);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, button6, slider, slider2);
+        slider.valueProperty().addListener(event -> {
+            double sliderValue = slider.getValue();
+            NB_STARS = (int) ((1-sliderValue)*MIN_STARS+MAX_STARS*sliderValue);
+            starsSliderValue = sliderValue;
+            Gui.createRemoveStars(NB_STARS);
+        });
+        slider2.valueProperty().addListener(event -> {
+            double sliderValue = slider2.getValue();
+            VOLUME = (1-sliderValue)*MIN_VOLUME+MAX_VOLUME*sliderValue;
+            volumeSliderValue = sliderValue;
+            Gui.changeVolume(VOLUME);
+        });
         if (Gui.getStars() != null)
             Gui.getStars().stop();
         if (Gui.getEtoiles().isEmpty())
             Gui.setEtoiles(Gui.generer(200));
-        new Thread(() -> {
-            Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
-            {
-                Gui.draw(root, nodes);
-                if (Gui.getEtoiles().size() < 8000) {
-                    Gui.getEtoiles().addAll(Gui.generer(100));
-                }
-            })));
-            Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-            Gui.getStars().play();
-        }).start();
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
+        {
+            Gui.draw(root);
+            if (Gui.getEtoiles().size() < NB_STARS) {
+                Gui.getEtoiles().addAll(Gui.generer(100));
+            }
+        })));
+        Gui.getStars().setCycleCount(Animation.INDEFINITE);
+        Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
-    public void createTimeLineThread(Pane root, List<Node> items) {
-        new Thread(() -> {
-            Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-                Gui.draw(root, items);
-            })));
-            Gui.getStars().setCycleCount(Timeline.INDEFINITE);
-            Gui.getStars().play();
-        }).start();
+    public void createTimeLineThread(Pane root) {
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            Gui.draw(root);
+        })));
+        Gui.getStars().setCycleCount(Animation.INDEFINITE);
+        Gui.getStars().play();
     }
 
-    public void createTextAnim(Pane root, Label label, String text) {
-        new Thread(() -> {
-            AtomicInteger i = new AtomicInteger();
-            Gui.setTimerText(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-                label.setText(text.substring(0, i.getAndIncrement()));
-                if(i.get() > text.length()) {
-                    URL url = GuiScene.class.getResource("/down-arrow.png");
-                    if(url == null) {
-                        log.error("Pas de fleche");
-                    } else {
-                        Image image = new Image(url.toExternalForm());
-                        ImageView imageView = new ImageView(image);
-                        imageView.relocate(UtilsGui.WINDOW_WIDTH - 380, UtilsGui.WINDOW_HEIGHT - 200);
-                        root.getChildren().add(imageView);
-                        UtilsGui.animationTexte(imageView, 20, 1);
+    public void createArrowAnim(Pane root) {
+        URL url = GuiScene.class.getResource("/down-arrow.png");
+        if(url == null) {
+            log.error("Pas de fleche");
+        } else {
+            Image image = new Image(url.toExternalForm());
+            arrow = new ImageView(image);
+            arrow.relocate(UtilsGui.WINDOW_WIDTH / 2 - 10, UtilsGui.WINDOW_HEIGHT - 200);
+            root.getChildren().add(arrow);
+            UtilsGui.animationTexte(arrow, 20, 1);
+        }
+    }
+
+    public void endTextAnim(Pane root, Label label, Label name, String text, HandleClick handleButtonClick) {
+        root.setOnMouseClicked(event -> playAllAnim(root, label, name, handleButtonClick));
+        label.setText(text);
+        createArrowAnim(root);
+        histoireAnimText = true;
+        Gui.getTimerText().stop();
+    }
+
+    public void createTextAnim(Pane root, Label label, Label name, String text, HandleClick handleButtonClick) {
+        AtomicInteger i = new AtomicInteger();
+        Gui.setTimerText(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+            label.setText(text.substring(0, i.getAndIncrement()));
+            if(i.get() > text.length()) endTextAnim(root, label, name, text, handleButtonClick);
+        })));
+        Gui.getTimerText().setCycleCount(Timeline.INDEFINITE);
+        Gui.getTimerText().play();
+        root.setOnMouseClicked(event -> endTextAnim(root, label, name, text, handleButtonClick));
+    }
+
+    public void createImgAnim(Pane root, Perso perso, boolean right, boolean actif) throws IOException {
+        Image image = perso.getImage();
+        ImageView imageView = new ImageView(image);
+        if (perso.same()) {
+            imageView.relocate(right ? UtilsGui.WINDOW_WIDTH - 400 : 100, UtilsGui.WINDOW_HEIGHT - 500);
+        } else {
+            imageView.relocate(right ? UtilsGui.WINDOW_WIDTH - 200 : -100, UtilsGui.WINDOW_HEIGHT - 500);
+            new Thread(() -> {
+                for (int i = 0; i < 100; i++) {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                     }
-                    Gui.getTimerText().stop();
+                    if (right) {
+                        imageView.relocate(imageView.getLayoutX() - 2, imageView.getLayoutY());
+                    } else {
+                        imageView.relocate(imageView.getLayoutX() + 2, imageView.getLayoutY());
+                    }
                 }
-            })));
-            Gui.getTimerText().setCycleCount(Timeline.INDEFINITE);
-            Gui.getTimerText().play();
-        }).start();
+                Thread.currentThread().interrupt();
+            }).start();
+        }
+        imageView.setFitWidth(300);
+        imageView.preserveRatioProperty().set(true);
+        if(!actif) imageView.setEffect(colorAdjust);
+        images[right ? 1 : 0] = imageView;
+        root.getChildren().add(imageView);
+    }
+
+    public void playAllAnim(Pane root, Label label, Label name, HandleClick handleButtonClick) {
+        root.getChildren().remove(arrow);
+        if (images[0] != null) root.getChildren().remove(images[0]);
+        if (images[1] != null) root.getChildren().remove(images[1]);
+        if (currentAnimation >= animations.length) {
+            handleButtonClick.call(ButtonClickType.LEVEL1);
+            return;
+        }
+        AnimationType animation = animations[currentAnimation];
+        createTextAnim(root, label, name, animation.text(), handleButtonClick);
+        name.setText(animation.getNameActif());
+        if(animation.perso() != null && animation.perso().length > 0) {
+            try {
+                createImgAnim(root, animation.perso()[0], false, animation.actif() == 0);
+                if(animation.perso().length > 1)
+                    createImgAnim(root, animation.perso()[1], true, animation.actif() == 1);
+            } catch (IOException e) {
+                log.error("Erreur lors de la création de l'animation", e);
+            }
+        }
+        currentAnimation++;
     }
 
     public Pane getBasicScene() {
@@ -201,13 +362,13 @@ public class GuiScene {
 
         TextField textJoin = new TextField();
         textJoin.setPromptText("code de partie");
-        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin));
+        Button buttonJoin = UtilsGui.createButton("Rejoindre", event -> joinField.call(textJoin), false);
 
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         Spinner<Integer> nbVertices = new Spinner<>(5,40,20);
         Text code = UtilsGui.createText("");
-        Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
+        Text textNbVertices = UtilsGui.createText("Nombre de sommets");
         Text textCreate = UtilsGui.createText(" ");
         //textCreate.setFont(Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font3.ttf"),30));
 
@@ -250,13 +411,16 @@ public class GuiScene {
                                 code.setText("Vérifiez votre connexion internet");
                                 code.setFill(Color.RED);
                             }
-                            catch (URISyntaxException | InterruptedException e) {
+                            catch (URISyntaxException e) {
                                 log.error("Erreur lors de la création de la partie", e);
+                            }
+                            catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
                             }
                         }).start();
 
-                    } catch (Exception e) {}
-                });
+                    } catch (Exception ignored) {}
+                }, false);
         if (pseudo.length() >= 3)
         {
             root.add(pseudoText, 0, 2);
@@ -268,15 +432,14 @@ public class GuiScene {
         root.add(buttonCreate, 1, 0);
         root.add(textTurn, 1, 3);
         root.add(choixTurn, 1, 4);
-        root.add(TextNbVertices, 1, 1);
+        root.add(textNbVertices, 1, 1);
         root.add(nbVertices, 1, 2);
         root.add(code, 1, 5);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-        List<Node> items = List.of(text1, textJoin, buttonJoin, textCreate, buttonCreate, textTurn, choixTurn, TextNbVertices, nbVertices, code);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -301,7 +464,7 @@ public class GuiScene {
         Spinner<Integer> spinner = new Spinner<>(5, 40, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
-        Text TextNbVertices = UtilsGui.createText("Nombre de sommets");
+        Text textNbVertices = UtilsGui.createText("Nombre de sommets");
         Button buttonCreate = UtilsGui.createButton(
                 "Lancer",
                 event -> {
@@ -328,7 +491,7 @@ public class GuiScene {
                     }
                     nbVertices = nbSommets;
                     handleButtonClick.call(ButtonClickType.AIvsAI);
-                });
+                }, false);
         scene.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
@@ -340,14 +503,13 @@ public class GuiScene {
         root.add(choixIA1, 1, 1);
         root.add(choixIA2, 2, 1);
         root.add(buttonCreate, 1, 3);
-        root.add(TextNbVertices, 2, 2);
+        root.add(textNbVertices, 2, 2);
         root.add(spinner, 2, 3);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
-        List<Node> items = List.of(text1, textIA1, textIA2, choixIA1, choixIA2, buttonCreate, TextNbVertices, spinner);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -355,8 +517,8 @@ public class GuiScene {
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("JOUEUR VS IA", true);
         Text text1 = UtilsGui.createText("Quel joueur voulez vous jouer ?");
-        Button shortbut = UtilsGui.createButton("SHORT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_SHORT));
-        Button cutbut = UtilsGui.createButton("CUT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_CUT));
+        Button shortbut = UtilsGui.createButton("SHORT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_SHORT), false);
+        Button cutbut = UtilsGui.createButton("CUT", event -> handleButtonClick.call(ButtonClickType.JOUEUR_CUT), false);
         title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
         title.setY(100);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
@@ -367,10 +529,9 @@ public class GuiScene {
         cutbut.setLayoutY(400);
         Gui.getStars().stop();
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut);
-        List<Node> items = List.of(title, text1, shortbut, cutbut);
         Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
-                Gui.draw(root, items))));
-        Gui.getStars().setCycleCount(Timeline.INDEFINITE);
+                Gui.draw(root))));
+        Gui.getStars().setCycleCount(Animation.INDEFINITE);
         Gui.getStars().play();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
@@ -380,9 +541,10 @@ public class GuiScene {
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("JOUEUR VS IA", true);
         Text text1 = UtilsGui.createText("Choisissez la difficulte");
-        Button facile = UtilsGui.createButton("facile", event -> handleButtonClick.call(ButtonClickType.PVIA_EASY));
-        Button normal = UtilsGui.createButton("normale", event -> handleButtonClick.call(ButtonClickType.PVIA_MEDIUM));
-        Button difficile = UtilsGui.createButton("difficile", event -> handleButtonClick.call(ButtonClickType.PVIA_HARD));
+        Button facile = UtilsGui.createButton("facile", event -> handleButtonClick.call(ButtonClickType.PVIA_EASY), false);
+        Button normal = UtilsGui.createButton("normale", event -> handleButtonClick.call(ButtonClickType.PVIA_MEDIUM), false);
+        Button difficile = UtilsGui.createButton("difficile", event -> handleButtonClick.call(ButtonClickType.PVIA_HARD), false);
+        Button strat = UtilsGui.createButton("Stratégie Gagnante", event -> handleButtonClick.call(ButtonClickType.STRAT_WIN), false);
         title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
         title.setY(100);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
@@ -393,10 +555,11 @@ public class GuiScene {
         normal.setLayoutY(400);
         difficile.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - difficile.getPrefWidth()/2);
         difficile.setLayoutY(500);
-        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile);
-        List<Node> items = List.of(title, text1, facile, normal, difficile);
+        strat.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - strat.getPrefWidth()/2);
+        strat.setLayoutY(600);
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile, strat);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -411,7 +574,7 @@ public class GuiScene {
             nbVertices = spinner.getValue();
             handleButtonClick.call(ButtonClickType.VERTICES);
 
-        });
+        }, false);
         root.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
@@ -425,9 +588,8 @@ public class GuiScene {
         enter.setLayoutY(300);
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
-        List<Node> items = List.of(title, spinner, enter);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
 
     }
@@ -450,8 +612,7 @@ public class GuiScene {
             erreurText.setY(150);
             root.getChildren().addAll(erreurText, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
             Gui.getStars().stop();
-            List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
-            createTimeLineThread(root, items);
+            createTimeLineThread(root);
             return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         }
         response.setText(statsList.getFirst().getAsString());
@@ -480,24 +641,22 @@ public class GuiScene {
         response.setFill(Color.RED);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
                 response, cutText, cut, shortText, shorts, onlineText, online);
-        List<Node> items = List.of(title, response, cutText, cut, shortText, shorts, onlineText, online);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
     public Scene ranked(HandleClick handleButtonClick) {
         Pane root = getBasicScene();
-        Button button1 = UtilsGui.createButton("Se connecter", event -> handleButtonClick.call(ButtonClickType.LOGIN));
-        Button button2 = UtilsGui.createButton("S'inscrire", event -> handleButtonClick.call(ButtonClickType.REGISTER));
+        Button button1 = UtilsGui.createButton("Se connecter", event -> handleButtonClick.call(ButtonClickType.LOGIN), false);
+        Button button2 = UtilsGui.createButton("S'inscrire", event -> handleButtonClick.call(ButtonClickType.REGISTER), false);
         button1.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button1.getPrefWidth()/2);
         button1.setLayoutY(300);
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
         button2.setLayoutY(400);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
-        List<Node> items = List.of(button1, button2);
         Gui.getStars().stop();
-        createTimeLineThread(root, items);
+        createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -530,7 +689,7 @@ public class GuiScene {
                     });
                 }
             }).start();
-        });
+        }, false);
         scene.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
@@ -547,9 +706,8 @@ public class GuiScene {
         login.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - login.getPrefWidth()/2);
         login.setLayoutY(300);
         scene.getChildren().addAll(root, title, username, password, login, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
-        List<Node> items = List.of(title, username, password, login);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
@@ -593,7 +751,7 @@ public class GuiScene {
                     });
                 }
             }).start();
-        });
+        }, false);
         scene.setOnKeyPressed(event ->
         {
             if (event.getCode() == KeyCode.ENTER)
@@ -613,34 +771,25 @@ public class GuiScene {
         register.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - register.getPrefWidth()/2);
         register.setLayoutY(350);
         scene.getChildren().addAll(root, title, username, password, passwordRepeat, register, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
-        List<Node> items = List.of(title, username, password, passwordRepeat, register);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
+        createTimeLineThread(scene);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
     public Scene histoire(HandleClick handleButtonClick) {
+        currentAnimation = 0;
         Pane scene = getBasicScene();
         Label text = UtilsGui.createLabel("");
         text.setWrapText(true);
-        text.prefWidthProperty().bind(scene.widthProperty().subtract(200));
+        text.prefWidthProperty().bind(scene.widthProperty().subtract(800));
         text.relocate(400, UtilsGui.WINDOW_HEIGHT - 350);
-        URL url = GuiScene.class.getResource("/diag.png");
-        if(url == null) {
-            log.error("Pas de dialogue box");
-        } else {
-            Image image = new Image(url.toExternalForm());
-            ImageView imageView = new ImageView(image);
-            imageView.relocate(300, UtilsGui.WINDOW_HEIGHT - 400);
-            imageView.setFitWidth(UtilsGui.WINDOW_WIDTH - 600);
-            imageView.setFitHeight(300);
-            scene.getChildren().add(imageView);
-        }
-        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text);
-        List<Node> items = List.of();
+        Label name = UtilsGui.createLabel("");
+        name.relocate(UtilsGui.WINDOW_WIDTH / 2 - 50, UtilsGui.WINDOW_HEIGHT - 400);
+        name.setFont(UtilsGui.FONT3);
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text, name);
         Gui.getStars().stop();
-        createTimeLineThread(scene, items);
-        createTextAnim(scene, text, "..........................................................................");
+        createTimeLineThread(scene);
+        playAllAnim(scene, text, name, handleButtonClick);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 }
