@@ -36,7 +36,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import javafx.scene.media.*;
-import java.io.IOException;
+
+import java.io.*;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -87,12 +88,19 @@ public class Gui extends Application {
     private static Timeline timer = new Timeline();
     private static final List<ImageView> images = new ArrayList<>();
     private static final CheckBox planetes = new CheckBox("Afficher Planètes");
+    @Getter
+    @Setter
     private static final Slider slider = new Slider(0, 1, GuiScene.getSlider().getValue());
+    @Getter
+    @Setter
     private static int NB_STARS = GuiScene.getNB_STARS();
     private static int MIN_STARS = GuiScene.getMIN_STARS();
     private static int MAX_STARS = GuiScene.getMAX_STARS();
+    @Getter
+    @Setter
     private static final Slider slider2 = new Slider(0, 1.5, GuiScene.getSlider2().getValue());
     @Getter
+    @Setter
     private static double VOLUME = GuiScene.getVOLUME();
     private static double MIN_VOLUME = GuiScene.getMIN_VOLUME();
     private static double MAX_VOLUME = GuiScene.getMAX_VOLUME();
@@ -171,6 +179,17 @@ public class Gui extends Application {
         // On initialise un handshake pour éviter de devoir attendre 1 seconde lorsqu'on appuie sur create
         new Thread(WebSocketClient::getHandshake).start();
         Gui.stage = stage;
+        try {
+            File file = new File("config.txt");
+            FileReader fileReader = new FileReader(file);
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            GuiScene.setVolumeSliderValue(Double.parseDouble(bufferedReader.readLine()));
+            GuiScene.setStarsSliderValue(Double.parseDouble(bufferedReader.readLine()));
+            bufferedReader.close();
+            fileReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         stage.setScene(GuiScene.home(Gui::handleButtonClick));
         stage.setTitle("Shannon Game");
         URL url = getClass().getResource("/icon-appli.png");
@@ -689,6 +708,7 @@ public class Gui extends Application {
         Media sound = new Media(Gui.class.getClassLoader().getResource("Sounds/testMusic.mp3").toExternalForm());
         mainSound = new MediaPlayer(sound);
         mainSound.setCycleCount(MediaPlayer.INDEFINITE);
+        mainSound.setVolume(GuiScene.getVOLUME());
         mainSound.play();
     }
 }

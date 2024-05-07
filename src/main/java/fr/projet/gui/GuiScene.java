@@ -59,8 +59,12 @@ public class GuiScene {
     private int MAX_STARS = 8000;
     @Getter
     @Setter
-    private Slider slider = new Slider(0, 1, 0.5);
+    private double starsSliderValue = 0.5;
     @Getter
+    @Setter
+    private Slider slider = new Slider(0, 1, starsSliderValue);
+    @Getter
+    @Setter
     private double VOLUME = 0.5;
     @Getter
     private double MIN_VOLUME = 0.0;
@@ -68,9 +72,16 @@ public class GuiScene {
     private double MAX_VOLUME = 1.5;
     @Getter
     @Setter
-    private Slider slider2 = new Slider(0, 1.5, 0.5);
+    private double volumeSliderValue = 0.5;
+    @Getter
+    @Setter
+    private Slider slider2 = new Slider(0, 1.5, volumeSliderValue);
 
     public Scene home(HandleClick handleButtonClick) {
+        slider.setValue(starsSliderValue);
+        slider2.setValue(volumeSliderValue);
+        NB_STARS = (int) ((1-starsSliderValue)*MIN_STARS+MAX_STARS*starsSliderValue);
+        VOLUME = (1-volumeSliderValue)*MIN_VOLUME+MAX_VOLUME*volumeSliderValue;
         Pane root = getBasicScene();
         String pseudo = WebSocketClient.getPseudoCUT();
         Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
