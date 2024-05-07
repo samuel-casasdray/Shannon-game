@@ -35,6 +35,19 @@ public class BasicAI extends InterfaceIA {
 
     @Override
     public Pair<Vertex, Vertex> playSHORT() {
+        Set<Pair<Vertex, Vertex>> edges = new HashSet<>();
+        Set<Pair<Vertex, Vertex>> redEdges = game.getSecured();
+        for (Pair<Vertex, Vertex> edge : game.getGraph().getNeighbors()) {
+            if (!game.getCutted().contains(edge) && !game.getSecured().contains(edge)) {
+                edges.add(edge);
+            }
+        }
+        Graph redGraph = new Graph(redEdges);
+        for (Pair<Vertex, Vertex> edge : edges) {
+            redGraph.addNeighbor(edge);
+            if (game.getGraph().estCouvrant(redGraph)) return edge;
+            redGraph.removeNeighbor(edge);
+        }
         return playCUT();
     }
 }

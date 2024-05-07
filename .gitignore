@@ -42,3 +42,6 @@ Shannon-game.jar
 
 ### Dotenv ###
 .env
+
+### Pour éviter de l'update à chaque fois ###
+config.txt

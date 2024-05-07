@@ -3,6 +3,7 @@ package fr.projet.game;
 import fr.projet.graph.Graph;
 import fr.projet.graph.Vertex;
 import fr.projet.gui.Gui;
+import fr.projet.gui.GuiScene;
 import fr.projet.gui.UtilsGui;
 import fr.projet.ia.BasicAI;
 import fr.projet.ia.InterfaceIA;
@@ -120,7 +121,6 @@ public class Game {
             this.againstAI = true;
             this.typeIA = typeIA;
         }
-        Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
 
@@ -144,7 +144,6 @@ public class Game {
                 throw new TimeoutException();
             }
         } while (graphIsNotOkay());
-        Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
 
@@ -162,7 +161,6 @@ public class Game {
         } while (graphIsNotOkay());
         ia = getIAwithDifficulty(levelIACut);
         ia2 = getIAwithDifficulty(levelIAShort);
-        Gui.setGraph(graph);
         Gui.setHandler(this::handleEvent);
     }
 
@@ -556,13 +554,13 @@ public void deleteCuttedEdge() {
 
     public void playSound () {
         MediaPlayer mediaPlayer = new MediaPlayer(soundFight);
-        mediaPlayer.setVolume(Gui.getVOLUME());
+        mediaPlayer.setVolume(GuiScene.getVOLUME());
         mediaPlayer.play();
     }
 
     public void playSoundShort () {
         MediaPlayer mediaPlayer = new MediaPlayer(soundShort);
-        mediaPlayer.setVolume(Gui.getVOLUME()/2);
+        mediaPlayer.setVolume(GuiScene.getVOLUME()/2);
         mediaPlayer.play();
     }
 
@@ -576,15 +574,23 @@ public void deleteCuttedEdge() {
             sound = soundCut2;
         }
         MediaPlayer mediaPlayer = new MediaPlayer(sound);
-        mediaPlayer.setVolume(Gui.getVOLUME()/2);
+        mediaPlayer.setVolume(GuiScene.getVOLUME()/2);
         mediaPlayer.play();
     }
 
-    private boolean isCutted(Vertex key, Vertex value) {
+    public boolean isCutted(Vertex key, Vertex value) {
         return cutted.contains(new Pair<>(key, value)) || cutted.contains(new Pair<>(value, key));
     }
 
-    private boolean isSecured(Vertex key, Vertex value) {
+    public boolean isSecured(Vertex key, Vertex value) {
         return secured.contains(new Pair<>(key, value)) || secured.contains(new Pair<>(value, key));
+    }
+
+    public boolean isCutted(Pair<Vertex, Vertex> edge) {
+        return cutted.contains(edge) || cutted.contains(new Pair<>(edge.getValue(), edge.getKey()));
+    }
+
+    public boolean isSecured(Pair<Vertex, Vertex> edge) {
+        return secured.contains(edge) || secured.contains(new Pair<>(edge.getValue(), edge.getKey()));
     }
 }

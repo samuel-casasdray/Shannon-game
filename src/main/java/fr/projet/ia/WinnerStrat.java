@@ -24,7 +24,7 @@ public class WinnerStrat extends InterfaceIA {
         if (!toCut.isEmpty()) {
             Pair<Vertex, Vertex> theEdge = null;
             for (Pair<Vertex, Vertex> edge : toCut) {
-                if (!game.getCutted().contains(edge) && !game.getSecured().contains(edge)) {
+                if (!game.isCutted(edge) && !game.isSecured(edge)) {
                     theEdge = edge;
                     break;
                 }
