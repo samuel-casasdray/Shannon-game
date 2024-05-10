@@ -18,11 +18,12 @@ public class BasicAI extends InterfaceIA {
         Set<Pair<Vertex, Vertex>> edges = new HashSet<>();
         Set<Pair<Vertex, Vertex>> notCutted = new HashSet<>();
         for (Pair<Vertex, Vertex> edge : game.getGraph().getNeighbors()) {
-            if (!game.getCutted().contains(edge) && !game.getSecured().contains(edge)) {
+            if (!game.isCutted(edge) && !game.isSecured(edge)) {
                 edges.add(edge);
             }
-            if (!game.getCutted().contains(edge))
+            if (!game.isCutted(edge)) {
                 notCutted.add(edge);
+            }
         }
         Graph notCuttedGraph = new Graph(notCutted);
         for (Pair<Vertex, Vertex> edge : edges) {
@@ -38,7 +39,7 @@ public class BasicAI extends InterfaceIA {
         Set<Pair<Vertex, Vertex>> edges = new HashSet<>();
         Set<Pair<Vertex, Vertex>> redEdges = game.getSecured();
         for (Pair<Vertex, Vertex> edge : game.getGraph().getNeighbors()) {
-            if (!game.getCutted().contains(edge) && !game.getSecured().contains(edge)) {
+            if (!game.isCutted(edge) && !game.isSecured(edge)) {
                 edges.add(edge);
             }
         }

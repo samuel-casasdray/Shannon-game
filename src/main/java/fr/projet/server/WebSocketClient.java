@@ -148,11 +148,7 @@ public class WebSocketClient {
         try {
             session.getBasicRemote().sendText(message);
         }
-        catch (Exception e) {
-            if (closed) {
-                log.error("Déconnexion inattendue");
-            }
-        }
+        catch (Exception e) {}
     }
 
     public static void getHandshake() {
@@ -192,7 +188,6 @@ public class WebSocketClient {
     public void onMessage(String message) {
         if (closed) return;
         response = message;
-        log.info("Received message: " + message);
         try {
             JsonElement jsonElement = JsonParser.parseString(message);
             JsonElement stats = jsonElement.getAsJsonObject().get("stats");
@@ -213,9 +208,7 @@ public class WebSocketClient {
                 try {
                     game.play1vs1(message);
                 }
-                catch (IOException e) {
-                    log.error("Erreur lors de la réception du message");
-                }
+                catch (IOException ignored) {}
             else
                 waiting = message;
         }

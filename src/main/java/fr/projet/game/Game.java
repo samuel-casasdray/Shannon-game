@@ -13,7 +13,6 @@ import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
 import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.util.Pair;
@@ -33,8 +32,8 @@ import javafx.scene.media.*;
 public class Game {
     private final HashSet<Pair<Vertex, Vertex>> secured = new HashSet<>();
     private final HashSet<Pair<Vertex, Vertex>> cutted = new HashSet<>();
-    private final ArrayList<Pair<Line, Turn>> lastsLinesCut = new ArrayList<>();
-    private final ArrayList<Pair<Line, Turn>> lastsLinesPaint = new ArrayList<>();
+    private final ArrayList<Line> lastsLinesCut = new ArrayList<>();
+    private final ArrayList<Line> lastsLinesPaint = new ArrayList<>();
     private final int nbVertices;
     private final int minDeg = 3;
     private final int maxDeg = 7;
@@ -67,7 +66,7 @@ public class Game {
     private Media soundCut2 = new Media(getClass().getClassLoader().getResource("Sounds/cut"+2+".mp3").toExternalForm());
     private Media soundFight = new Media(this.getClass().getClassLoader().getResource("Sounds/fight.mp3").toExternalForm());
     private List<Graph> stratGagnante;
-    public Game(int nbv) throws TimeoutException { 
+    public Game(int nbv) throws TimeoutException {
       this(nbv,false, Turn.CUT, Level.EASY); 
     }
   
@@ -174,7 +173,6 @@ public class Game {
                 try {
                     Thread.sleep(AIDelay - delay);
                 } catch (InterruptedException e) {
-                    log.error(e.getMessage() + "Interrupted");
                     Thread.currentThread().interrupt();
                 }
             }
@@ -182,22 +180,22 @@ public class Game {
         }
     }
 
-    public void play(Vertex key, Vertex value) {
+    public void play(Pair<Vertex, Vertex> move) {
         if (againstAI && turn == typeIA) {
             AIPlay(ia, ia, typeIA);
         } else {
             Pair<Vertex, Vertex> played;
             for (Pair<Pair<Vertex, Vertex>, Line> neighbors : Gui.getEdges()) {
-                if (Vertex.isSameCouple(new Pair<>(key, value), neighbors.getKey())) {
-                    if (isCutted(key, value) || isSecured(key, value) || isInterrupted()) {
+                if (Vertex.isSameCouple(move, neighbors.getKey())) {
+                    if (isCutted(move) || isSecured(move) || isInterrupted()) {
                         return;
                     }
                     if (turn == Turn.CUT) {
-                        played = new Pair<>(key, value);
+                        played = move;
                         cutEdge(played);
                         cutLine(neighbors.getValue());
                     } else {
-                        played = new Pair<>(key, value);
+                        played = move;
                         secureEdge(played);
                         paintLine(neighbors.getValue());
                     }
@@ -206,9 +204,7 @@ public class Game {
                         showWinner();
                         if (cutWon || shortWon) return;
                     }
-                    Platform.runLater(() -> {
-                        if (againstAI) new Thread(() -> AIPlay(ia, ia, typeIA)).start();
-                    });
+                    if (againstAI) new Thread(() -> AIPlay(ia, ia, typeIA)).start();
                 }
             }
         }
@@ -259,13 +255,13 @@ public class Game {
         else
             typeGame = 3; // IA vs IA
         if (cutWon()) {
-            Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
+            Gui.popupMessage(Turn.CUT);
             if (!pvpOnline || !client.isClosed())
                 isolateComponent();
             thereAreAWinner = true;
         }
         else if (shortWon()) {
-            Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
+            Gui.popupMessage(Turn.SHORT);
             if (!pvpOnline || !client.isClosed())
                 deleteCuttedEdge();
             thereAreAWinner = true;
@@ -300,7 +296,7 @@ public class Game {
         Set<Vertex> finalSmallestComponent = smallestComponent;
         List<Pair<Pair<Vertex, Vertex>, Line>> edgesGreen = Gui.getEdges().stream().filter(pair -> finalSmallestComponent.contains(pair.getKey().getKey())
             && finalSmallestComponent.contains(pair.getKey().getValue())
-            && !isCutted(pair.getKey().getKey(), pair.getKey().getValue())).toList();
+            && !isCutted(pair.getKey())).toList();
         createTimer(edgesGreen, false, 250);
         List<Pair<Pair<Vertex, Vertex>, Line>> cuttedLines = Gui.getEdges().stream().filter(x ->
             cutted.contains(x.getKey())).toList();
@@ -348,7 +344,7 @@ public void deleteCuttedEdge() {
         Line line = null;
         if (mouseEvent.getTarget() instanceof Line line2) {
             line = line2;
-        } else if (mouseEvent.getTarget() instanceof Pane) {
+        } else {
             List<Pair<Double, Line>> good = new ArrayList<>();
             for (Pair<Pair<Vertex, Vertex>, Line> pair : Gui.getEdges()) {
                 double d;
@@ -360,7 +356,7 @@ public void deleteCuttedEdge() {
                         pair.getKey().getKey().getY() + UtilsGui.CIRCLE_SIZE,
                         pair.getKey().getValue().getX() + UtilsGui.CIRCLE_SIZE,
                         pair.getKey().getValue().getY() + UtilsGui.CIRCLE_SIZE)
-                    ) < 10
+                    ) < 20
                 ) {
                     good.add(new Pair<>(d, pair.getValue()));
                 }
@@ -370,7 +366,7 @@ public void deleteCuttedEdge() {
         }
         if (line == null) return;
         Pair<Vertex, Vertex> move = (Pair<Vertex, Vertex>) line.getProperties().get("pair");
-        if (move == null || isCutted(move.getKey(), move.getValue()) || isSecured(move.getKey(), move.getValue())) return;
+        if (move == null || isCutted(move) || isSecured(move)) return;
         if (pvpOnline) {
             try {
                 sendMove(move);
@@ -378,7 +374,7 @@ public void deleteCuttedEdge() {
                 log.error(e.getMessage());
             }
         } else {
-            play(move.getKey(), move.getValue());
+            play(move);
         }
     }
 
@@ -417,7 +413,6 @@ public void deleteCuttedEdge() {
             if (!shortWon && !cutWon)
                 client.sendMessage(data);
         } catch (URISyntaxException | IOException e) {
-            log.error("Can't reconnect to serveur : ", e);
             throw new IOException("Can't reconnect");
         }
     }
@@ -436,11 +431,11 @@ public void deleteCuttedEdge() {
             }
             if (!getClient().isClosed()) {
                 if (cutWon) {
-                    Platform.runLater(() -> Gui.popupMessage(Turn.CUT));
+                    Gui.popupMessage(Turn.CUT);
                     HttpsClient.sendStatistics(2, 0, seed);
                 }
                 else if (shortWon) {
-                    Platform.runLater(() -> Gui.popupMessage(Turn.SHORT));
+                    Gui.popupMessage(Turn.SHORT);
                     HttpsClient.sendStatistics(2, 1, seed);
                 }
                 client.sendMessage(turnValue.toString()); // On envoie le gagnant au serveur pour qu'il puisse update les elo
@@ -457,7 +452,6 @@ public void deleteCuttedEdge() {
                 try {
                     results[i] = Integer.parseInt(items[i]);
                 } catch (NumberFormatException nfe) {
-                    log.error("Erreur de parsing dans la réponse");
                     return;
                 }
             }
@@ -475,7 +469,7 @@ public void deleteCuttedEdge() {
                     setTurn(Turn.CUT);
                 else
                     setTurn(Turn.SHORT);
-                play(key, val);
+                play(new Pair<>(key, val));
                 if (cutWon) {
                     client.sendMessage("CUT!");
                     client.close();
@@ -483,49 +477,31 @@ public void deleteCuttedEdge() {
                     client.sendMessage("SHORT!");
                     client.close();
                 }
-            } else {
-                log.info(key + " " + val);
             }
         }
     }
 
     public void cutLine(Line line) {
-        lastsLinesCut.add(new Pair<>(line, turn));
         Platform.runLater(() -> {
+            lastsLinesCut.add(line);
             line.setStroke(Color.BLUE);
             line.getStrokeDashArray().addAll(25D, 15D);
         });
-        setColor();
         playSoundCut();
     }
 
     public void paintLine(Line line) {
-        if (!lastsLinesCut.isEmpty())
-            Platform.runLater(() -> lastsLinesCut.getLast().getKey().setVisible(false));
-        lastsLinesPaint.add(new Pair<>(line, turn));
-        Platform.runLater(() -> line.setStroke(Color.RED));
-        setColor();
+        Platform.runLater(() -> {
+            if (!lastsLinesCut.isEmpty())
+                lastsLinesCut.getLast().setVisible(false);
+            lastsLinesPaint.add(line);
+            line.setStroke(Color.RED);
+            if (lastsLinesPaint.size() < 2) return;
+            lastsLinesPaint.get(lastsLinesPaint.size()-2).setStroke(Color.ORANGERED);
+        });
         playSoundShort();
     }
 
-    public void setColor() {
-        if (lastsLinesCut.size() < 2) return;
-        if (lastsLinesCut.get(lastsLinesCut.size()-2).getValue() == Turn.CUT) {
-            Platform.runLater(() -> lastsLinesCut.get(lastsLinesCut.size()-2).getKey().setStroke(Color.BLACK));
-            Platform.runLater(() -> lastsLinesCut.get(lastsLinesCut.size()-2).getKey().getStrokeDashArray().addAll(25D, 15D));
-        }
-        else {
-            Platform.runLater(() -> lastsLinesCut.get(lastsLinesCut.size()-2).getKey().setStroke(Color.ORANGERED));
-        }
-        if (lastsLinesPaint.size() < 2) return;
-        if (lastsLinesPaint.get(lastsLinesPaint.size()-2).getValue() == Turn.CUT) {
-            Platform.runLater(() -> lastsLinesPaint.get(lastsLinesPaint.size()-2).getKey().setStroke(Color.BLACK));
-            Platform.runLater(() -> lastsLinesPaint.get(lastsLinesPaint.size()-2).getKey().getStrokeDashArray().addAll(25D, 15D));
-        }
-        else {
-            Platform.runLater(() -> lastsLinesPaint.get(lastsLinesPaint.size()-2).getKey().setStroke(Color.ORANGERED));
-        }
-    }
 
     public boolean graphIsNotOkay() {
         return graph.getNbVertices() != nbVertices || graph.minDeg() < minDeg || graph.maxDeg() > maxDeg || !graph.estConnexe();
@@ -580,10 +556,6 @@ public void deleteCuttedEdge() {
 
     public boolean isCutted(Vertex key, Vertex value) {
         return cutted.contains(new Pair<>(key, value)) || cutted.contains(new Pair<>(value, key));
-    }
-
-    public boolean isSecured(Vertex key, Vertex value) {
-        return secured.contains(new Pair<>(key, value)) || secured.contains(new Pair<>(value, key));
     }
 
     public boolean isCutted(Pair<Vertex, Vertex> edge) {

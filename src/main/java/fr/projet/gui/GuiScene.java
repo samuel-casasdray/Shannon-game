@@ -54,7 +54,7 @@ public class GuiScene {
     @Setter
     private int NB_STARS = 4000;
     @Getter
-    private int MIN_STARS = 1000;
+    private int MIN_STARS = 0;
     @Getter
     private int MAX_STARS = 8000;
     @Getter
@@ -195,8 +195,6 @@ public class GuiScene {
         });
         if (Gui.getStars() != null)
             Gui.getStars().stop();
-        if (Gui.getEtoiles().isEmpty())
-            Gui.setEtoiles(Gui.generer(200));
         new Thread(() -> {
             Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
             {
@@ -222,13 +220,9 @@ public class GuiScene {
     }
 
     public Pane getBasicScene() {
-        //VBox root = new VBox(50); // Espacement vertical entre les éléments
         Pane root = new Pane();
         root.setPadding(new Insets(-40, 0, 10, 0));
-
-        //root.setBackground(getBackground());
         root.setBackground(Background.fill(Color.BLACK));
-        //root.setAlignment(Pos.CENTER);
         return root;
     }
 
