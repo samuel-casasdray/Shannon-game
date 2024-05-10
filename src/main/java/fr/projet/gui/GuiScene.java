@@ -166,7 +166,7 @@ public class GuiScene {
         Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL), false);
         Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA), false);
         Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED), false);
-        Button button6 = UtilsGui.createButton("Histoire", event -> handleButtonClick.call(ButtonClickType.HISTOIRE), false);
+        Button button6 = UtilsGui.createButton("Histoire", event -> Platform.runLater(() -> handleButtonClick.call(ButtonClickType.HISTOIRE)), false);
         Button statsButton = new Button("?");
         statsButton.setTextFill(Color.RED);
         Button deconnexion = new Button("Déconnexion");
