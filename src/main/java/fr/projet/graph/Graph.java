@@ -796,7 +796,6 @@ public class Graph {
         P.add(allVertice);
 
         if (globalVariable>100) {
-            System.out.println("PLAAAAAANTE");
             return new Pair<>(true, new Pair<>( new Pair<>(null, null), new ArrayList<>())); //Short Win
         }
         globalVariable+=1;

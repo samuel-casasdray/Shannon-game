@@ -11,7 +11,6 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
@@ -103,26 +102,6 @@ public class Gui extends Application {
     public static void createAnim() {
         new Thread(() -> {
             Gui.setTimer(new Timeline(new KeyFrame(Duration.millis(20), event -> {
-//                for(Line line: posTransport) {
-//                    ObservableMap<Object, Object> properties = line.getProperties();
-//                    int i = (int) properties.get("i");
-//                    double Ux = (double) properties.get("Ux");
-//                    double Uy = (double) properties.get("Uy");
-//                    int Ax = (int) properties.get("Ax");
-//                    int Ay = (int) properties.get("Ay");
-//                    int Bx = (int) properties.get("Bx");
-//                    int By = (int) properties.get("By");
-//                    i++;
-//                    properties.put("i", i);
-//                    double posX = i * Ux + Ax;
-//                    double posY = i * Uy + Ay;
-//                    if ((Ax < Bx && posX > Bx) || (Ax > Bx && posX < Bx) || (Ay < By && posY > By) || (Ay > By && posY < By)) {
-//                        i = 0;
-//                        properties.put("i", i);
-//                    }
-//                    line.setTranslateX(i*Ux);
-//                    line.setTranslateY(i*Uy);
-//                }
                 draw(pane);
                 if (etoiles.size() < NB_STARS) {
                     etoiles.addAll(generer(100));
@@ -154,14 +133,14 @@ public class Gui extends Application {
             }
         }
         root.getChildren().removeIf(Rectangle.class::isInstance);
-        //etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed());
+        //etoiles.sort(Comparator.comparingDouble(Etoile::getZ).reversed()); // des tests sont à faire mais
+        // laissons commenté pour le moment
         for (Etoile etoile : etoiles.stream().filter(e -> e.getZ() >= planZ).toList()) {
             float x = planZ * etoile.getX() / etoile.getZ() + width/2;
             float y = planZ * etoile.getY() / etoile.getZ() + height/2;
             if (x >= 0 && x <= width && y >= 0 && y <= height) {
-                Rectangle pixel;
                 Color color = etoile.pixelColor();
-                pixel = new Rectangle(x, y, 2,2);
+                Rectangle pixel = new Rectangle(x, y, 2,2);
                 pixel.setFill(color);
                 pixel.setViewOrder(100);
                 root.getChildren().add(pixel);
@@ -284,7 +263,6 @@ public class Gui extends Application {
     }
 
     private static void leaveGame() {
-        etoiles = generer(200);
         timer.stop();
         stage.setScene(GuiScene.home(Gui::handleButtonClick));
         if (game.isPvpOnline()) {
@@ -385,7 +363,6 @@ public class Gui extends Application {
         // Création du Pane pour afficher le graphique
         pane = new Pane();
         stars.stop();
-        etoiles = generer(200);
         pane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         planetes.setSelected(true);
         pane.getChildren().removeAll(images);
