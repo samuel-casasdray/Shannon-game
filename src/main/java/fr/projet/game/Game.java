@@ -174,7 +174,6 @@ public class Game {
                 try {
                     Thread.sleep(AIDelay - delay);
                 } catch (InterruptedException e) {
-                    log.error(e.getMessage() + "Interrupted");
                     Thread.currentThread().interrupt();
                 }
             }
@@ -417,7 +416,6 @@ public void deleteCuttedEdge() {
             if (!shortWon && !cutWon)
                 client.sendMessage(data);
         } catch (URISyntaxException | IOException e) {
-            log.error("Can't reconnect to serveur : ", e);
             throw new IOException("Can't reconnect");
         }
     }
@@ -457,7 +455,6 @@ public void deleteCuttedEdge() {
                 try {
                     results[i] = Integer.parseInt(items[i]);
                 } catch (NumberFormatException nfe) {
-                    log.error("Erreur de parsing dans la réponse");
                     return;
                 }
             }
@@ -483,8 +480,6 @@ public void deleteCuttedEdge() {
                     client.sendMessage("SHORT!");
                     client.close();
                 }
-            } else {
-                log.info(key + " " + val);
             }
         }
     }

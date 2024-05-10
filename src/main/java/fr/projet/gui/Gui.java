@@ -658,7 +658,7 @@ public class Gui extends Application {
             if (game == null) return;
             stage.setScene(run());
             if (client.getWaiting() != null)
-                game.play1vs1(client.getWaiting());
+                game.play1vs1(client.getWaiting()); // ne surtout pas enlever
         } catch (SocketException se) {
             Platform.runLater(() -> popupMessage("Le serveur n'est pas joignable", "Vérifiez votre connexion internet"));
         }
