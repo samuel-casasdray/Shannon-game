@@ -331,7 +331,8 @@ public class GuiScene {
                 log.error("Erreur lors de la création de l'animation", e);
             }
         }
-        currentAnimation = animations.histoire().length;
+//        currentAnimation = animations.histoire().length;
+        currentAnimation++;
     }
 
     public Pane getBasicScene() {
