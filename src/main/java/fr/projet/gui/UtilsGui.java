@@ -37,7 +37,7 @@ public class UtilsGui {
 
     public static final double CIRCLE_SIZE = 20D;
     public static final double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
-    public static final double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight();
+    public static final double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight()-75;
     public static final int WINDOW_MARGE = (int) (0.1*WINDOW_HEIGHT);
 
 

@@ -21,9 +21,11 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
 import javafx.scene.effect.ColorAdjust;
@@ -32,7 +34,6 @@ import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -82,13 +83,12 @@ public class GuiScene {
     @Setter
     private Slider slider2 = new Slider(0, 1.5, volumeSliderValue);
 
-
     @Getter
     @Setter
     private boolean histoireAnimText = false;
     @Getter
     @Setter
-    private AnimationType[] animations = AnimationType.loadAnimationTypes("animations.json");
+    private Animations animations = Animations.loadAnimations();
     @Getter
     @Setter
     private int currentAnimation = 0;
@@ -99,6 +99,9 @@ public class GuiScene {
     private final ColorAdjust colorAdjust = new ColorAdjust(0, 0, -0.6, 0);
     @Getter
     private ImageView[] images = new ImageView[2];
+    @Getter
+    @Setter
+    private static MediaPlayer typingSound;
 
     public Scene home(HandleClick handleButtonClick) {
         slider.setValue(starsSliderValue);
@@ -166,7 +169,7 @@ public class GuiScene {
         Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL), false);
         Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA), false);
         Button button5 = UtilsGui.createButton("Mode compétitif", event -> handleButtonClick.call(ButtonClickType.RANKED), false);
-        Button button6 = UtilsGui.createButton("Histoire", event -> Platform.runLater(() -> handleButtonClick.call(ButtonClickType.HISTOIRE)), false);
+        Button button6 = UtilsGui.createButton("Histoire", event -> handleButtonClick.call(ButtonClickType.HISTOIRE), false);
         Button statsButton = new Button("?");
         statsButton.setTextFill(Color.RED);
         Button deconnexion = new Button("Déconnexion");
@@ -250,21 +253,23 @@ public class GuiScene {
         } else {
             Image image = new Image(url.toExternalForm());
             arrow = new ImageView(image);
-            arrow.relocate(UtilsGui.WINDOW_WIDTH / 2 - 10, UtilsGui.WINDOW_HEIGHT - 200);
+            arrow.relocate(UtilsGui.WINDOW_WIDTH / 2 - 10, UtilsGui.WINDOW_HEIGHT - 100);
             root.getChildren().add(arrow);
             UtilsGui.animationTexte(arrow, 20, 1);
         }
     }
 
     public void endTextAnim(Pane root, Label label, Label name, String text, HandleClick handleButtonClick) {
+        typingSound.stop();
+        Gui.getTimerText().stop();
         root.setOnMouseClicked(event -> playAllAnim(root, label, name, handleButtonClick));
         label.setText(text);
         createArrowAnim(root);
         histoireAnimText = true;
-        Gui.getTimerText().stop();
     }
 
     public void createTextAnim(Pane root, Label label, Label name, String text, HandleClick handleButtonClick) {
+        typingSound.play();
         AtomicInteger i = new AtomicInteger();
         Gui.setTimerText(new Timeline(new KeyFrame(Duration.millis(20), e -> {
             label.setText(text.substring(0, i.getAndIncrement()));
@@ -282,21 +287,17 @@ public class GuiScene {
             imageView.relocate(right ? UtilsGui.WINDOW_WIDTH - 400 : 100, UtilsGui.WINDOW_HEIGHT - 500);
         } else {
             imageView.relocate(right ? UtilsGui.WINDOW_WIDTH - 200 : -100, UtilsGui.WINDOW_HEIGHT - 500);
-            new Thread(() -> {
+            Thread.ofVirtual().start(() -> {
                 for (int i = 0; i < 100; i++) {
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
-                    if (right) {
-                        imageView.relocate(imageView.getLayoutX() - 2, imageView.getLayoutY());
-                    } else {
-                        imageView.relocate(imageView.getLayoutX() + 2, imageView.getLayoutY());
-                    }
+                    Platform.runLater(() -> imageView.relocate(imageView.getLayoutX() + (right ? -2 : 2), imageView.getLayoutY()));
                 }
                 Thread.currentThread().interrupt();
-            }).start();
+            });
         }
         imageView.setFitWidth(300);
         imageView.preserveRatioProperty().set(true);
@@ -309,11 +310,16 @@ public class GuiScene {
         root.getChildren().remove(arrow);
         if (images[0] != null) root.getChildren().remove(images[0]);
         if (images[1] != null) root.getChildren().remove(images[1]);
-        if (currentAnimation >= animations.length) {
+        if (currentAnimation >= animations.histoire().length) {
             handleButtonClick.call(ButtonClickType.LEVEL1);
             return;
         }
-        AnimationType animation = animations[currentAnimation];
+        Media sound = new Media(Gui.class.getClassLoader().getResource("Sounds/typing.mp3").toExternalForm());
+        typingSound = new MediaPlayer(sound);
+        typingSound.setCycleCount(MediaPlayer.INDEFINITE);
+        typingSound.setVolume(GuiScene.getVOLUME());
+        typingSound.setRate(2);
+        AnimationType animation = animations.histoire()[currentAnimation];
         createTextAnim(root, label, name, animation.text(), handleButtonClick);
         name.setText(animation.getNameActif());
         if(animation.perso() != null && animation.perso().length > 0) {
@@ -325,7 +331,7 @@ public class GuiScene {
                 log.error("Erreur lors de la création de l'animation", e);
             }
         }
-        currentAnimation++;
+        currentAnimation = animations.histoire().length;
     }
 
     public Pane getBasicScene() {
@@ -783,13 +789,54 @@ public class GuiScene {
         text.setWrapText(true);
         text.prefWidthProperty().bind(scene.widthProperty().subtract(800));
         text.relocate(400, UtilsGui.WINDOW_HEIGHT - 350);
+        text.setLineSpacing(12);
         Label name = UtilsGui.createLabel("");
-        name.relocate(UtilsGui.WINDOW_WIDTH / 2 - 50, UtilsGui.WINDOW_HEIGHT - 400);
+        name.relocate(UtilsGui.WINDOW_WIDTH / 2 - 200, UtilsGui.WINDOW_HEIGHT - 400);
         name.setFont(UtilsGui.FONT3);
+        name.prefWidthProperty().set(400);
+        name.setTextAlignment(TextAlignment.CENTER);
         scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text, name);
         Gui.getStars().stop();
         createTimeLineThread(scene);
         playAllAnim(scene, text, name, handleButtonClick);
         return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+    }
+
+    public void histoire1(HandleClick handleButtonClick) {
+        log.info("hi");
+        Image good = null;
+        try {
+            good = animations.perso()[0].getImage();
+        } catch (IOException e) {
+            log.error("Impossible de charger le perso 1");
+        }
+        ImageView imageViewGood = new ImageView(good);
+        imageViewGood.relocate(100, UtilsGui.WINDOW_HEIGHT / 2 - 100);
+        imageViewGood.setFitWidth(300);
+        imageViewGood.preserveRatioProperty().set(true);
+        Image bad = null;
+        try {
+            bad = animations.perso()[1].getImage();
+        } catch (IOException e) {
+            log.error("Impossible de charger le perso 2");
+        }
+        ImageView imageViewBad = new ImageView(bad);
+        imageViewBad.relocate(UtilsGui.WINDOW_WIDTH - 400, UtilsGui.WINDOW_HEIGHT / 2 - 100);
+        imageViewBad.setFitWidth(300);
+        imageViewBad.preserveRatioProperty().set(true);
+
+        Label textGood = UtilsGui.createLabel(animations.text()[0]);
+        textGood.setWrapText(true);
+        textGood.prefWidthProperty().set(UtilsGui.WINDOW_WIDTH / 2 - 350);
+        textGood.relocate(100, UtilsGui.WINDOW_HEIGHT / 2 - 400);
+        textGood.setLineSpacing(12);
+
+        Label textBad = UtilsGui.createLabel(animations.text()[1]);
+        textBad.setWrapText(true);
+        textBad.prefWidthProperty().set(UtilsGui.WINDOW_WIDTH / 2 - 350);
+        textBad.relocate(UtilsGui.WINDOW_WIDTH / 2 + 300, UtilsGui.WINDOW_HEIGHT / 2 - 200);
+        textBad.setLineSpacing(12);
+
+        Gui.getPane().getChildren().addAll(imageViewGood, imageViewBad, textGood, textBad);
     }
 }

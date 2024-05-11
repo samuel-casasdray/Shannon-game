@@ -320,6 +320,7 @@ public class Gui extends Application {
                 }};
                 Gui.game = new Game(vertices, adjVertices);
                 stage.setScene(run());
+                GuiScene.histoire1(Gui::handleButtonClick);
             }
         }
     }

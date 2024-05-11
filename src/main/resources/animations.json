@@ -1,37 +1,145 @@
-[
-    {
-        "text": ".........................................................................."
-    },
-    {
-        "text": "Hi",
-        "actif": 0,
-        "perso": [
-            {
-                "name": "player",
-                "img": "cap.png",
-                "same": false
-            },
-            {
-                "name": "player2",
-                "img": "cap.png",
-                "same": false
-            }
-        ]
-    },
-    {
-        "text": "Why are you here ??",
-        "actif": 1,
-        "perso": [
-            {
-                "name": "player",
-                "img": "cap.png",
-                "same": true
-            },
-            {
-                "name": "player2",
-                "img": "cap.png",
-                "same": true
-            }
-        ]
-    }
-]
+{
+    "histoire": [
+        {
+            "text": "Il y a un millénaire, la galaxie était prospère, ses routes de commerce reliant des mondes lointains prospéraient. Mais aujourd'hui, une guerre spatiale sévit. D'un côté, < les Gardiens de l'Étoile >, protecteurs des échanges galactiques. De l'autre, < l'Empire des Ombres >, avides de destruction et de chaos."
+        },
+        {
+            "text": "[La scène s'ouvre dans le cockpit d'un vaisseau de guerre des < Gardiens >, Alara et Darian sont en train de surveiller les écrans de contrôle.]"
+        },
+        {
+            "text": "Darian, les < Ombres > sont en train de se rapprocher de la Route de Trade 7. Ils préparent sûrement une embuscade.",
+            "actif": 0,
+            "perso": [
+                {
+                    "name": "< Gardien de l'Etoile > Alara",
+                    "img": "cap.png",
+                    "same": false
+                },
+                {
+                    "name": "< Gardien de l'Etoile > Darian",
+                    "img": "cap.png",
+                    "same": false
+                }
+            ]
+        },
+        {
+            "text": "Nous devons les arrêter avant qu'ils ne causent plus de dégâts. Préparez les chasseurs, nous allons intercepter leur flotte.",
+            "actif": 1,
+            "perso": [
+                {
+                    "name": "< Gardien de l'Etoile > Alara",
+                    "img": "cap.png",
+                    "same": true
+                },
+                {
+                    "name": "< Gardien de l'Etoile > Darian",
+                    "img": "cap.png",
+                    "same": true
+                }
+            ]
+        },
+        {
+            "text": "[De l'autre côté de la galaxie, dans la salle de commandement des < Ombres >, Zephyr et Vex planifient leur prochaine attaque.]"
+        },
+        {
+            "text": "Vex, je veux que vous infiltriez la base des < Gardiens > sur la Planète Delta. Sabotez leurs défenses et ouvrez la voie pour notre attaque.\n\n",
+            "actif": 0,
+            "perso": [
+                {
+                    "name": "< L'Empire des Ombres > Zephyr",
+                    "img": "cap.png",
+                    "same": false
+                },
+                {
+                    "name": "< L'Empire des Ombres > Vex",
+                    "img": "cap.png",
+                    "same": false
+                }
+            ]
+        },
+        {
+            "text": "À vos ordres, Commandant. Je vais semer la confusion parmi eux avant même qu'ils ne sachent ce qui les frappe.",
+            "actif": 1,
+            "perso": [
+                {
+                    "name": "< L'Empire des Ombres > Zephyr",
+                    "img": "cap.png",
+                    "same": true
+                },
+                {
+                    "name": "< L'Empire des Ombres > Vex",
+                    "img": "cap.png",
+                    "same": true
+                }
+            ]
+        },
+        {
+            "text": "[Retour sur le vaisseau des < Gardiens >, Alara et Darian mènent l'attaque contre les < Ombres >, tandis que Vex s'infiltre dans la base verte sur Delta.]"
+        },
+        {
+            "text": "On dirait que les < Ombres > ont sous-estimé notre détermination. Repoussez-les en arrière, ne les laissez pas s'emparer de la Route de Trade 7!",
+            "actif": 0,
+            "perso": [
+                {
+                    "name": "< Gardien de l'Etoile > Alara",
+                    "img": "cap.png",
+                    "same": false
+                },
+                {
+                    "name": "< Gardien de l'Etoile > Darian",
+                    "img": "cap.png",
+                    "same": false
+                }
+            ]
+        },
+        {
+            "text": "Nous avons réussi à les repousser, mais nous devons nous assurer qu'ils ne reviennent pas. Alara, préparez-vous à poursuivre l'ennemi.",
+            "actif": 1,
+            "perso": [
+                {
+                    "name": "< Gardien de l'Etoile > Alara",
+                    "img": "cap.png",
+                    "same": true
+                },
+                {
+                    "name": "< Gardien de l'Etoile > Darian",
+                    "img": "cap.png",
+                    "same": true
+                }
+            ]
+        },
+        {
+            "text": "[Sur Delta, Vex active les charges explosives, causant la panique parmi les < Gardiens >.]"
+        },
+        {
+            "text": "La base est en train de tomber! Les < Gardiens > ne pourront pas nous arrêter cette fois-ci!",
+            "actif": 0,
+            "perso": [
+                {
+                    "name": "< L'Empire des Ombres > Vex",
+                    "img": "cap.png",
+                    "same": false
+                }
+            ]
+        },
+        {
+            "text": "[La bataille fait rage dans l'espace et sur terre, les forces des < Gardiens > et des < Ombres > s'affrontent violemment. La victoire semble incertaine, mais le dévouement des < Gardiens > à protéger les routes de commerce galactiques reste leur plus grande arme.]"
+        }
+    ],
+    "perso": [
+        {
+            "name": "< Gardien de l'Etoile > Darian",
+            "img": "cap.png",
+            "same": false
+        },
+        {
+            "name": "< L'Empire des Ombres > Vex",
+            "img": "cap.png",
+            "same": false
+        }
+    ],
+    "text": [
+        "En tant que nouvelle recrue des Gardiens, ton role est d'empecher les < Ombres > d'isoler certaines planetes. Tu dois donc sécuriser en coloriant une route reliant toutes les planetes entre elles !",
+        "Mon but est d'isoler des planetes et donc de faire 2 graphes séparés"
+    ]
+}

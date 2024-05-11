@@ -3,38 +3,40 @@ package fr.projet.gui;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Objects;
 
-import com.fasterxml.jackson.core.exc.StreamReadException;
-import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javafx.scene.image.Image;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public record AnimationType(String text, Perso[] perso, int actif) {
+public record Animations(AnimationType[] histoire, Perso[] perso, String[] text) {
+    static Animations loadAnimations() {
+        ObjectMapper mapper = new ObjectMapper();
+        InputStream is;
+        try {
+            is = Objects.requireNonNull(Animations.class.getResource("/animations.json")).openStream();
+        } catch (IOException e) {
+            log.error("Impossible de charger le fichier : animations.json");
+            return new Animations(new AnimationType[]{}, new Perso[]{}, new String[]{});
+        }
+        try {
+            return mapper.readValue(is, Animations.class);
+        } catch (IOException e) {
+            log.error("Impossible de mapper le fichier animation");
+            return new Animations(new AnimationType[]{}, new Perso[]{}, new String[]{});
+        }
+    }
+}
+
+@Slf4j
+record AnimationType(String text, Perso[] perso, int actif) {
     String getNameActif() {
         if (perso == null || perso.length - 1 < actif) {
             return "";
         }
         return perso[actif].name();
-    }
-
-    static AnimationType[] loadAnimationTypes(String file) {
-        ObjectMapper mapper = new ObjectMapper();
-        InputStream is;
-        try {
-            is = AnimationType.class.getResource("/" + file).openStream();
-        } catch (IOException e) {
-            log.error("Impossible de charger le fichier : " + file);
-            return new AnimationType[0];
-        }
-        try {
-            return mapper.readValue(is, AnimationType[].class);
-        } catch (IOException e) {
-            log.error("Impossible de mapper le fichier animation");
-            return new AnimationType[0];
-        }
     }
 }
 
