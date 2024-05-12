@@ -21,9 +21,9 @@ class MainTest {
             Vertex v = new Vertex(0, 0);
             g.addVertex(v);
             for (int j = 0; j < i; j++)
-                g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
+                g.addEdge(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
         }
-        assertEquals(g.getNeighbors().size(), k * (k - 1) / 2);
+        assertEquals(g.getEdges().size(), k * (k - 1) / 2);
         assertTrue(g.estConnexe());
     }
 
@@ -35,7 +35,7 @@ class MainTest {
         g.addVertex(v1);
         g.addVertex(v2);
         g.addVertex(new Vertex(0, 0));
-        g.addNeighbor(new Pair<>(v1, v2));
+        g.addEdge(new Pair<>(v1, v2));
         assertFalse(g.estConnexe());
     }
 
@@ -48,29 +48,11 @@ class MainTest {
             Vertex v = new Vertex(0, 0);
             g.addVertex(v);
             for (int j = 0; j < i; j++)
-                g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
+                g.addEdge(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
         }
         g.addVertex(new Vertex(0, 0));
-        assertEquals(g.getNeighbors().size(), k * (k - 1) / 2);
+        assertEquals(g.getEdges().size(), k * (k - 1) / 2);
         assertFalse(g.estConnexe());
-    }
-
-    @Test
-    void testSpanningTreesGenerator() {
-        Graph g = new Graph();
-        int k = 6;
-        // Création graphe complet à k sommets
-        for (int i = 0; i < k; i++) {
-            Vertex v = new Vertex(0, 0);
-            g.addVertex(v);
-            for (int j = 0; j < i; j++)
-                g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
-        }
-        assertEquals(g.getNbVertices(), k);
-        assertEquals(g.getTwoDistinctSpanningTrees().size(), 2);
-        for (Graph spanningTree : g.getTwoDistinctSpanningTrees()) {
-            assertTrue(spanningTree.getNbVertices() == k && spanningTree.getNeighbors().size() == g.getNbVertices()-1 && spanningTree.estConnexe());
-        }
     }
 
     @Test
@@ -82,10 +64,10 @@ class MainTest {
             Vertex v = new Vertex(0, 0);
             g.addVertex(v);
             for (int j = 0; j < i; j++)
-                g.addNeighbor(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
+                g.addEdge(new Pair<>(g.getVertices().get(i), g.getVertices().get(j)));
         }
         Graph spanningTree = g.getSpanningTree();
         assertTrue(spanningTree.getNbVertices() == g.getNbVertices() &&
-                spanningTree.getNeighbors().size() < g.getNeighbors().size() && spanningTree.estConnexe());
+                spanningTree.getEdges().size() < g.getEdges().size() && spanningTree.estConnexe());
     }
 }

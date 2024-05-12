@@ -34,7 +34,7 @@ public class Minimax extends InterfaceIA {
             link.put(v,i);
             i++;
         }
-        for (Pair<Vertex,Vertex> e : this.graph.getNeighbors()) {
+        for (Pair<Vertex,Vertex> e : this.graph.getEdges()) {
             if (secured.contains(e)) {
                 int val = link.get(e.getKey());
                 int toChange = link.get(e.getValue());
@@ -75,7 +75,7 @@ public class Minimax extends InterfaceIA {
         int d=this.depth-1;
         Pair<Vertex, Vertex> solution = null;
         long res = -1000000000;
-        for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+        for (Pair<Vertex, Vertex> edge : this.graph.getEdges()) {
             if (!securedInit.contains(edge) && !cuttedInit.contains(edge)) {
                 HashSet<Pair<Vertex, Vertex>> cuttedModif = new HashSet<>(cuttedInit);
                 cuttedModif.add(edge);
@@ -97,7 +97,7 @@ public class Minimax extends InterfaceIA {
         int d=this.depth-1;
         Pair<Vertex, Vertex> solution = null;
         int res = 100000;
-        for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+        for (Pair<Vertex, Vertex> edge : this.graph.getEdges()) {
             if (!securedInit.contains(edge) && !cuttedInit.contains(edge)) {
                 HashSet<Pair<Vertex, Vertex>> securedModif = new HashSet<>(securedInit);
                 securedModif.add(edge);
@@ -120,7 +120,7 @@ public class Minimax extends InterfaceIA {
         int val = 0;
         if (player == 1) {
             val = -10000;
-            for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+            for (Pair<Vertex, Vertex> edge : this.graph.getEdges()) {
                 if (!cutted.contains(edge) && !secured.contains(edge)) {
                     HashSet<Pair<Vertex, Vertex>> cuttedSuite = new HashSet<>(cutted);
                     cuttedSuite.add(edge);
@@ -133,7 +133,7 @@ public class Minimax extends InterfaceIA {
             }
         } else {
             val = 10000;
-            for (Pair<Vertex, Vertex> edge : this.graph.getNeighbors()) {
+            for (Pair<Vertex, Vertex> edge : this.graph.getEdges()) {
                 if (!cutted.contains(edge) && !secured.contains(edge)) {
                     HashSet<Pair<Vertex, Vertex>> securedSuite = new HashSet<>(secured);
                     securedSuite.add(edge);

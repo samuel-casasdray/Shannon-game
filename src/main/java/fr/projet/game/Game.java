@@ -395,7 +395,7 @@ public void deleteCuttedEdge() {
 
     public boolean cutWon() {
         if (cutWon) return true;
-        Graph notCuttedGraph = new Graph(getGraph().getNeighbors());
+        Graph notCuttedGraph = new Graph(getGraph().getEdges());
         for (Pair<Vertex, Vertex> edge : getCutted()) {
             notCuttedGraph.removeNeighbor(edge);
         }

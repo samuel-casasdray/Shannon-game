@@ -588,7 +588,7 @@ public class Gui extends Application {
     public static void showGraph() {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
-        for (Pair<Vertex, Vertex> pair : Gui.game.getGraph().getNeighbors()) {
+        for (Pair<Vertex, Vertex> pair : Gui.game.getGraph().getEdges()) {
             int Ax = pair.getKey().getCoords().getKey();
             int Ay = pair.getKey().getCoords().getValue();
             int Bx = pair.getValue().getCoords().getKey();
