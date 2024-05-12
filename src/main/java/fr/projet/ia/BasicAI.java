@@ -17,7 +17,7 @@ public class BasicAI extends InterfaceIA {
     public Pair<Vertex, Vertex> playCUT() {
         Set<Pair<Vertex, Vertex>> edges = new HashSet<>();
         Set<Pair<Vertex, Vertex>> notCutted = new HashSet<>();
-        for (Pair<Vertex, Vertex> edge : game.getGraph().getNeighbors()) {
+        for (Pair<Vertex, Vertex> edge : game.getGraph().getEdges()) {
             if (!game.isCutted(edge) && !game.isSecured(edge)) {
                 edges.add(edge);
             }
@@ -29,7 +29,7 @@ public class BasicAI extends InterfaceIA {
         for (Pair<Vertex, Vertex> edge : edges) {
             notCuttedGraph.removeNeighbor(edge);
             if (!notCuttedGraph.estConnexe()) return edge;
-            notCuttedGraph.addNeighbor(edge);
+            notCuttedGraph.addEdge(edge);
         }
         return edges.iterator().next();
     }
@@ -38,14 +38,14 @@ public class BasicAI extends InterfaceIA {
     public Pair<Vertex, Vertex> playSHORT() {
         Set<Pair<Vertex, Vertex>> edges = new HashSet<>();
         Set<Pair<Vertex, Vertex>> redEdges = game.getSecured();
-        for (Pair<Vertex, Vertex> edge : game.getGraph().getNeighbors()) {
+        for (Pair<Vertex, Vertex> edge : game.getGraph().getEdges()) {
             if (!game.isCutted(edge) && !game.isSecured(edge)) {
                 edges.add(edge);
             }
         }
         Graph redGraph = new Graph(redEdges);
         for (Pair<Vertex, Vertex> edge : edges) {
-            redGraph.addNeighbor(edge);
+            redGraph.addEdge(edge);
             if (game.getGraph().estCouvrant(redGraph)) return edge;
             redGraph.removeNeighbor(edge);
         }

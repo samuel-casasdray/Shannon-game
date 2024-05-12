@@ -18,7 +18,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -35,8 +34,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
-import java.net.URL;
-import java.util.*;
 
 @Slf4j
 @UtilityClass
@@ -138,7 +135,7 @@ public class GuiScene {
         slider2.setLayoutX(300);
         slider2.setLayoutY(0);
         //création des boutons d'option de jeu
-        Button button1 = UtilsGui.createButton("Jouer vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA), false);
+        Button button1 = UtilsGui.createButton("Joueur vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA), false);
         Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO), false);
         Button button3 = UtilsGui.createButton("Joueur vs Joueur Local", event -> handleButtonClick.call(ButtonClickType.HOME_PVPL), false);
         Button button4 = UtilsGui.createButton("IA vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_IAVIA), false);
@@ -226,16 +223,6 @@ public class GuiScene {
         return root;
     }
 
-    public Background getBackground() {
-        String name = "bg.jpg";
-        URL ressource = GuiScene.class.getClassLoader().getResource(name);
-        if(Objects.isNull(ressource)) {
-            log.error("Impossible de recupérer la ressource : " + name);
-            return null;
-        }
-        Image image = new Image(ressource.toExternalForm());
-        return new Background(new BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false)));
-    }
     public Scene pvp(HandleClick handleButtonClick, JoinCreateField joinField, JoinCreateField createField) {
 
         Pane scene = getBasicScene();
@@ -264,6 +251,7 @@ public class GuiScene {
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         UtilsGui.addEnterOnText(textJoin, event -> joinField.call(textJoin));
         Spinner<Integer> nbVertices = new Spinner<>(5,40,20);
+        nbVertices.setEditable(true);
         Text code = UtilsGui.createText("");
         Text textNbVertices = UtilsGui.createText("Nombre de sommets");
         Text textCreate = UtilsGui.createText(" ");
@@ -301,12 +289,16 @@ public class GuiScene {
                                 finalClient.set(new WebSocketClient(finalNbSommets, turn));
                                 Optional<Long> gameCode = Optional.of(finalClient.get().getId());
                                 Gui.setGameCode(gameCode);
-                                code.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
-                                code.setFill(Color.WHITE);
+                                Platform.runLater(() -> {
+                                    code.setText("Code de la partie: " + StringUtils.rightPad(String.valueOf(gameCode.get()), 4));
+                                    code.setFill(Color.WHITE);
+                                });
                                 createField.call(finalClient.get());
                             } catch (IOException e) {
-                                code.setText("Vérifiez votre connexion internet");
-                                code.setFill(Color.RED);
+                                Platform.runLater(() -> {
+                                    code.setText("Vérifiez votre connexion internet");
+                                    code.setFill(Color.RED);
+                                });
                             }
                             catch (URISyntaxException e) {
                                 log.error("Erreur lors de la création de la partie", e);
@@ -461,10 +453,12 @@ public class GuiScene {
 
     }
 
-    public Scene nbVertices(HandleClick handleButtonClick, boolean IA) {
+    public Scene nbVertices(HandleClick handleButtonClick, boolean IA, Level level) {
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe",true);
-        Spinner<Integer> spinner = new Spinner<>(5, 40, 20);
+        int minVertices = 5;
+        if (level == Level.STRAT_WIN) minVertices = 6;
+        Spinner<Integer> spinner = new Spinner<>(minVertices, 40, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
         Button enter = UtilsGui.createButton("Confirmer",e -> {
@@ -488,7 +482,6 @@ public class GuiScene {
         Gui.getStars().stop();
         createTimeLineThread(root);
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
-
     }
 
     public Scene stats(HandleClick handleButtonClick) {

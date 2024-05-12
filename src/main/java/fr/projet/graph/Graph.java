@@ -30,13 +30,13 @@ public class Graph {
     private Map<Vertex, HashSet<Vertex>> adjVertices = new HashMap<>();
 
     @Getter
-    private Set<Pair<Vertex, Vertex>> neighbors = new HashSet<>();
+    private Set<Pair<Vertex, Vertex>> edges = new HashSet<>();
     public Graph(Collection<Pair<Vertex, Vertex>> neighbors) {
         Set<Vertex> vertexSet = new HashSet<>();
         for (Pair<Vertex, Vertex> element : neighbors) {
             vertexSet.add(element.getKey());
             vertexSet.add(element.getValue());
-            addNeighbor(element);
+            addEdge(element);
         }
         this.vertices = new ArrayList<>(vertexSet);
         this.nbVertices = vertexSet.size();
@@ -48,7 +48,7 @@ public class Graph {
         }
         for (Map.Entry<Vertex, HashSet<Vertex>> entry : adjVertices.entrySet()) {
             for (Vertex v : entry.getValue()) {
-                addNeighbor(new Pair<>(entry.getKey(), v));
+                addEdge(new Pair<>(entry.getKey(), v));
             }
         }
     }
@@ -75,7 +75,7 @@ public class Graph {
         for (HashSet<Vertex> listVertex : getAdjVertices().values()) {
             listVertex.remove(v);
         }
-        neighbors.removeIf(neighbor -> neighbor.getKey().equals(v) || neighbor.getValue().equals(v));
+        edges.removeIf(neighbor -> neighbor.getKey().equals(v) || neighbor.getValue().equals(v));
     }
 
     public int getNbVertices() {return getVertices().size();}
@@ -119,7 +119,7 @@ public class Graph {
                 Vertex v2 = getVertices().get(j);
                 if (getAdjVertices().get(v).contains(v2)) continue; // Si les sommets sont déjà reliés, on passe
                 boolean intersect = false;
-                for (Pair<Vertex, Vertex> neighbor : getNeighbors()) {
+                for (Pair<Vertex, Vertex> neighbor : getEdges()) {
                     if (!neighbor.getValue().equals(v) && !neighbor.getValue().equals(v2) && !neighbor.getKey().equals(v) && !neighbor.getKey().equals(v2) && intersect(v.getX(), v.getY(), v2.getX(), v2.getY(),
                             neighbor.getKey().getX(), neighbor.getKey().getY(), neighbor.getValue().getX(), neighbor.getValue().getY())) {
                         intersect = true;
@@ -129,7 +129,7 @@ public class Graph {
                 if (!intersect && !thereAreACircleCollision(radius, v, v2) && (degree(v) < maxDeg && degree(v2) < maxDeg))
                 {
                     Pair<Vertex, Vertex> neighbor = new Pair<>(v, v2);
-                    addNeighbor(neighbor);
+                    addEdge(neighbor);
                     edges.add(neighbor); // Permet de synchroniser dans le cas des games en ligne
                 }
             }
@@ -160,20 +160,20 @@ public class Graph {
         int compteur=0;
         generateGraphPlanaire(7, 3);
         int tailleMax = 2*(this.vertices.size()-1)-1;
-        while (this.neighbors.size()>tailleMax) {
+        while (this.edges.size()>tailleMax) {
             compteur+=1;
             //System.out.println(this.neighbors.size());
-            int x=random.nextInt(this.neighbors.size());
-            HashSet<Pair<Vertex, Vertex>> save = new HashSet<>(this.getNeighbors());
-            List<Pair<Vertex, Vertex>> newVertice = new ArrayList<>(this.neighbors);
+            int x=random.nextInt(this.edges.size());
+            HashSet<Pair<Vertex, Vertex>> save = new HashSet<>(this.getEdges());
+            List<Pair<Vertex, Vertex>> newVertice = new ArrayList<>(this.edges);
             newVertice.remove(x);
-            this.neighbors= new HashSet<>(newVertice);
+            this.edges = new HashSet<>(newVertice);
             System.out.println("A : "+this.minDeg());
             if (this.minDeg()<2) {
-                this.neighbors=new HashSet<>(save);
+                this.edges =new HashSet<>(save);
             }
             System.out.println("B : "+this.minDeg());
-            if (compteur>=this.neighbors.size()*10) {
+            if (compteur>=this.edges.size()*10) {
                 System.out.println("OOOOH");
                 graphForCUT();
             }
@@ -186,7 +186,7 @@ public class Graph {
         int compteur=0;
         generateGraphPlanaire(7, 3);
         Graph tree = getSpanningTree();
-        if (difference((HashSet<Pair<Vertex, Vertex>>) tree.getNeighbors())) {
+        if (difference((HashSet<Pair<Vertex, Vertex>>) tree.getEdges())) {
             graphForSHORT();
         }
     }
@@ -276,18 +276,18 @@ public class Graph {
     }
 
     public void removeNeighbor(Pair<Vertex, Vertex> edge) {
-        neighbors.remove(edge);
-        neighbors.remove(new Pair<>(edge.getValue(), edge.getKey()));
+        edges.remove(edge);
+        edges.remove(new Pair<>(edge.getValue(), edge.getKey()));
         if (adjVertices.containsKey(edge.getKey()))
             adjVertices.get(edge.getKey()).remove(edge.getValue());
         if (adjVertices.containsKey(edge.getValue()))
             adjVertices.get(edge.getValue()).remove(edge.getKey());
     }
 
-    public void addNeighbor(Pair<Vertex, Vertex> edge) {
-        if (!neighbors.contains(new Pair<>(edge.getValue(), edge.getKey())))
+    public void addEdge(Pair<Vertex, Vertex> edge) {
+        if (!edges.contains(new Pair<>(edge.getValue(), edge.getKey())))
         {
-            boolean contained = neighbors.add(edge);
+            boolean contained = edges.add(edge);
             if (!contained) return;
         }
         else return;
@@ -307,7 +307,7 @@ public class Graph {
 
 
     public void printGraph () { //Affiche le graphe dans la console (pour debuguer surtout)
-        for (Pair<Vertex, Vertex> element : neighbors) {
+        for (Pair<Vertex, Vertex> element : edges) {
             log.info("Arrete : "+element.getKey().toString()+element.getValue().toString());
         }
         log.info(ToStringBuilder.reflectionToString(this.vertices));
@@ -319,7 +319,7 @@ public class Graph {
 
     public boolean difference (Set<Pair<Vertex, Vertex>> cutted) { //true si this\cutted est non connexe
         Set<Pair<Vertex, Vertex>> verticeNew = new HashSet<>();
-        for (Pair<Vertex, Vertex> edge : neighbors) {
+        for (Pair<Vertex, Vertex> edge : edges) {
             if (!cutted.contains(edge)) {
                 verticeNew.add(edge);
             }
@@ -331,110 +331,6 @@ public class Graph {
         }
 
         return !toTest.estConnexe();
-    }
-
-    private List<List<Integer>> cartesianProduct(List<List<Integer>> lists) {
-        List<List<Integer>> resultLists = new ArrayList<>();
-        if (lists.isEmpty()) {
-            resultLists.add(new ArrayList<>());
-            return resultLists;
-        } else {
-            List<Integer> firstList = lists.getFirst();
-            List<List<Integer>> remainingLists = cartesianProduct(lists.subList(1, lists.size()));
-            for (Integer condition : firstList) {
-                for (List<Integer> remainingList : remainingLists) {
-                    List<Integer> resultList = new ArrayList<>();
-                    resultList.add(condition);
-                    resultList.addAll(remainingList);
-                    resultLists.add(resultList);
-                }
-            }
-        }
-        return resultLists;
-    }
-    private List<Graph> spanTrees(List<List<Integer>> trs, List<List<List<Integer>>> edg, int k, Map<Integer, Pair<Integer, Integer>> edgNum) {
-        if (k == 0) {
-            List<List<Integer>> productResult = cartesianProduct(trs);
-            // Code pour renvoyer deux arbres couvrants par énumération
-            // On prend le graphe moins l'arbre couvrant (=diff)
-            // On prend un arbre couvrant de diff
-            // Si cet arbre est couvrant du graphe de base alors on a trouvé deux arbres couvrants disjoints
-            for (List<Integer> tree : productResult) {
-                Graph spanningTree = new Graph();
-                for (Integer t : tree) {
-                    Pair<Integer, Integer> edgeIndices = edgNum.get(t);
-                    Vertex v1 = getVertices().get(edgeIndices.getKey());
-                    Vertex v2 = getVertices().get(edgeIndices.getValue());
-                    spanningTree.addNeighbor(new Pair<>(v1, v2));
-                }
-                boolean isNotPossibleToGetASecondSpanningTree = false;
-                for (Vertex v : spanningTree.getVertices()) {
-                    if (spanningTree.getAdjVertices().get(v).size() == getAdjVertices().get(v).size())
-                    {
-                        isNotPossibleToGetASecondSpanningTree = true; // Si un sommet d'un arbre couvrant a le même degré que le graphe de base,
-                        break;  // cela veut dire qu'il ne peut pas y avoir de second arbre couvrant disjoint de celui-ci
-                    }   // car le graphe complémentaire ne contiendrait pas ce sommet
-                }
-                if (isNotPossibleToGetASecondSpanningTree) continue;
-                Graph diff = new Graph();
-                for (Pair<Vertex, Vertex> edge : getNeighbors()) {
-                    if (!spanningTree.getAdjVertices().get(edge.getKey()).contains(edge.getValue())) {
-                        diff.addNeighbor(edge);
-                    }
-                }
-                // Second spanning tree ?
-                Graph kruskal = diff.getSpanningTree();
-                if (kruskal.getNbVertices() == getNbVertices() && kruskal.estConnexe()) // yes
-                    return Arrays.asList(spanningTree, kruskal);
-            }
-        }
-            for (int i = 0; i < k; i++) {
-                if (edg.get(k).get(i).isEmpty()) continue;
-                trs.add(edg.get(k).get(i));
-                List<List<Integer>> concat = new ArrayList<>();
-                for (int j = 0; j < i; j++) {
-                    List<Integer> tempList = new ArrayList<>();
-                    tempList.addAll(edg.get(i).get(j));
-                    tempList.addAll(edg.get(k).get(j));
-                    concat.add(tempList);
-                }
-                edg.set(i, concat);
-                List<Graph> spanningTrees = spanTrees(trs, edg, k - 1, edgNum);
-                if (!spanningTrees.isEmpty()) return spanningTrees;
-                trs.removeLast();
-                for (int j = 0; j < i; j++) {
-                    for (int m = 0; m < edg.get(k).get(j).size(); m++) {
-                        edg.get(i).get(j).removeLast();
-                    }
-                }
-            }
-            return new ArrayList<>();
-        }
-
-    // Algorithme permettant d'énumérer tous les arbres couvrants trouvé ici :
-    // Tag, M. A., & Mansour, M. E. (2019). Automatic computing of the grand potential in finite temperature many-body
-    // perturbation theory. International Journal of Modern Physics C, 30(11), 1950100.
-    public List<Graph> getTwoDistinctSpanningTrees() {
-        if (!estConnexe()) return new ArrayList<>();
-        int n = getNbVertices();
-        List<List<List<Integer>>> edg = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            edg.add(new ArrayList<>(Collections.nCopies(n, new ArrayList<>())));
-        }
-        int mx = getNeighbors().size();
-        Map<Integer, Pair<Integer, Integer>> edgNum = new HashMap<>();
-        for (Pair<Vertex, Vertex> ed : getNeighbors()) {
-            int index1 = getVertices().indexOf(ed.getKey());
-            int index2 = getVertices().indexOf(ed.getValue());
-            int i = Math.min(index1, index2);
-            int j = Math.max(index1, index2);
-            List<Integer> lMx = new ArrayList<>();
-            lMx.add(mx);
-            edg.get(j).set(i, lMx);
-            edgNum.put(mx, new Pair<>(i, j));
-            mx--;
-        }
-        return spanTrees(new ArrayList<>(), edg, n-1, edgNum);
     }
 
     public Graph getSpanningTree() {
@@ -457,8 +353,6 @@ public class Graph {
         }
         return new Graph(edges);
     }
-
-
 
     public String toString() {
         StringBuilder r = new StringBuilder();
@@ -507,7 +401,7 @@ public class Graph {
 
     public List<Pair<Integer,Integer>> printNeib () {
         List<Pair<Integer,Integer>> tab = new ArrayList<>();
-        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+        for (Pair<Vertex,Vertex> e : this.getEdges()) {
             Pair<Integer,Integer> p = new Pair<>(this.getVertices().indexOf(e.getKey()),this.getVertices().indexOf(e.getValue()));
             tab.add(p);
         }
@@ -526,8 +420,8 @@ public class Graph {
 
     public Graph soustraction (Graph dif) {
         HashSet <Pair<Vertex, Vertex>> newNeib = new HashSet<>();
-        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
-            if (!dif.getNeighbors().contains(e) && !dif.getNeighbors().contains(reverseEdge(e))) {
+        for (Pair<Vertex,Vertex> e : this.getEdges()) {
+            if (!dif.getEdges().contains(e) && !dif.getEdges().contains(reverseEdge(e))) {
                 newNeib.add(e);
             }
         }
@@ -545,7 +439,7 @@ public class Graph {
         boolean result = true;
         for (ArrayList<Vertex> partition : P) {
             HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
-            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+            for (Pair<Vertex, Vertex> edge : this.getEdges()) {
                 if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
                     newNeib.add(edge);
                 }
@@ -579,7 +473,7 @@ public class Graph {
         ArrayList<Graph> res = new ArrayList<>();
         for (ArrayList<Vertex> partition : P) {
             HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
-            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+            for (Pair<Vertex, Vertex> edge : this.getEdges()) {
                 if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
                     newNeib.add(edge);
                 }
@@ -648,7 +542,7 @@ public class Graph {
             if (!contientTab(newP,comp)) {
                 newP.add(comp);
                 ArrayList<Pair<Vertex,Vertex>> newNeib = new ArrayList<>();
-                for (Pair<Vertex,Vertex> e : G.getNeighbors()) {
+                for (Pair<Vertex,Vertex> e : G.getEdges()) {
                     if (comp.contains(e.getKey()) && comp.contains(e.getValue())) {
                         newNeib.add(e);
                     }
@@ -669,7 +563,7 @@ public class Graph {
     public Pair<Graph,Map<Pair<Vertex,Vertex>,Integer>> getT (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, int actualLevel) {
         HashSet<Pair<Vertex, Vertex>> newNeib = new HashSet<>();
         for (ArrayList<Vertex> partition : P) {
-            for (Pair<Vertex, Vertex> edge : this.getNeighbors()) {
+            for (Pair<Vertex, Vertex> edge : this.getEdges()) {
                 if (partition.contains(edge.getValue()) && partition.contains(edge.getKey())) {
                     newNeib.add(edge);
                 }
@@ -694,11 +588,11 @@ public class Graph {
 
 
     public Pair<Vertex,Vertex> cycle (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels) {
-        Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
+        Pair<Vertex,Vertex> res = this.getEdges().iterator().next();
         int level = 100000000;
         for (Graph G : composantesConnexeGraph(this)) {
-            for (Pair<Vertex, Vertex> e : G.getNeighbors()) {
-                HashSet<Pair<Vertex, Vertex>> newV = new HashSet(this.getNeighbors());
+            for (Pair<Vertex, Vertex> e : G.getEdges()) {
+                HashSet<Pair<Vertex, Vertex>> newV = new HashSet(this.getEdges());
                 newV.remove(e);
                 boolean betweenTwo = true;
                 for (ArrayList<Vertex> part : P) {
@@ -728,17 +622,17 @@ public class Graph {
                 }
             }
         }
-        if (!this.getNeighbors().contains(res)) {
+        if (!this.getEdges().contains(res)) {
             res=reverseEdge(res);
         }
         return res;
     }
 
     public Pair<Vertex,Vertex> cycleForT1 (ArrayList<ArrayList<Vertex>> P, Map<Pair<Vertex,Vertex>,Integer> levels, Pair<Vertex,Vertex> stay) {
-        Pair<Vertex,Vertex> res = this.getNeighbors().iterator().next();
+        Pair<Vertex,Vertex> res = this.getEdges().iterator().next();
         int level = 100000000;
-        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
-            HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getNeighbors());
+        for (Pair<Vertex,Vertex> e : this.getEdges()) {
+            HashSet<Pair<Vertex,Vertex>> newV = new HashSet(this.getEdges());
             newV.remove(e);
             Graph newG = new Graph(newV);
             for (Vertex v : this.getVertices()) {
@@ -766,7 +660,7 @@ public class Graph {
 
 
     public Graph copy () {
-        Graph res = new Graph(this.getNeighbors());
+        Graph res = new Graph(this.getEdges());
         for (Vertex v : this.getVertices()) {
             if (!res.getVertices().contains(v)) {
                 res.addVertex(v);
@@ -785,7 +679,7 @@ public class Graph {
 
         //On créé les levels et on dit que le level actuel est de 1
         Map<Pair<Vertex,Vertex>,Integer> levels = new HashMap<>();
-        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+        for (Pair<Vertex,Vertex> e : this.getEdges()) {
             levels.put(e,1000000);
         }
         int actualLevel=1;
@@ -834,7 +728,7 @@ public class Graph {
         //On regarde combien il y a d'arêtes à couper et on les stockes
         ArrayList<Pair<Vertex,Vertex>> toCut = new ArrayList<>();
         int compteur = 0;
-        for (Pair<Vertex,Vertex> e : this.getNeighbors()) {
+        for (Pair<Vertex,Vertex> e : this.getEdges()) {
             boolean cutable = true;
             for (ArrayList<Vertex> partie : P) {
                 if (partie.contains(e.getValue()) && partie.contains(e.getKey())) {
@@ -855,10 +749,10 @@ public class Graph {
         //là faut trouver le cycle et l'arrete on utilise une fonction qui trouve l'arrête
         Pair<Vertex,Vertex> toRemove = T2.cycle(P,levels);
         T2.removeNeighbor(toRemove);
-        T1.addNeighbor(toRemove);
+        T1.addEdge(toRemove);
         Pair<Vertex,Vertex> toRemT1 = T1.cycleForT1(P,levels,toRemove);
         T1.removeNeighbor(toRemT1);
-        T2.addNeighbor(toRemT1);
+        T2.addEdge(toRemT1);
         return winningStrat(T1.copy(),T2.copy());
     }
 

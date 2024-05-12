@@ -15,7 +15,7 @@ public class WinnerStrat extends InterfaceIA {
     private Graph T2;
     public WinnerStrat(Game game, Turn plays, List<Graph> stratGagnante) {
         super(game, plays);
-        this.toCut = stratGagnante.getFirst().getNeighbors();
+        this.toCut = stratGagnante.getFirst().getEdges();
         this.T1 = stratGagnante.getFirst();
         this.T2 = stratGagnante.get(1);
     }
@@ -40,15 +40,15 @@ public class WinnerStrat extends InterfaceIA {
 
     public Graph modEgdeGraph (Graph g, Set<Pair<Vertex,Vertex>> edgesAdd, Set<Pair<Vertex,Vertex>> edgesDel) {
         for (Pair<Vertex,Vertex> e : edgesAdd) {
-            if (!g.getNeighbors().contains(e) && !g.getNeighbors().contains(Graph.reverseEdge(e))) {
-                g.addNeighbor(e);
+            if (!g.getEdges().contains(e) && !g.getEdges().contains(Graph.reverseEdge(e))) {
+                g.addEdge(e);
             }
         }
         for (Pair<Vertex,Vertex> e : edgesDel) {
-            if (g.getNeighbors().contains(e)) {
+            if (g.getEdges().contains(e)) {
                 g.removeNeighbor(e);
             }
-            if (g.getNeighbors().contains(Graph.reverseEdge(e))) {
+            if (g.getEdges().contains(Graph.reverseEdge(e))) {
                 g.removeNeighbor(Graph.reverseEdge(e));
             }
         }
@@ -66,20 +66,20 @@ public class WinnerStrat extends InterfaceIA {
         Graph T1mod = modEgdeGraph(T1.copy(),securedInit,cuttedInit);
         Graph T2mod = modEgdeGraph(T2.copy(),securedInit,cuttedInit);
         if (T1mod.estConnexe() && T2mod.estConnexe()) {
-            for (Pair<Vertex,Vertex> e : graph.getNeighbors()) {
+            for (Pair<Vertex,Vertex> e : graph.getEdges()) {
                 if (!securedInit.contains(e) && !cuttedInit.contains(e)) {
                     return e;
                 }
             }
         }
         if (!T1mod.estConnexe()) {
-            for (Pair<Vertex, Vertex> e : T2mod.getNeighbors()) {
-                boolean allReadyIn = T1mod.getNeighbors().contains(e) || T1mod.getNeighbors().contains(Graph.reverseEdge(e));
+            for (Pair<Vertex, Vertex> e : T2mod.getEdges()) {
+                boolean allReadyIn = T1mod.getEdges().contains(e) || T1mod.getEdges().contains(Graph.reverseEdge(e));
                 if (!allReadyIn) {
-                    T1mod.addNeighbor(e);
+                    T1mod.addEdge(e);
                 }
                 if (T1mod.estConnexe() && !securedInit.contains(e) && !cuttedInit.contains(e) && !securedInit.contains(Graph.reverseEdge(e)) && !cuttedInit.contains(Graph.reverseEdge(e))) {
-                    if (graph.getNeighbors().contains(Graph.reverseEdge(e))) {
+                    if (graph.getEdges().contains(Graph.reverseEdge(e))) {
                         e = Graph.reverseEdge(e);
                     }
                     return e;
@@ -90,13 +90,13 @@ public class WinnerStrat extends InterfaceIA {
             }
         }
         if (!T2mod.estConnexe()) {
-            for (Pair<Vertex, Vertex> e : T1mod.getNeighbors()) {
-                boolean allReadyIn = T2mod.getNeighbors().contains(e) || T2mod.getNeighbors().contains(Graph.reverseEdge(e));
+            for (Pair<Vertex, Vertex> e : T1mod.getEdges()) {
+                boolean allReadyIn = T2mod.getEdges().contains(e) || T2mod.getEdges().contains(Graph.reverseEdge(e));
                 if (!allReadyIn) {
-                    T2mod.addNeighbor(e);
+                    T2mod.addEdge(e);
                 }
                 if (T2mod.estConnexe() && !securedInit.contains(e) && !cuttedInit.contains(e) && !securedInit.contains(Graph.reverseEdge(e)) && !cuttedInit.contains(Graph.reverseEdge(e))) {
-                    if (graph.getNeighbors().contains(Graph.reverseEdge(e))) {
+                    if (graph.getEdges().contains(Graph.reverseEdge(e))) {
                         e = Graph.reverseEdge(e);
                     }
                     return e;

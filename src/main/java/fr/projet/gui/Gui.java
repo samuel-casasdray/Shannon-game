@@ -160,7 +160,20 @@ public class Gui extends Application {
         Gui.stage = stage;
         try {
             File file = new File("config.txt");
-            FileReader fileReader = new FileReader(file);
+            FileReader fileReader;
+            try {
+                new FileReader(file);
+            }
+            catch (FileNotFoundException e) {
+                FileWriter fileWriter = new FileWriter(file);
+                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+                bufferedWriter.write("0.5");
+                bufferedWriter.newLine();
+                bufferedWriter.write("0.5");
+                bufferedWriter.close();
+                fileWriter.close();
+            }
+            fileReader = new FileReader(file);
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             GuiScene.setVolumeSliderValue(Double.parseDouble(bufferedReader.readLine()));
             GuiScene.setStarsSliderValue(Double.parseDouble(bufferedReader.readLine()));
@@ -191,7 +204,7 @@ public class Gui extends Application {
             case JOUEUR -> stage.setScene(GuiScene.joueur(Gui::handleButtonClick));
             case HOME_PVPL -> {
                 withIA=false;
-                stage.setScene(GuiScene.nbVertices(Gui::handleButtonClick,withIA));
+                stage.setScene(GuiScene.nbVertices(Gui::handleButtonClick, withIA, level));
             }
             case HOME_PVPO -> stage.setScene(
                 GuiScene.pvp(
@@ -203,11 +216,11 @@ public class Gui extends Application {
             case HOME_IAVIA -> stage.setScene(GuiScene.aivsai(Gui::handleButtonClick));
             case JOUEUR_SHORT -> {
                 turn=Turn.CUT;
-                stage.setScene(GuiScene.nbVertices(Gui::handleButtonClick,withIA));
+                stage.setScene(GuiScene.nbVertices(Gui::handleButtonClick,withIA, level));
             }
             case JOUEUR_CUT -> {
                 turn=Turn.SHORT;
-                stage.setScene(GuiScene.nbVertices(Gui::handleButtonClick, withIA));
+                stage.setScene(GuiScene.nbVertices(Gui::handleButtonClick, withIA, level));
             }
             case PVIA_EASY -> {
                 Gui.level = Level.EASY;
@@ -268,6 +281,8 @@ public class Gui extends Application {
     }
 
     private static void leaveGame() {
+        withIA = false;
+        level = null;
         timer.stop();
         stage.setScene(GuiScene.home(Gui::handleButtonClick));
         if (game.isPvpOnline()) {
@@ -588,7 +603,7 @@ public class Gui extends Application {
     public static void showGraph() {
         // Ajout des aretes sur l'affichage
         if (game == null) return; // Cas qui peut survenir si le serveur est off
-        for (Pair<Vertex, Vertex> pair : Gui.game.getGraph().getNeighbors()) {
+        for (Pair<Vertex, Vertex> pair : Gui.game.getGraph().getEdges()) {
             int Ax = pair.getKey().getCoords().getKey();
             int Ay = pair.getKey().getCoords().getValue();
             int Bx = pair.getValue().getCoords().getKey();

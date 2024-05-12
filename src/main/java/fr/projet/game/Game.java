@@ -11,6 +11,7 @@ import fr.projet.ia.Minimax;
 import fr.projet.ia.WinnerStrat;
 import fr.projet.server.HttpsClient;
 import fr.projet.server.WebSocketClient;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -165,13 +166,15 @@ public class Game {
 
     public void aiVsAi() {
         LocalTime time = LocalTime.now();
+        if (interrupted) return;
+        AIPlay(ia, ia2, turn);
         while (!cutWon && !shortWon) {
-            if (interrupted) return;
-            AIPlay(ia, ia2, turn);
             long delay = time.until(LocalTime.now(), ChronoUnit.MILLIS);
             if (delay < AIDelay) {
                 try {
                     Thread.sleep(AIDelay - delay);
+                    if (interrupted) return;
+                    AIPlay(ia, ia2, turn);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -395,7 +398,7 @@ public void deleteCuttedEdge() {
 
     public boolean cutWon() {
         if (cutWon) return true;
-        Graph notCuttedGraph = new Graph(getGraph().getNeighbors());
+        Graph notCuttedGraph = new Graph(getGraph().getEdges());
         for (Pair<Vertex, Vertex> edge : getCutted()) {
             notCuttedGraph.removeNeighbor(edge);
         }

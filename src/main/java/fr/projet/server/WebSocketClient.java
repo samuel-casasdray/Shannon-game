@@ -181,7 +181,6 @@ public class WebSocketClient {
     public void onOpen(Session session) {
         this.session = session;
         closed = false;
-        log.info("Connected to server");
     }
 
     @OnMessage
@@ -218,6 +217,5 @@ public class WebSocketClient {
         if (timer != null)
             timer.cancel();
         closed = true;
-        log.info("Connection closed");
     }
 }
