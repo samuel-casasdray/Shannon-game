@@ -1,10 +1,14 @@
 package fr.projet.gui;
 
+import javafx.animation.Animation;
 import javafx.animation.ScaleTransition;
+import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
@@ -33,7 +37,7 @@ public class UtilsGui {
 
     public static final double CIRCLE_SIZE = 20D;
     public static final double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
-    public static final double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight();
+    public static final double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight()-75;
     public static final int WINDOW_MARGE = (int) (0.1*WINDOW_HEIGHT);
 
 
@@ -60,6 +64,22 @@ public class UtilsGui {
     public Text createText(String content, boolean withShadow) {
         Text text = new Text(content);
         text.setFill(Color.WHITE);
+        if (withShadow) {
+            text.setFont(FONT1);
+            DropShadow dropShadow = new DropShadow();
+            dropShadow.setOffsetX(3.0);
+            dropShadow.setOffsetY(3.0);
+            dropShadow.setColor(Color.GREY);
+            text.setEffect(dropShadow);
+        } else {
+            text.setFont(FONT2);
+        }
+        return text;
+    }
+    public Label createLabel(String content) { return createLabel(content, false); }
+    public Label createLabel(String content, boolean withShadow) {
+        Label text = new Label(content);
+        text.setTextFill(Color.WHITE);
         if (withShadow) {
             text.setFont(FONT1);
             DropShadow dropShadow = new DropShadow();
@@ -122,6 +142,19 @@ public class UtilsGui {
         if(imageView != null)
             returnButton.setGraphic(imageView);
         return returnButton;
+    }
+
+    public static void animationTexte (Node node) {
+        animationTexte(node, 40, 2);
+    }
+    public static void animationTexte (Node node, int n, double time) {
+        TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(time), node);
+        translateTransition.setToY(n); // Déplacement de 50 pixels vers le bas
+        translateTransition.setCycleCount(Animation.INDEFINITE); // Répéter indéfiniment
+        translateTransition.setAutoReverse(true); // Revenir en arrière après chaque itération
+
+        // Démarrer la translation
+        translateTransition.play();
     }
 
 }

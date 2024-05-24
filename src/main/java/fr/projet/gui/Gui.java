@@ -21,8 +21,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
+import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -82,6 +81,9 @@ public class Gui extends Application {
     @Getter
     @Setter
     private static Timeline timer = new Timeline();
+    @Getter
+    @Setter
+    private static Timeline timerText = new Timeline();
     private static final List<ImageView> images = new ArrayList<>();
     private static final CheckBox planetes = new CheckBox("Afficher Planètes");
     @Getter
@@ -277,6 +279,43 @@ public class Gui extends Application {
             case RANKED -> stage.setScene(GuiScene.ranked(Gui::handleButtonClick));
             case LOGIN -> stage.setScene(GuiScene.login(Gui::handleButtonClick));
             case REGISTER -> stage.setScene(GuiScene.register(Gui::handleButtonClick));
+            case HISTOIRE -> stage.setScene(GuiScene.histoire(Gui::handleButtonClick));
+            case LEVEL1 -> {
+                Gui.nbVertices = 4;
+                List<Vertex> vertices = new ArrayList<>() {
+                    {
+                        add(new Vertex(UtilsGui.WINDOW_WIDTH / 2 - 200, UtilsGui.WINDOW_HEIGHT / 2 - 200));
+                        add(new Vertex(UtilsGui.WINDOW_WIDTH / 2 + 200, UtilsGui.WINDOW_HEIGHT / 2 - 200));
+                        add(new Vertex(UtilsGui.WINDOW_WIDTH / 2 - 200, UtilsGui.WINDOW_HEIGHT / 2 + 200));
+                        add(new Vertex(UtilsGui.WINDOW_WIDTH / 2 + 200, UtilsGui.WINDOW_HEIGHT / 2 + 200));
+                    }
+                };
+                Map<Vertex, HashSet<Vertex>> adjVertices = new HashMap<>() {{
+                    put(vertices.get(0), new HashSet<>() {{
+                        add(vertices.get(1));
+                        add(vertices.get(2));
+                        add(vertices.get(3));
+                    }});
+                    put(vertices.get(1), new HashSet<>() {{
+                        add(vertices.get(0));
+                        add(vertices.get(2));
+                        add(vertices.get(3));
+                    }});
+                    put(vertices.get(2), new HashSet<>() {{
+                        add(vertices.get(0));
+                        add(vertices.get(1));
+                        add(vertices.get(3));
+                    }});
+                    put(vertices.get(3), new HashSet<>() {{
+                        add(vertices.get(0));
+                        add(vertices.get(1));
+                        add(vertices.get(2));
+                    }});
+                }};
+                Gui.game = new Game(vertices, adjVertices);
+                stage.setScene(run());
+                GuiScene.histoire1(Gui::handleButtonClick);
+            }
         }
     }
 
@@ -493,7 +532,7 @@ public class Gui extends Application {
                    text1.setX((scene.getWidth() - text1.getLayoutBounds().getWidth()) / 2);
                    text1.setY((scene.getHeight() - text1.getLayoutBounds().getHeight()) / 2);
                    text1.setTextAlignment(TextAlignment.CENTER);
-                   animationTexte(text1);
+                   UtilsGui.animationTexte(text1);
                    pane.getChildren().add(text1);
                } else if (newValue.equals(2)) {
                    Text text2 = UtilsGui.createText("SHORT a gagné !",true);
@@ -501,7 +540,7 @@ public class Gui extends Application {
                    text2.setX((scene.getWidth() - text2.getLayoutBounds().getWidth()) / 2);
                    text2.setY((scene.getHeight() - text2.getLayoutBounds().getHeight()) / 2);
                    text2.setTextAlignment(TextAlignment.CENTER);
-                   animationTexte(text2);
+                   UtilsGui.animationTexte(text2);
                    pane.getChildren().add(text2);
                }
             });
@@ -608,13 +647,24 @@ public class Gui extends Application {
             int Ay = pair.getKey().getCoords().getValue();
             int Bx = pair.getValue().getCoords().getKey();
             int By = pair.getValue().getCoords().getValue();
+            double pas = random.nextDouble() / 200 + 0.0025;
             Line line = new Line(Ax, Ay, Bx, By);
-            line.setStroke(Paint.valueOf("#a2d2ff"));
+            LinearGradient gradient = new LinearGradient(
+                Ax,
+                Bx,
+                Ay,
+                By,
+                false,
+                CycleMethod.NO_CYCLE,
+                new Stop(0, Color.valueOf("ff99c8")),
+                new Stop(1, Color.valueOf("fff"))
+            );
+            line.setStroke(gradient);
             line.setStrokeWidth(5);
             line.setOnMouseClicked(handler);
             line.getProperties().put("pair", pair);
             // Ajout de la ligne sur sur l'affichage
-            pane.getChildren().addAll(line);
+            pane.getChildren().add(line);
             edges.add(new Pair<>(pair, line));
         }
         colorPlanarGraph(game.getGraph());
