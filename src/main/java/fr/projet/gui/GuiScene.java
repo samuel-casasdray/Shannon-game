@@ -226,15 +226,17 @@ public class GuiScene {
             Gui.getStars().stop();
         if (Gui.getEtoiles().isEmpty())
             Gui.setEtoiles(Gui.generer(200));
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
-        {
-            Gui.draw(root);
-            if (Gui.getEtoiles().size() < NB_STARS) {
-                Gui.getEtoiles().addAll(Gui.generer(100));
-            }
-        })));
-        Gui.getStars().setCycleCount(Animation.INDEFINITE);
-        Gui.getStars().play();
+        new Thread(() -> {
+            Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
+            {
+                Gui.draw(root);
+                if (Gui.getEtoiles().size() < NB_STARS) {
+                    Gui.getEtoiles().addAll(Gui.generer(100));
+                }
+            })));
+            Gui.getStars().setCycleCount(Animation.INDEFINITE);
+            Gui.getStars().play();
+        }).start();
         return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
     }
 
