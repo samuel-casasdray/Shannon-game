@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>C:/Users/samue/OneDrive/Bureau/Samuel/Work/FDS/L3 info/HAI606I - Projet de Programmation/Shannon Game/src/main</OriginalElement>
+  <nodes>
+    <node x="53.0" y="360.0">fr.projet.game.Game</node>
+    <node x="212.0" y="286.0">fr.projet.graph.Vertex</node>
+    <node x="-82.0" y="434.0">fr.projet.game.Turn</node>
+    <node x="66.0" y="286.0">fr.projet.gui.UtilsGui</node>
+    <node x="42.0" y="434.0">fr.projet.gui.Gui</node>
+    <node x="36.0" y="64.0">fr.projet.ia.Minimax</node>
+    <node x="-32.75" y="-15.0">fr.projet.ia.InterfaceIA</node>
+    <node x="-82.0" y="212.0">fr.projet.gui.HandleClick</node>
+    <node x="187.0" y="360.0">fr.projet.game.Level</node>
+    <node x="316.0" y="360.0">fr.projet.Main</node>
+    <node x="-82.0" y="286.0">fr.projet.game.TypeJeu</node>
+    <node x="248.0" y="212.0">fr.projet.Callback</node>
+    <node x="-82.0" y="360.0">fr.projet.graph.Graph</node>
+    <node x="120.0" y="138.0">fr.projet.gui.JoinCreateField</node>
+    <node x="-82.0" y="64.0">fr.projet.ia.BasicAI</node>
+    <node x="-82.0" y="138.0">fr.projet.gui.ButtonClickType</node>
+    <node x="188.0" y="-15.0">fr.projet.server.WebSocketClient</node>
+    <node x="92.0" y="212.0">fr.projet.gui.GuiScene</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="fr.projet.ia.BasicAI" target="fr.projet.ia.InterfaceIA" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.5" />
+      <point x="-33.0" y="39.0" />
+      <point x="28.25" y="39.0" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="fr.projet.ia.Minimax" target="fr.projet.ia.InterfaceIA" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.5" />
+      <point x="89.5" y="39.0" />
+      <point x="28.25" y="39.0" />
+      <point x="0.0" y="14.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic" zoom="1.0" showDependencies="false" x="158.5" y="224.0" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

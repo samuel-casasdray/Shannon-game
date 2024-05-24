@@ -14,6 +14,9 @@ public class Vertex {
         this.coords = new Pair<>(x, y);
     }
 
+    public Vertex(double x, double y) {
+        this.coords = new Pair<>((int) x, (int) y);
+    }
 
     public int getX() {
         return getCoords().getKey();

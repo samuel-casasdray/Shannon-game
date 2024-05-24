@@ -75,6 +75,12 @@ public class Game {
       this(20,false, Turn.CUT, Level.EASY); 
     }
 
+    public Game(List<Vertex> vertices, Map<Vertex, HashSet<Vertex>> adjVertices) {
+        nbVertices = vertices.size();
+        graph = new Graph(vertices, adjVertices);
+        Gui.setHandler(this::handleEvent);
+    }
+
     public Game(int nbv, boolean withIA, Turn typeIA, Level level) throws TimeoutException {
         nbVertices = nbv;
         seed = new Random().nextLong();
