@@ -70,7 +70,6 @@ public class Gui extends Application {
     private static final Random random = new Random();
     @Setter
     private static IntegerProperty victoryAchievedProperty= new SimpleIntegerProperty();
-    private static final List<Line> posTransport = new ArrayList<>();
     @Getter
     @Setter
     private static List<Etoile> etoiles = new ArrayList<>();
@@ -85,7 +84,7 @@ public class Gui extends Application {
     @Setter
     private static Timeline timerText = new Timeline();
     private static final List<ImageView> images = new ArrayList<>();
-    private static final CheckBox planetes = new CheckBox("Afficher Planètes");
+    private static final CheckBox planetes = new CheckBox("Afficher planètes");
     @Getter
     private static final Slider slider = new Slider(0, 1, GuiScene.getSlider().getValue());
     @Getter
@@ -497,6 +496,15 @@ public class Gui extends Application {
             pane.getChildren().addAll(root, returnButton, planetes, slider, slider2);
             game.playSound();
         }
+        else if (game.getLevelIACut() != null && game.getLevelIAShort() != null) {
+            GridPane root = new GridPane();
+            root.setAlignment(Pos.CENTER);
+            root.setHgap(80);
+            root.setVgap(0);
+            Text versus = UtilsGui.createText(game.getLevelIACut() + " vs " + game.getLevelIAShort());
+            root.add(versus, 1, 1);
+            pane.getChildren().addAll(root, returnButton, planetes, slider, slider2);
+        }
         else
             pane.getChildren().addAll(returnButton, planetes, slider, slider2);
 
@@ -519,7 +527,7 @@ public class Gui extends Application {
 
         borderPane.setCenter(pane);
         pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
-        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
 
 
         //Ecouteur pour afficher message de victoire

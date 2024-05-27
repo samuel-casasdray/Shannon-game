@@ -190,15 +190,17 @@ public class GuiScene {
             Gui.getStars().setCycleCount(Animation.INDEFINITE);
             Gui.getStars().play();
         }).start();
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public void createTimeLineThread(Pane root) {
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(root);
-        })));
-        Gui.getStars().setCycleCount(Animation.INDEFINITE);
-        Gui.getStars().play();
+        new Thread(() -> {
+            Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+                Gui.draw(root);
+            })));
+            Gui.getStars().setCycleCount(Animation.INDEFINITE);
+            Gui.getStars().play();
+        }).start();
     }
 
     public void createArrowAnim(Pane root) {
@@ -312,7 +314,7 @@ public class GuiScene {
         if (pseudo.length() >= 3) {
             eloPlayer = HttpsClient.getElo(WebSocketClient.getPseudoCUT());
             if (eloPlayer < 0) {
-                return new Scene(new Pane(), UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+                return new Scene(new Pane(), UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
             }
         }
         Text elo = UtilsGui.createText("Elo : " + eloPlayer);
@@ -403,7 +405,7 @@ public class GuiScene {
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene aivsai(HandleClick handleButtonClick) {
@@ -474,7 +476,7 @@ public class GuiScene {
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene joueur(HandleClick handleButtonClick) {
@@ -498,7 +500,7 @@ public class GuiScene {
                 Gui.draw(root))));
         Gui.getStars().setCycleCount(Animation.INDEFINITE);
         Gui.getStars().play();
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
 
     }
 
@@ -527,7 +529,7 @@ public class GuiScene {
                 title, text1, facile, normal, difficile, strat, slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(root);
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
 
     }
 
@@ -562,7 +564,7 @@ public class GuiScene {
                 title, spinner,enter, slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(root);
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene stats(HandleClick handleButtonClick) {
@@ -586,7 +588,7 @@ public class GuiScene {
                     slider, slider2);
             Gui.getStars().stop();
             createTimeLineThread(root);
-            return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+            return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
         }
         response.setText(statsList.getFirst().getAsString());
         cut.setText(statsList.get(1).getAsString());
@@ -616,7 +618,7 @@ public class GuiScene {
                 response, cutText, cut, shortText, shorts, onlineText, online, slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(root);
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene ranked(HandleClick handleButtonClick) {
@@ -632,7 +634,7 @@ public class GuiScene {
                 slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(root);
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene login(HandleClick handleButtonClick) {
@@ -685,7 +687,7 @@ public class GuiScene {
                 UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene register(HandleClick handleButtonClick) {
@@ -752,7 +754,7 @@ public class GuiScene {
                 UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     private void configSliders() {
@@ -822,7 +824,7 @@ public class GuiScene {
         Gui.getStars().stop();
         createTimeLineThread(scene);
         playAllAnim(scene, text, name, handleButtonClick);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public void histoire1(HandleClick handleButtonClick) {
