@@ -9,6 +9,7 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.value.ObservableDoubleValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -27,6 +28,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
+import javafx.util.Pair;
 import javafx.util.StringConverter;
 import javafx.scene.effect.ColorAdjust;
 import lombok.Getter;
@@ -184,6 +186,7 @@ public class GuiScene {
         statsButton.setOnAction(event -> handleButtonClick.call(ButtonClickType.STATS));
         statsButton.setStyle("-fx-background-color: transparent;");
         statsButton.setAlignment(Pos.TOP_RIGHT);
+        UtilsGui.updateOnResize(root, text1, text2, button1, button2, button3, button4, button5, button6, pseudoText, elo, deconnexion);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         text2.setX(UtilsGui.WINDOW_WIDTH/2 - text2.getLayoutBounds().getWidth()/2);
@@ -196,9 +199,9 @@ public class GuiScene {
         button3.setLayoutY(390);
         button4.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
         button4.setLayoutY(460);
-        button5.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
+        button5.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button5.getPrefWidth()/2);
         button5.setLayoutY(530);
-        button6.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button4.getPrefWidth()/2);
+        button6.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button6.getPrefWidth()/2);
         button6.setLayoutY(600);
         pseudoText.setX(UtilsGui.WINDOW_WIDTH/2 - pseudoText.getLayoutBounds().getWidth()/2);
         pseudoText.setY(700);
@@ -253,6 +256,8 @@ public class GuiScene {
         } else {
             Image image = new Image(url.toExternalForm());
             arrow = new ImageView(image);
+            root.widthProperty().addListener((obs, oldVal, newVal) -> arrow.setX(newVal.doubleValue()/ 2 - 10));
+            root.heightProperty().addListener((obs, oldVal, newVal) -> arrow.setY(newVal.doubleValue() - 100));
             arrow.relocate(UtilsGui.WINDOW_WIDTH / 2 - 10, UtilsGui.WINDOW_HEIGHT - 100);
             root.getChildren().add(arrow);
             UtilsGui.animationTexte(arrow, 20, 1);
@@ -350,7 +355,7 @@ public class GuiScene {
         root.setAlignment(Pos.CENTER);
         root.setHgap(90);
         root.setVgap(25);
-        root.setPadding(new Insets(300, 5, 5, 500));
+        root.setPadding(new Insets(300, 5, 5, 5));
         String pseudo = WebSocketClient.getPseudoCUT();
         Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
         int eloPlayer = -1;
@@ -373,8 +378,6 @@ public class GuiScene {
         nbVertices.setEditable(true);
         Text code = UtilsGui.createText("");
         Text textNbVertices = UtilsGui.createText("Nombre de sommets");
-        Text textCreate = UtilsGui.createText(" ");
-        //textCreate.setFont(Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font3.ttf"),30));
 
         Text textTurn = UtilsGui.createText("Choisir son joueur");
         ComboBox<String> choixTurn = new ComboBox<>();
@@ -434,15 +437,60 @@ public class GuiScene {
             root.add(pseudoText, 0, 2);
             root.add(elo, 0, 3);
         }
-        root.add(textJoin, 0, 1);
         root.add(buttonJoin, 0, 0);
-        root.add(textCreate, 1, 3);
+        root.add(textJoin, 0, 1);
         root.add(buttonCreate, 1, 0);
-        root.add(textTurn, 1, 3);
-        root.add(choixTurn, 1, 4);
         root.add(textNbVertices, 1, 1);
         root.add(nbVertices, 1, 2);
+        root.add(textTurn, 1, 3);
+        root.add(choixTurn, 1, 4);
         root.add(code, 1, 5);
+        if (UtilsGui.WINDOW_WIDTH < 800) {
+            root.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - 350./2);
+        } else if (UtilsGui.WINDOW_WIDTH > 800) {
+            root.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - 400);
+        }
+        scene.widthProperty().addListener((obs, oldVal, newVal) -> {
+            if (oldVal.doubleValue() >= 800 && newVal.doubleValue() < 800) {
+                root.getChildren().clear();
+                int i = 0;
+                if (pseudo.length() >= 3)
+                {
+                    root.add(pseudoText, 0, 0);
+                    root.add(elo, 0, 1);
+                    i = 2;
+                }
+                root.add(buttonJoin, 0, i);
+                root.add(textJoin, 0, i+1);
+                root.add(buttonCreate, 0, i+2);
+                root.add(textNbVertices, 0, i+3);
+                root.add(nbVertices, 0, i+4);
+                root.add(textTurn, 0, i+5);
+                root.add(choixTurn, 0, i+6);
+                root.add(code, 0, i+7);
+            } else if (oldVal.doubleValue() <= 800 && newVal.doubleValue() > 800) {
+                root.getChildren().clear();
+                if (pseudo.length() >= 3)
+                {
+                    root.add(pseudoText, 0, 2);
+                    root.add(elo, 0, 3);
+                }
+                root.add(buttonJoin, 0, 0);
+                root.add(textJoin, 0, 1);
+                root.add(buttonCreate, 1, 0);
+                root.add(textNbVertices, 1, 1);
+                root.add(nbVertices, 1, 2);
+                root.add(textTurn, 1, 3);
+                root.add(choixTurn, 1, 4);
+                root.add(code, 1, 5);
+            }
+            if (newVal.doubleValue() < 800) {
+                root.setLayoutX(newVal.doubleValue()/2 - 350./2);
+            } else if (newVal.doubleValue() > 800) {
+                root.setLayoutX(newVal.doubleValue()/2 - 400);
+            }
+        });
+        UtilsGui.updateOnResize(scene, text1);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
@@ -458,7 +506,7 @@ public class GuiScene {
         root.setAlignment(Pos.CENTER);
         root.setHgap(90);
         root.setVgap(25);
-        root.setPadding(new Insets(300, 5, 5, 500));
+        root.setPadding(new Insets(300, 5, 5, 5));
 
         Text text1 = UtilsGui.createText("IA vs IA", true);
         Text textIA1 = UtilsGui.createText("IA CUT");
@@ -505,14 +553,45 @@ public class GuiScene {
             if (event.getCode() == KeyCode.ENTER)
                 buttonCreate.fire();
         });
-        root.add(text1, 0, 1);
-        root.add(textIA1, 1, 0);
-        root.add(textIA2, 2, 0);
-        root.add(choixIA1, 1, 1);
-        root.add(choixIA2, 2, 1);
-        root.add(buttonCreate, 1, 3);
-        root.add(textNbVertices, 2, 2);
-        root.add(spinner, 2, 3);
+        root.add(textIA1, 0, 0);
+        root.add(choixIA1, 0, 1);
+        root.add(buttonCreate, 0, 3);
+        root.add(textIA2, 1, 0);
+        root.add(choixIA2, 1, 1);
+        root.add(textNbVertices, 1, 2);
+        root.add(spinner, 1, 3);
+        if (UtilsGui.WINDOW_WIDTH < 800) {
+            root.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - 350./2);
+        } else if (UtilsGui.WINDOW_WIDTH > 800) {
+            root.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - 400);
+        }
+        scene.widthProperty().addListener((obs, oldVal, newVal) -> {
+            if (oldVal.doubleValue() >= 800 && newVal.doubleValue() < 800) {
+                root.getChildren().clear();
+                root.add(textIA1, 0, 0);
+                root.add(choixIA1, 0, 1);
+                root.add(textIA2, 0, 2);
+                root.add(choixIA2, 0, 3);
+                root.add(textNbVertices, 0, 4);
+                root.add(spinner, 0, 5);
+                root.add(buttonCreate, 0, 7);
+            } else if (oldVal.doubleValue() <= 800 && newVal.doubleValue() > 800) {
+                root.getChildren().clear();
+                root.add(textIA1, 0, 0);
+                root.add(choixIA1, 0, 1);
+                root.add(buttonCreate, 0, 3);
+                root.add(textIA2, 1, 0);
+                root.add(choixIA2, 1, 1);
+                root.add(textNbVertices, 1, 2);
+                root.add(spinner, 1, 3);
+            }
+            if (newVal.doubleValue() < 800) {
+                root.setLayoutX(newVal.doubleValue()/2 - 350./2);
+            } else if (newVal.doubleValue() > 800) {
+                root.setLayoutX(newVal.doubleValue()/2 - 400);
+            }
+        });
+        UtilsGui.updateOnResize(scene, text1);
         text1.setX(UtilsGui.WINDOW_WIDTH/2 - text1.getLayoutBounds().getWidth()/2);
         text1.setY(100);
         scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
@@ -536,6 +615,7 @@ public class GuiScene {
         cutbut.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - cutbut.getPrefWidth()/2);
         cutbut.setLayoutY(400);
         Gui.getStars().stop();
+        UtilsGui.updateOnResize(root, title, text1, shortbut, cutbut);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut);
         Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
                 Gui.draw(root))));
@@ -565,6 +645,7 @@ public class GuiScene {
         difficile.setLayoutY(500);
         strat.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - strat.getPrefWidth()/2);
         strat.setLayoutY(600);
+        UtilsGui.updateOnResize(root, title, text1, facile, normal, difficile, strat);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile, strat);
         Gui.getStars().stop();
         createTimeLineThread(root);
@@ -574,7 +655,7 @@ public class GuiScene {
 
     public Scene nbVertices(HandleClick handleButtonClick, boolean IA, Level level) {
         Pane root = getBasicScene();
-        Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe",true);
+        Text title = UtilsGui.createText("Choisissez le nombre de sommets de votre graphe",true);
         int minVertices = 5;
         if (level == Level.STRAT_WIN) minVertices = 6;
         Spinner<Integer> spinner = new Spinner<>(minVertices, 40, 20);
@@ -590,12 +671,15 @@ public class GuiScene {
             if (event.getCode() == KeyCode.ENTER)
                 enter.fire();
         });
+        title.wrappingWidthProperty().setValue(Math.min(UtilsGui.WINDOW_WIDTH - 100, 900));
+        root.widthProperty().addListener((obs, oldVal, newVal) -> title.wrappingWidthProperty().setValue(Math.min(newVal.doubleValue() - 100, 900)));
+        UtilsGui.updateOnResize(root, title, spinner, enter);
         title.setX(UtilsGui.WINDOW_WIDTH/2 - title.getLayoutBounds().getWidth()/2);
         title.setY(100);
         spinner.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - spinner.getPrefWidth()/2);
-        spinner.setLayoutY(200);
+        spinner.setLayoutY(300);
         enter.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - enter.getPrefWidth()/2);
-        enter.setLayoutY(300);
+        enter.setLayoutY(400);
         if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),title, spinner,enter);
         else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),title, spinner,enter);
         Gui.getStars().stop();
@@ -648,6 +732,7 @@ public class GuiScene {
         online.setY(450);
         online.setFill(Color.RED);
         response.setFill(Color.RED);
+        UtilsGui.updateOnResize(root, response, title, cutText, cut, shortText, shorts, online, onlineText);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
                 response, cutText, cut, shortText, shorts, onlineText, online);
         Gui.getStars().stop();
@@ -663,6 +748,7 @@ public class GuiScene {
         button1.setLayoutY(300);
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - button2.getPrefWidth()/2);
         button2.setLayoutY(400);
+        UtilsGui.updateOnResize(root, button1, button2);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
         Gui.getStars().stop();
         createTimeLineThread(root);
@@ -714,6 +800,7 @@ public class GuiScene {
         password.setLayoutY(250);
         login.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - login.getPrefWidth()/2);
         login.setLayoutY(300);
+        UtilsGui.updateOnResize(scene, title, username, password, login);
         scene.getChildren().addAll(root, title, username, password, login, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
         Gui.getStars().stop();
         createTimeLineThread(scene);
@@ -779,6 +866,7 @@ public class GuiScene {
         passwordRepeat.setLayoutY(300);
         register.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - register.getPrefWidth()/2);
         register.setLayoutY(350);
+        UtilsGui.updateOnResize(scene, title, username, password, passwordRepeat, register);
         scene.getChildren().addAll(root, title, username, password, passwordRepeat, register, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
         Gui.getStars().stop();
         createTimeLineThread(scene);
@@ -790,8 +878,11 @@ public class GuiScene {
         Pane scene = getBasicScene();
         Label text = UtilsGui.createLabel("");
         text.setWrapText(true);
-        text.prefWidthProperty().bind(scene.widthProperty().subtract(800));
-        text.relocate(400, UtilsGui.WINDOW_HEIGHT - 350);
+        text.prefWidthProperty().setValue(900);
+        scene.widthProperty().addListener((obs, oldVal, newVal) -> {
+            text.setLayoutX(newVal.doubleValue()/2 - 450);
+        });
+        scene.heightProperty().addListener((obs, oldVal, newVal) -> text.setLayoutY(newVal.doubleValue() - 350));
         text.setLineSpacing(12);
         Label name = UtilsGui.createLabel("");
         name.relocate(UtilsGui.WINDOW_WIDTH / 2 - 200, UtilsGui.WINDOW_HEIGHT - 400);
@@ -806,7 +897,6 @@ public class GuiScene {
     }
 
     public void histoire1(HandleClick handleButtonClick) {
-        log.info("hi");
         Image good = null;
         try {
             good = animations.perso()[0].getImage();
