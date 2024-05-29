@@ -101,10 +101,7 @@ public class GuiScene {
     private static MediaPlayer typingSound;
 
     public Scene home(HandleClick handleButtonClick) {
-        slider.setValue(starsSliderValue);
-        slider2.setValue(volumeSliderValue);
-        NB_STARS = (int) ((1 - starsSliderValue) * MIN_STARS + MAX_STARS * starsSliderValue);
-        VOLUME = (1 - volumeSliderValue) * MIN_VOLUME + MAX_VOLUME * volumeSliderValue;
+        configSliders();
         Pane root = getBasicScene();
         String pseudo = WebSocketClient.getPseudoCUT();
         Text pseudoText = UtilsGui.createText("Pseudo : " + pseudo);
@@ -118,48 +115,6 @@ public class GuiScene {
         Text elo = UtilsGui.createText("Elo : " + eloPlayer);
         Text text1 = UtilsGui.createText("SHANNON GAME", true);
         Text text2 = UtilsGui.createText("Choisissez votre mode de jeu :");
-        slider.setLayoutX(100);
-        slider.setLayoutY(0);
-        slider.setMinorTickCount(0);
-        slider.setMajorTickUnit(1);
-        slider.setShowTickMarks(true);
-        slider.setShowTickLabels(true);
-        slider.setLabelFormatter(new StringConverter<>() {
-            @Override
-            public String toString(Double n) {
-                if (n < 0.5) return "Less stars";
-                return "More stars";
-            }
-
-            @Override
-            public Double fromString(String s) {
-                if (s.equals("Less stars")) {
-                    return 0d;
-                }
-                return 1d;
-            }
-        });
-        slider2.setMinorTickCount(0);
-        slider2.setMajorTickUnit(1.5);
-        slider2.setShowTickMarks(true);
-        slider2.setShowTickLabels(true);
-        slider2.setLabelFormatter(new StringConverter<>() {
-            @Override
-            public String toString(Double n) {
-                if (n < 0.5) return "-";
-                return "+";
-            }
-
-            @Override
-            public Double fromString(String s) {
-                if (s.equals("-")) {
-                    return 0d;
-                }
-                return 1.5d;
-            }
-        });
-        slider2.setLayoutX(300);
-        slider2.setLayoutY(0);
         //création des boutons d'option de jeu
         Button button1 = UtilsGui.createButton("Joueur vs IA", event -> handleButtonClick.call(ButtonClickType.HOME_PVIA), false);
         Button button2 = UtilsGui.createButton("Joueur vs Joueur Online", event -> handleButtonClick.call(ButtonClickType.HOME_PVPO), false);
@@ -175,7 +130,7 @@ public class GuiScene {
             WebSocketClient.setPseudoSHORT("B");
             Platform.runLater(() -> {
                 root.getChildren().removeAll(deconnexion, pseudoText, elo);
-                root.getChildren().add(button5);
+                root.getChildren().addAll(button5, button6);
             });
         });
         statsButton.setOnAction(event -> handleButtonClick.call(ButtonClickType.STATS));
@@ -204,8 +159,10 @@ public class GuiScene {
         elo.setY(750);
         deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - deconnexion.getPrefWidth() / 2);
         deconnexion.setLayoutY(800);
-        if (pseudo.length() >= 3)
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider, slider2);
+        if (pseudo.length() >= 3) {
+            button6.setLayoutY(530);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button6, pseudoText, elo, deconnexion, slider, slider2);
+        }
         else
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, button6, slider, slider2);
         slider.valueProperty().addListener(event -> {
@@ -231,15 +188,17 @@ public class GuiScene {
             Gui.getStars().setCycleCount(Animation.INDEFINITE);
             Gui.getStars().play();
         }).start();
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public void createTimeLineThread(Pane root) {
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
-            Gui.draw(root);
-        })));
-        Gui.getStars().setCycleCount(Animation.INDEFINITE);
-        Gui.getStars().play();
+        new Thread(() -> {
+            Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> {
+                Gui.draw(root);
+            })));
+            Gui.getStars().setCycleCount(Animation.INDEFINITE);
+            Gui.getStars().play();
+        }).start();
     }
 
     public void createArrowAnim(Pane root) {
@@ -347,7 +306,7 @@ public class GuiScene {
     }
 
     public Scene pvp(HandleClick handleButtonClick, JoinCreateField joinField, JoinCreateField createField) {
-
+        configSliders();
         Pane scene = getBasicScene();
 
         GridPane root = new GridPane();
@@ -361,7 +320,7 @@ public class GuiScene {
         if (pseudo.length() >= 3) {
             eloPlayer = HttpsClient.getElo(WebSocketClient.getPseudoCUT());
             if (eloPlayer < 0) {
-                return new Scene(new Pane(), UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+                return new Scene(new Pane(), UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
             }
         }
         Text elo = UtilsGui.createText("Elo : " + eloPlayer);
@@ -377,6 +336,8 @@ public class GuiScene {
         nbVertices.setEditable(true);
         Text code = UtilsGui.createText("");
         Text textNbVertices = UtilsGui.createText("Nombre de sommets");
+        Text textCreate = UtilsGui.createText(" ");
+        //textCreate.setFont(Font.loadFont(UtilsGui.class.getResourceAsStream("/Fonts/Font3.ttf"),30));
 
         Text textTurn = UtilsGui.createText("Choisir son joueur");
         ComboBox<String> choixTurn = new ComboBox<>();
@@ -431,11 +392,10 @@ public class GuiScene {
             root.add(pseudoText, 0, 2);
             root.add(elo, 0, 3);
         }
+        root.add(textJoin, 0, 1);
         root.add(buttonJoin, 0, 0);
         root.add(textJoin, 0, 1);
         root.add(buttonCreate, 1, 0);
-        root.add(textNbVertices, 1, 1);
-        root.add(nbVertices, 1, 2);
         root.add(textTurn, 1, 3);
         root.add(choixTurn, 1, 4);
         root.add(code, 1, 5);
@@ -485,13 +445,14 @@ public class GuiScene {
         UtilsGui.updateOnResize(scene, text1);
         text1.setX(UtilsGui.WINDOW_WIDTH / 2 - text1.getLayoutBounds().getWidth() / 2);
         text1.setY(100);
-        scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
+        scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene aivsai(HandleClick handleButtonClick) {
+        configSliders();
         Pane scene = getBasicScene();
 
         GridPane root = new GridPane();
@@ -581,13 +542,14 @@ public class GuiScene {
         UtilsGui.updateOnResize(scene, text1);
         text1.setX(UtilsGui.WINDOW_WIDTH / 2 - text1.getLayoutBounds().getWidth() / 2);
         text1.setY(100);
-        scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
+        scene.getChildren().addAll(text1, root, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene joueur(HandleClick handleButtonClick) {
+        configSliders();
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("JOUEUR VS IA", true);
         Text text1 = UtilsGui.createText("Quel joueur voulez vous jouer ?");
@@ -602,16 +564,17 @@ public class GuiScene {
         cutbut.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - cutbut.getPrefWidth() / 2);
         cutbut.setLayoutY(400);
         Gui.getStars().stop();
-        UtilsGui.updateOnResize(root, title, text1, shortbut, cutbut);
-        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut);
-        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e -> Gui.draw(root))));
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut, slider, slider2);
+        Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
+                Gui.draw(root))));
         Gui.getStars().setCycleCount(Animation.INDEFINITE);
         Gui.getStars().play();
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
 
     }
 
     public Scene pvia(HandleClick handleButtonClick) {
+        configSliders();
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("JOUEUR VS IA", true);
         Text text1 = UtilsGui.createText("Choisissez la difficulte");
@@ -631,23 +594,24 @@ public class GuiScene {
         difficile.setLayoutY(500);
         strat.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - strat.getPrefWidth() / 2);
         strat.setLayoutY(600);
-        UtilsGui.updateOnResize(root, title, text1, facile, normal, difficile, strat);
-        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, text1, facile, normal, difficile, strat);
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick),
+                title, text1, facile, normal, difficile, strat, slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(root);
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
 
     }
 
     public Scene nbVertices(HandleClick handleButtonClick, boolean IA, Level level) {
+        configSliders();
         Pane root = getBasicScene();
-        Text title = UtilsGui.createText("Choisissez le nombre de sommets de votre graphe", true);
+        Text title = UtilsGui.createText("Choisissez le nombre de \n sommets de votre graphe",true);
         int minVertices = 5;
         if (level == Level.STRAT_WIN) minVertices = 6;
         Spinner<Integer> spinner = new Spinner<>(minVertices, 40, 20);
         spinner.setStyle("-fx-background-color: #00A4B4; -fx-text-fill: white;");
         spinner.setEditable(true);
-        Button enter = UtilsGui.createButton("Confirmer", e -> {
+        Button enter = UtilsGui.createButton("Confirmer",e -> {
             nbVertices = spinner.getValue();
             handleButtonClick.call(ButtonClickType.VERTICES);
 
@@ -660,20 +624,21 @@ public class GuiScene {
         UtilsGui.updateOnResize(root, title, spinner, enter);
         title.setX(UtilsGui.WINDOW_WIDTH / 2 - title.getLayoutBounds().getWidth() / 2);
         title.setY(100);
-        spinner.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - spinner.getPrefWidth() / 2);
-        spinner.setLayoutY(300);
-        enter.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - enter.getPrefWidth() / 2);
-        enter.setLayoutY(400);
-        if (IA)
-            root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR, handleButtonClick), title, spinner, enter);
-        else
-            root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, spinner, enter);
+        spinner.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - spinner.getPrefWidth()/2);
+        spinner.setLayoutY(200);
+        enter.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - enter.getPrefWidth()/2);
+        enter.setLayoutY(300);
+        if (IA) root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.JOUEUR,handleButtonClick),
+                title, spinner,enter, slider, slider2);
+        else root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME,handleButtonClick),
+                title, spinner,enter, slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(root);
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene stats(HandleClick handleButtonClick) {
+        configSliders();
         Pane root = getBasicScene();
         Text title = UtilsGui.createText("Nombre de parties faites :", false);
         Text cutText = UtilsGui.createText("Nombre de parties gagnées par cut :", false);
@@ -689,10 +654,11 @@ public class GuiScene {
             erreurText.setFill(Color.RED);
             erreurText.setX(UtilsGui.WINDOW_WIDTH / 2 - erreurText.getLayoutBounds().getWidth() / 2);
             erreurText.setY(150);
-            root.getChildren().addAll(erreurText, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick));
+            root.getChildren().addAll(erreurText, UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick),
+                    slider, slider2);
             Gui.getStars().stop();
             createTimeLineThread(root);
-            return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+            return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
         }
         response.setText(statsList.getFirst().getAsString());
         cut.setText(statsList.get(1).getAsString());
@@ -718,14 +684,15 @@ public class GuiScene {
         online.setY(450);
         online.setFill(Color.RED);
         response.setFill(Color.RED);
-        UtilsGui.updateOnResize(root, response, title, cutText, cut, shortText, shorts, online, onlineText);
-        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title, response, cutText, cut, shortText, shorts, onlineText, online);
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
+                response, cutText, cut, shortText, shorts, onlineText, online, slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(root);
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene ranked(HandleClick handleButtonClick) {
+        configSliders();
         Pane root = getBasicScene();
         Button button1 = UtilsGui.createButton("Se connecter", event -> handleButtonClick.call(ButtonClickType.LOGIN), false);
         Button button2 = UtilsGui.createButton("S'inscrire", event -> handleButtonClick.call(ButtonClickType.REGISTER), false);
@@ -733,14 +700,15 @@ public class GuiScene {
         button1.setLayoutY(300);
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - button2.getPrefWidth() / 2);
         button2.setLayoutY(400);
-        UtilsGui.updateOnResize(root, button1, button2);
-        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2);
+        root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2,
+                slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(root);
-        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(root, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene login(HandleClick handleButtonClick) {
+        configSliders();
         Pane scene = getBasicScene();
         GridPane root = new GridPane();
         root.setAlignment(Pos.CENTER);
@@ -782,14 +750,15 @@ public class GuiScene {
         password.setLayoutY(250);
         login.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - login.getPrefWidth() / 2);
         login.setLayoutY(300);
-        UtilsGui.updateOnResize(scene, title, username, password, login);
-        scene.getChildren().addAll(root, title, username, password, login, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
+        scene.getChildren().addAll(root, title, username, password, login,
+                UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public Scene register(HandleClick handleButtonClick) {
+        configSliders();
         Pane scene = getBasicScene();
         GridPane root = new GridPane();
         root.setAlignment(Pos.CENTER);
@@ -845,14 +814,64 @@ public class GuiScene {
         passwordRepeat.setLayoutY(300);
         register.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - register.getPrefWidth() / 2);
         register.setLayoutY(350);
-        UtilsGui.updateOnResize(scene, title, username, password, passwordRepeat, register);
-        scene.getChildren().addAll(root, title, username, password, passwordRepeat, register, UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick));
+        scene.getChildren().addAll(root, title, username, password, passwordRepeat, register,
+                UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
+    }
+
+    private void configSliders() {
+        slider.setValue(starsSliderValue);
+        slider2.setValue(volumeSliderValue);
+        NB_STARS = (int) ((1-starsSliderValue)*MIN_STARS+MAX_STARS*starsSliderValue);
+        VOLUME = (1-volumeSliderValue)*MIN_VOLUME+MAX_VOLUME*volumeSliderValue;
+        slider.setLayoutX(100);
+        slider.setLayoutY(0);
+        slider.setMinorTickCount(0);
+        slider.setMajorTickUnit(1);
+        slider.setShowTickMarks(true);
+        slider.setShowTickLabels(true);
+        slider.setLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "Less stars";
+                return "More stars";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                if (s.equals("Less stars")) {
+                    return 0d;
+                }
+                return 1d;
+            }
+        });
+        slider2.setMinorTickCount(0);
+        slider2.setMajorTickUnit(1.5);
+        slider2.setShowTickMarks(true);
+        slider2.setShowTickLabels(true);
+        slider2.setLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Double n) {
+                if (n < 0.5) return "-";
+                return "+";
+            }
+
+            @Override
+            public Double fromString(String s) {
+                if (s.equals("-")) {
+                    return 0d;
+                }
+                return 1.5d;
+            }
+        });
+        slider2.setLayoutX(300);
+        slider2.setLayoutY(0);
     }
 
     public Scene histoire(HandleClick handleButtonClick) {
+        configSliders();
         currentAnimation = 0;
         Pane scene = getBasicScene();
         Label text = UtilsGui.createLabel("");
@@ -878,11 +897,11 @@ public class GuiScene {
         name.setFont(UtilsGui.FONT3);
         name.prefWidthProperty().set(400);
         name.setTextAlignment(TextAlignment.CENTER);
-        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text, name);
+        scene.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), text, name, slider, slider2);
         Gui.getStars().stop();
         createTimeLineThread(scene);
         playAllAnim(scene, text, name, handleButtonClick);
-        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
+        return new Scene(scene, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
     }
 
     public void histoire1(HandleClick handleButtonClick) {

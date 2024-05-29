@@ -67,6 +67,11 @@ public class Game {
     private Media soundCut2 = new Media(getClass().getClassLoader().getResource("Sounds/cut"+2+".mp3").toExternalForm());
     private Media soundFight = new Media(this.getClass().getClassLoader().getResource("Sounds/fight.mp3").toExternalForm());
     private List<Graph> stratGagnante;
+    @Getter
+    private Level levelIACut;
+    @Getter
+    private Level levelIAShort;
+
     public Game(int nbv) throws TimeoutException {
       this(nbv,false, Turn.CUT, Level.EASY); 
     }
@@ -155,6 +160,8 @@ public class Game {
 
     public Game(int nbVertices, Level levelIACut, Level levelIAShort) throws TimeoutException {
         this.nbVertices = nbVertices;
+        this.levelIACut = levelIACut;
+        this.levelIAShort = levelIAShort;
         seed = new Random().nextLong();
         LocalTime duration = LocalTime.now();
         int c = 0;
