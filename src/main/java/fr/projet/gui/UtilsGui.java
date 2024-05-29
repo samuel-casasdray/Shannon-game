@@ -15,15 +15,21 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Screen;
 import javafx.util.Duration;
+import javafx.util.Pair;
+import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @UtilityClass
 @Slf4j
@@ -36,8 +42,10 @@ public class UtilsGui {
 
 
     public static final double CIRCLE_SIZE = 20D;
-    public static final double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
-    public static final double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight()-75;
+    @Setter
+    public static double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
+    @Setter
+    public static double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight()-75;
     public static final int WINDOW_MARGE = (int) (0.1*WINDOW_HEIGHT);
 
 
@@ -155,6 +163,50 @@ public class UtilsGui {
 
         // Démarrer la translation
         translateTransition.play();
+    }
+
+    public static void updateOnResize(Pane pane, List<Pair<Node, Number>> childs) {
+        pane.heightProperty().addListener((obs, oldVal, newVal) -> setWINDOW_HEIGHT(newVal.floatValue()));
+
+        pane.widthProperty().addListener((obs, oldVal, newVal) -> {
+            setWINDOW_WIDTH(newVal.floatValue());
+            childs.forEach(child -> {
+                if(child.getKey() instanceof Text childT) {
+                    childT.setX(WINDOW_WIDTH / 2 + child.getValue().doubleValue());
+                } else
+                    child.getKey().setLayoutX(WINDOW_WIDTH / 2 + child.getValue().doubleValue());
+            });
+        });
+    }
+    public static void updateOnResize(Pane pane) {
+        updateOnResize(pane, List.of());
+    }
+    @SafeVarargs
+    public static void updateOnResize(Pane pane, Pair<Node, Number>... childs) {
+        updateOnResize(pane, List.of(childs));
+    }
+    public static void updateOnResize(Pane pane, Pair<Node, Number> child) {
+        updateOnResize(pane, List.of(child));
+    }
+    public static void updateOnResize(Pane pane, Node... childs) {
+        updateOnResize(pane, Arrays.stream(childs).map(child -> {
+            if (child instanceof Text || child instanceof Label) {
+                return new Pair<>(child, (Number)(-child.getLayoutBounds().getWidth() / 2));
+            } else if (child instanceof Button childB) {
+                return new Pair<>(child, (Number)(-childB.getPrefWidth() / 2));
+            } else {
+                return new Pair<>(child, (Number)0);
+            }
+        }).toList());
+    }
+    public static void updateOnResize(Pane pane, Node child) {
+        if (child instanceof Text || child instanceof Label) {
+            updateOnResize(pane, new Pair<>(child, (Number) (-child.getLayoutBounds().getWidth() / 2)));
+        } else if (child instanceof Button childB) {
+            updateOnResize(pane, new Pair<>(child, (Number) (-childB.getPrefWidth() / 2)));
+        } else {
+            updateOnResize(pane, new Pair<>(child, (Number)0));
+        }
     }
 
 }

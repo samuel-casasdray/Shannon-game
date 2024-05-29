@@ -473,12 +473,12 @@ public class Gui extends Application {
 
         Button returnButton = UtilsGui.getReturnButton(ButtonClickType.JEU, Gui::handleButtonClick);
         edges.clear();
-        planetes.setLayoutX(500);
+        planetes.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - 275);
         planetes.setLayoutY(0);
         planetes.setTextFill(Color.WHITE);
-        slider.setLayoutX(700);
+        slider.setLayoutX(UtilsGui.WINDOW_WIDTH/2 - 75);
         slider.setLayoutY(0);
-        slider2.setLayoutX(900);
+        slider2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 + 125);
         slider2.setLayoutY(0);
         showGraph();
         if (game.isPvpOnline()) {
@@ -507,6 +507,8 @@ public class Gui extends Application {
         }
         else
             pane.getChildren().addAll(returnButton, planetes, slider, slider2);
+
+        UtilsGui.updateOnResize(pane, new Pair<>(planetes, -275), new Pair<>(slider, -75), new Pair<>(slider2, 125));
 
         slider.valueProperty().addListener(event -> {
             double t = slider.getValue();

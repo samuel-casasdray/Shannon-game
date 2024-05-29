@@ -31,7 +31,7 @@ public record Animations(AnimationType[] histoire, Perso[] perso, String[] text)
 }
 
 @Slf4j
-record AnimationType(String text, Perso[] perso, int actif) {
+record AnimationType(String text, Perso[] perso, int actif, int size) {
     String getNameActif() {
         if (perso == null || perso.length - 1 < actif) {
             return "";
