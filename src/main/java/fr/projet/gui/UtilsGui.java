@@ -179,6 +179,9 @@ public class UtilsGui {
             });
         });
     }
+    public static void updateOnResize(Pane pane) {
+        updateOnResize(pane, List.of());
+    }
     @SafeVarargs
     public static void updateOnResize(Pane pane, Pair<Node, Number>... childs) {
         updateOnResize(pane, List.of(childs));
