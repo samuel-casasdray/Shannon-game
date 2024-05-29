@@ -392,10 +392,11 @@ public class GuiScene {
             root.add(pseudoText, 0, 2);
             root.add(elo, 0, 3);
         }
-        root.add(textJoin, 0, 1);
         root.add(buttonJoin, 0, 0);
         root.add(textJoin, 0, 1);
         root.add(buttonCreate, 1, 0);
+        root.add(textNbVertices, 1, 1);
+        root.add(nbVertices, 1, 2);
         root.add(textTurn, 1, 3);
         root.add(choixTurn, 1, 4);
         root.add(code, 1, 5);
@@ -564,6 +565,7 @@ public class GuiScene {
         cutbut.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - cutbut.getPrefWidth() / 2);
         cutbut.setLayoutY(400);
         Gui.getStars().stop();
+        UtilsGui.updateOnResize(root, title, text1, shortbut, cutbut);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME_PVIA, handleButtonClick), title, text1, shortbut, cutbut, slider, slider2);
         Gui.setStars(new Timeline(new KeyFrame(Duration.millis(20), e ->
                 Gui.draw(root))));
@@ -594,6 +596,7 @@ public class GuiScene {
         difficile.setLayoutY(500);
         strat.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - strat.getPrefWidth() / 2);
         strat.setLayoutY(600);
+        UtilsGui.updateOnResize(root, title, text1, facile, normal, difficile, strat);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick),
                 title, text1, facile, normal, difficile, strat, slider, slider2);
         Gui.getStars().stop();
@@ -684,6 +687,7 @@ public class GuiScene {
         online.setY(450);
         online.setFill(Color.RED);
         response.setFill(Color.RED);
+        UtilsGui.updateOnResize(root, response, title, cutText, cut, shortText, shorts, onlineText, online);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), title,
                 response, cutText, cut, shortText, shorts, onlineText, online, slider, slider2);
         Gui.getStars().stop();
@@ -700,6 +704,7 @@ public class GuiScene {
         button1.setLayoutY(300);
         button2.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - button2.getPrefWidth() / 2);
         button2.setLayoutY(400);
+        UtilsGui.updateOnResize(root, button1, button2);
         root.getChildren().addAll(UtilsGui.getReturnButton(ButtonClickType.HOME, handleButtonClick), button1, button2,
                 slider, slider2);
         Gui.getStars().stop();
@@ -750,6 +755,7 @@ public class GuiScene {
         password.setLayoutY(250);
         login.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - login.getPrefWidth() / 2);
         login.setLayoutY(300);
+        UtilsGui.updateOnResize(scene, title, login, username, password);
         scene.getChildren().addAll(root, title, username, password, login,
                 UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
@@ -814,6 +820,7 @@ public class GuiScene {
         passwordRepeat.setLayoutY(300);
         register.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - register.getPrefWidth() / 2);
         register.setLayoutY(350);
+        UtilsGui.updateOnResize(scene, title, username, password, passwordRepeat, register);
         scene.getChildren().addAll(root, title, username, password, passwordRepeat, register,
                 UtilsGui.getReturnButton(ButtonClickType.RANKED, handleButtonClick), slider, slider2);
         Gui.getStars().stop();
