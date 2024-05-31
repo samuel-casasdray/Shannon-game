@@ -15,6 +15,8 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeoutException;
@@ -57,7 +59,7 @@ public class WebSocketClient {
         int creatorTurn = turn == Turn.CUT ? 0 : 1;
         if (!this.isClosed())
             this.close();
-        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices+"/"+pseudoCUT);
+        this.connectServer(CREATE_GAME_URI +creatorTurn+"/"+nbVertices+"/"+ URLEncoder.encode(URLEncoder.encode(pseudoCUT), StandardCharsets.UTF_8));
         createConnection();
     }
 
@@ -65,7 +67,7 @@ public class WebSocketClient {
         this.joiner = true;
         if (!this.isClosed())
             this.close();
-        this.connectServer(JOIN_GAME_URI + id + "/"+pseudoSHORT);
+        this.connectServer(JOIN_GAME_URI + id + "/"+URLEncoder.encode(URLEncoder.encode(pseudoSHORT), StandardCharsets.UTF_8));
         createConnection();
     }
 

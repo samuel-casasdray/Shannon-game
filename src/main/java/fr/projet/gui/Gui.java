@@ -13,7 +13,6 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
-import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -373,6 +372,8 @@ public class Gui extends Application {
     }
 
     public static Scene run() {
+        // Création du Pane pour afficher le graphe
+        pane = GuiScene.getBasicScene();
         slider.setValue(GuiScene.getSlider().getValue());
         slider.setMinorTickCount(0);
         slider.setMajorTickUnit(1);
@@ -414,14 +415,7 @@ public class Gui extends Application {
         });
         slider2.setValue(GuiScene.getSlider2().getValue());
         NB_STARS = GuiScene.getNB_STARS();
-        // Création d'un BorderPane pour centrer le contenu
-        BorderPane borderPane = new BorderPane();
-        borderPane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
-
-        // Création du Pane pour afficher le graphique
-        pane = new Pane();
         stars.stop();
-        pane.setPrefSize(UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT);
         planetes.setSelected(true);
         pane.getChildren().removeAll(images);
         images.clear();
@@ -432,9 +426,6 @@ public class Gui extends Application {
                 pane.getChildren().removeAll(images);
             }
         });
-
-
-
         //Code pour afficher les deux arbres couvrants disjoints s'ils existent
 //        Graph graph = game.getGraph();
 //        Thread arbres = new Thread(() -> {
@@ -480,6 +471,7 @@ public class Gui extends Application {
         slider.setLayoutY(0);
         slider2.setLayoutX(UtilsGui.WINDOW_WIDTH/2 + 125);
         slider2.setLayoutY(0);
+        createAnim();
         showGraph();
         if (game.isPvpOnline()) {
             GridPane root = new GridPane();
@@ -527,16 +519,11 @@ public class Gui extends Application {
             changeVolume(VOLUME);
         });
 
-        borderPane.setCenter(pane);
-        pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
-        Scene scene = new Scene(borderPane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
-
-
+        Scene scene = new Scene(pane, UtilsGui.WINDOW_WIDTH, UtilsGui.WINDOW_HEIGHT, Color.BLACK);
         //Ecouteur pour afficher message de victoire
         victoryAchievedProperty.addListener((observableValue, oldValue, newValue) -> {
             Platform.runLater(() -> {
                if(newValue.equals(1)){
-                   //text1.setVisible(true);
                    Text text1 = UtilsGui.createText("CUT a gagné !",true);
                    text1.setFont(UtilsGui.FONT4);
                    text1.setX((scene.getWidth() - text1.getLayoutBounds().getWidth()) / 2);
@@ -587,16 +574,6 @@ public class Gui extends Application {
             }
         }
     }
-
-    private static void animationTexte(Text text){
-    TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(2), text);
-    translateTransition.setToY(40); // Déplacement de 50 pixels vers le bas
-    translateTransition.setCycleCount(Animation.INDEFINITE); // Répéter indéfiniment
-    translateTransition.setAutoReverse(true); // Revenir en arrière après chaque itération
-
-    // Démarrer la translation
-    translateTransition.play();
-}
 
 //fonction qui recalcule les position des aretes et sommets lors d'un redimensionnement
     private static void updateGraphLayout(Pane pane) {
@@ -657,7 +634,6 @@ public class Gui extends Application {
             int Ay = pair.getKey().getCoords().getValue();
             int Bx = pair.getValue().getCoords().getKey();
             int By = pair.getValue().getCoords().getValue();
-            double pas = random.nextDouble() / 200 + 0.0025;
             Line line = new Line(Ax, Ay, Bx, By);
             LinearGradient gradient = new LinearGradient(
                 Ax,
@@ -701,7 +677,6 @@ public class Gui extends Application {
             pane.getChildren().addAll(vertex, imageView);
         }
         pane.setOnMouseClicked(handler);
-        createAnim();
     }
 
     public static void create(WebSocketClient client) {

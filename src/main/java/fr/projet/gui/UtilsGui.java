@@ -27,7 +27,6 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -43,9 +42,9 @@ public class UtilsGui {
 
     public static final double CIRCLE_SIZE = 20D;
     @Setter
-    public static double WINDOW_WIDTH = Screen.getPrimary().getBounds().getWidth();
+    public static double WINDOW_WIDTH = Screen.getPrimary().getVisualBounds().getWidth();
     @Setter
-    public static double WINDOW_HEIGHT = Screen.getPrimary().getBounds().getHeight()-75;
+    public static double WINDOW_HEIGHT = Screen.getPrimary().getVisualBounds().getHeight();
     public static final int WINDOW_MARGE = (int) (0.1*WINDOW_HEIGHT);
 
 
@@ -166,10 +165,10 @@ public class UtilsGui {
     }
 
     public static void updateOnResize(Pane pane, List<Pair<Node, Number>> childs) {
-        pane.heightProperty().addListener((obs, oldVal, newVal) -> setWINDOW_HEIGHT(newVal.floatValue()));
+        pane.heightProperty().addListener((obs, oldVal, newVal) -> setWINDOW_HEIGHT(Screen.getPrimary().getVisualBounds().getHeight()));
 
         pane.widthProperty().addListener((obs, oldVal, newVal) -> {
-            setWINDOW_WIDTH(newVal.floatValue());
+            setWINDOW_WIDTH((Screen.getPrimary().getVisualBounds().getWidth()));
             childs.forEach(child -> {
                 if(child.getKey() instanceof Text childT) {
                     childT.setX(WINDOW_WIDTH / 2 + child.getValue().doubleValue());

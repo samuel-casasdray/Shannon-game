@@ -160,8 +160,7 @@ public class GuiScene {
         deconnexion.setLayoutX(UtilsGui.WINDOW_WIDTH / 2 - deconnexion.getPrefWidth() / 2);
         deconnexion.setLayoutY(800);
         if (pseudo.length() >= 3) {
-            button6.setLayoutY(530);
-            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button6, pseudoText, elo, deconnexion, slider, slider2);
+            root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, pseudoText, elo, deconnexion, slider, slider2);
         }
         else
             root.getChildren().addAll(statsButton, text1, text2, button1, button2, button3, button4, button5, button6, slider, slider2);
